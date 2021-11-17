@@ -1,0 +1,95 @@
+# the type of the running node, can be set with 'dataOwner' or 'storage'.
+type = "dataOwner"
+
+#########################################################################
+#
+#  [dataOwner] defines features of a dataOwner node.
+#
+#########################################################################
+[dataOwner]
+# Define a name of the node, for readability
+name = "node1"
+
+# The Address this server will listen on
+listenAddress = ":8122"
+
+# The private key of the node.
+# Different key express different identity.
+privateKey = "5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79"
+publicAddress = "10.144.94.17:8122"
+
+[dataOwner.slicer]
+    type = "simpleSlicer"
+    [dataOwner.slicer.simpleSlicer]
+        blockSize = 4194304
+        queueSize = 4
+
+[dataOwner.encryptor]
+    type = "softEncryptor"
+    [dataOwner.encryptor.softEncryptor]
+        password = "abcdefg"
+
+# The generator of the challenge requests, to check if the file exists in the storage.
+[dataOwner.challenger]
+    # Generator's type, can be 'pdp' or 'merkle'.
+    type = "pdp"
+
+    # Proof of data Possession. http://cryptowiki.net/index.php?title=Proof_of_data_possession
+    [dataOwner.challenger.pdp]
+        # Max file slices number when generating pdp challenge
+        maxIndexNum = 5
+        sk = "W4HyiC7kx+bafMftHrD7Mz4ff2/0Bb103fUIrbRVkFk="
+        pk = "AVcT6JO4Ddcq+JjC2Vw/kGZSrCjEeCu1Lu1EFya9C96Nb/HtJkaHEJ4Ni89leAAaCbKu/oEFrfEpb3oAaEd2JqNuyBlWZ0MZk7PmFkaUlYaTVvQRUWRRSmiIZa+iNtJEIYC/AC5C88k1vRoXq3m7VonvJUFP95oLX3CSMMfSiUln"
+        # Random Number used by pdb.
+        randu = "AfM3n7CzmkbVEBRPOYV8gH1qpyaQdTNA1MZ7PHYfmWs="
+        randv = "TKOt9kE7m5O7fCztoyy1J+WpNugLxKPS3hweeUK+09Y="
+
+    # Merkle Proof.
+    [leasee.challenger.merkle]
+        leveldbRoot = "/home/data/challenger"
+        shrinkSize = 500
+        segmentSize = 5
+
+# Blockchain used by the dataOwner node.
+[dataOwner.blockchain]
+    # blockchain type, 'xchain' or 'fabric'
+    type = "xchain"
+
+    # The configuration of how to invoke contracts using xchain. It is necessary when type is 'xchain'.
+    [dataOwner.blockchain.xchain]
+        mnemonic = "臂 袁 饿 莫 新 棉 骗 矩 巨 愿 稍 造"
+        contractName = "dstorage1"
+        contractAccount = "XC7142093261616521@dstorage"
+        chainAddress = "106.12.139.7:15022"
+        chainName = "dstorage"
+
+    # The configuration of how to invoke contracts using fabric. It is necessary when type is 'fabric'.
+    [dataOwner.blockchain.fabric]
+        configFile = "./config/fabric/config.yaml"
+        channelId = "mychannel"
+        chaincode = "mycc"
+        userName = "Admin"
+        orgName = "org1"
+
+# The copier makes backups of files, currently only supports 'random-copier'.
+[dataOwner.copier]
+    type = "random-copier"
+
+# The monitor will query new tasks in blockchain regularly, and trigger the task handler's operations
+[dataOwner.monitor]
+    # Whether to monitor the challenge answer of the storage node.
+    challengingSwitch = "on"
+
+    # Whether to monitor the file migration and the change of the namespaces's capacity.
+    filemaintainerSwitch = "on"
+    # unit: hour
+    filemigrateInterval = 6
+
+#########################################################################
+#
+#   [log] sets the log related options
+#
+#########################################################################
+[log]
+level = "debug"
+path = "./logs"

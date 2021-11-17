@@ -1,0 +1,34 @@
+[executor]
+name = "exe-node2"
+listenAddress = ":80"
+publicAddress = "executor2.node.com:80"
+privateKey = "858843291fe4ed4bd2afc1120efd7315f3cae2d3f79e582f7df843ac6eb0543b"
+
+[executor.mpc]
+    trainTaskLimit = 100
+    predictTaskLimit = 100
+    rpcTimeout = 3
+    # task maximum execution time (in seconds)
+    taskLimitTime = 3600
+
+[executor.storage]
+    localStoragePath = "./models"
+    type = 'XuperDB'
+    [executor.storage.XuperDB]
+        host = "http://dataowner2.node.com:80"
+        namespace = "paddlempc"
+        expiretime = 72
+
+
+[executor.blockchain]
+    type = 'xchain'
+    [executor.blockchain.xchain]
+        mnemonic = "提 现 详 责 腐 贪 沉 回 涨 谓 献 即"
+        contractName = "paddlempc"
+        contractAccount = "XC1111111111111112@xuper"
+        chainAddress = "xchain1.node.com:37101"
+        chainName = "xuper"
+
+[log]
+level = "debug"
+path = "./logs"

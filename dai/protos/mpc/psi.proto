@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package mpc;
+option go_package = "github.com/PaddlePaddle/PaddleDTX/dai/protos/mpc";
+
+//VLReEncIDsRequest is a message sent in Vertical-Learning-PSI Re-Encrypt-IDSet requesting.
+message VLPsiReEncIDsRequest {
+    string taskID = 2;
+    bytes EncIDs = 3;
+}
+message VLPsiReEncIDsResponse {
+    string taskID = 2;
+    bytes ReEncIDs = 3;
+}
+

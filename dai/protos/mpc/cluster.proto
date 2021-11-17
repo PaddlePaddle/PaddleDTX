@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+import "common/common.proto";
+
+package mpc;
+option go_package = "github.com/PaddlePaddle/PaddleDTX/dai/protos/mpc";
+
+// Cluster defines communication between cluster members.
+service Cluster {
+    // Step passes an implementation-specific message to another cluster member.
+    rpc Step(StepRequest) returns (StepResponse);
+}
+
+// StepRequest wraps a message that is sent to a cluster member.
+message StepRequest {
+    oneof payload {
+        // train_request is a message sent in training progress.
+        TrainRequest train_request = 2;
+        // predict_request is a message sent in predicting progress.
+        PredictRequest predict_request = 3;
+    }
+}
+
+// StepResponse is a message received from a cluster member.
+message StepResponse {
+        oneof payload {
+        // train_response is a message responsed in training progress.
+        TrainResponse train_response = 2;
+        // predict_response is a message responsed in predicting progress.
+        PredictResponse predict_response = 3;
+    }
+}
+
+// TrainRequest is a message sent in training progress.
+message TrainRequest {
+    string taskID = 2;
+    common.Algorithm algo = 3;
+    // payload can be processed by the specific algorithm
+    bytes payload = 4;  
+}
+
+// PredictRequest is a message sent in predicting progress.
+message PredictRequest {
+    string taskID = 2;
+    common.Algorithm algo = 3;
+    bytes payload = 4;
+}
+
+//TrainResponse is a message responsed in training progress
+message TrainResponse {
+    string taskID = 2;
+    // payload can be processed by the specific algorithm and training phase
+    bytes payload = 3;
+}
+
+//PredictResponse is a message responsed in predicting progress
+message PredictResponse {
+    string taskID = 2;
+    // payload can be processed by the specific algorithm and predicting phase
+    bytes payload = 3; 
+}

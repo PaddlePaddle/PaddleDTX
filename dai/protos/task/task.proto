@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+import "common/common.proto";
+
+package task;
+option go_package = "github.com/PaddlePaddle/PaddleDTX/dai/protos/task";
+
+// Cluster defines communication communication between client and server, and communication between cluster members.
+service Task {
+    // ConfirmTask is provided by Executor server for Executor client to confirm a task published by Requester. 
+    rpc ConfirmTask(ConfirmTaskRequest) returns (TaskResponse);
+    // ListTask is provided by Executor server for Executor client to list tasks with filters.
+    rpc ListTask(ListTaskRequest)  returns (FLTasks);
+    // GetTaskById is provided by Executor server for Executor client to query a task.
+    rpc GetTaskById(GetTaskRequest) returns (FLTask);
+    // GetPredictResult is provided by Executor server for Executor client to get prediction result.
+    rpc GetPredictResult(TaskRequest) returns (PredictResponse);
+    // StartTask is for Executors to request remote ones to start a task.
+    rpc StartTask(TaskRequest) returns (TaskResponse);
+}
+ 
+// ConfirmTaskRequest is message sent to Executor server to confirm a task published by Requester.
+message ConfirmTaskRequest {
+    bytes owner = 1;
+    string taskID = 2;
+    int64 timestamp = 3;
+    bytes signature = 4;
+}
+
+// TaskRequest is message sent between Executors to request to start a task. 
+message TaskRequest {
+    bytes owner = 1;
+    string taskID = 2;
+    bytes signature = 4;
+}
+
+
+// TaskResponse is a message received from Executor.
+message TaskResponse {
+    string taskID = 2;
+}
+
+// ListTaskRequest is message sent to Executor server to list tasks
+message ListTaskRequest {
+    bytes pubKey = 1;  // requester or executor's public key
+    string status = 2;
+    int64 timeStart = 3;
+    int64 timeEnd = 4;
+    uint64 limit = 5;
+}
+
+// DataForTask is a message received from Executor
+message DataForTask {
+    bytes  owner = 1;  // samples'owner, also Executor who confirm and process task
+	string dataID = 2; // file id of samples
+	string pSILabel = 3 ; // psi lable for vertical learning
+	int64  confirmedAt = 4; // task confirm time
+	int64  rejectedAt = 5; // task reject time
+    string address = 6; // host of Executor   
+}
+
+// FLTask is a message received from Executor and defines Federated Learning Task based on MPC
+message FLTask {
+    string iD = 1;
+    string name = 2;
+    string description = 3;
+
+    bytes requester = 4;
+    repeated DataForTask dataSets = 5;
+	common.TaskParams algoParam = 6; // fl algorithm related params
+
+	string status = 7;
+	string errMessage = 8;
+	string result = 9;
+	int64 publishTime = 10;
+	int64 startTime = 11;
+	int64 endTime = 12;
+}
+
+// FLTasks is list of FLTasks received from Executor 
+message FLTasks {
+    repeated FLTask fLTasks = 1;
+}
+
+// GetTaskRequest is message sent to Executor server to get a task
+message GetTaskRequest {
+    string taskID = 1;
+}
+
+// PredictResponse is a message received from Executor 
+message PredictResponse {
+    string taskID = 1;
+    bytes payload = 2; 
+}
+
