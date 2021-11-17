@@ -17,8 +17,6 @@ all: prepare compile package
 # set proxy env
 set-env:
 	$(GO) env -w GO111MODULE=on
-	$(GO) env -w GONOPROXY=\*\*.baidu.com\*\*
-	$(GO) env -w GOPROXY=https://goproxy.baidu-int.com
 	$(GO) env -w GONOSUMDB=\*
 
 # make build-pb 

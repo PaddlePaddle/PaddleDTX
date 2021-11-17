@@ -39,6 +39,10 @@ github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20211014091416-04fab022840d/go.m
 github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20211101101755-c7f332274862 h1:ZkgmyhiHW7Sad9G8vmwUyqLPDWBzWaUtYllT1XCmTNI=
 github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20211101101755-c7f332274862 h1:ZkgmyhiHW7Sad9G8vmwUyqLPDWBzWaUtYllT1XCmTNI=
 github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20211101101755-c7f332274862/go.mod h1:kslIIgBxzVJ3l2fUwukW/o3J95QUwzKLy6htfEGhuRg=
+github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20211117095239-166020adc84f h1:L7HQb0073H8iAj70p1Cq9U3TlqkJoNG9XvgjLsGqSNs=
+github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20211117095239-166020adc84f/go.mod h1:1aRQvMrXkvHDsfArUE3pLmzDPvlvf6gNp0WPDw7HT/4=
+github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20211117105727-938628bc17b5 h1:prUPVenEEs49+753Hb1o2ZOMvMwSbccJ02t04fLl7H0=
+github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20211117105727-938628bc17b5/go.mod h1:5Y4gX6XSar8viN/JmmXFu/ybjAIrgojIzvvcUfX8mfA=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
 github.com/Shopify/sarama v1.30.0/go.mod h1:zujlQQx1kzHsh4jfV1USnptCQrHAEZ2Hk8fTKCulPVs=
 github.com/Shopify/toxiproxy/v2 v2.1.6-0.20210914104332-15ea381dcdae/go.mod h1:/cvHQkZ1fst0EmZnA5dFtiQdWCNCFYzb+uE2vqVgvx0=
@@ -488,10 +492,12 @@ github.com/koron/go-ssdp v0.0.0-20191105050749-2e1c40ed0b5d/go.mod h1:5Ky9EC2xfo
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pretty v0.2.0/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
+github.com/kr/pretty v0.2.1 h1:Fmg33tUaq4/8ym9TJN1x7sLJnHVwhP33CNkpYV/7rwI=
 github.com/kr/pretty v0.2.1/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
+github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
 github.com/leodido/go-urn v1.2.0 h1:hpXL4XnriNwQ/ABnpepYM/1vCLWNDfUNts8dX3xTG6Y=
 github.com/leodido/go-urn v1.2.0/go.mod h1:+8+nEpDfqqsY+g338gtMEUOtuK+4dEMhiQEgxpxOKII=
@@ -1383,6 +1389,7 @@ gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b h1:QRR6H1YWRnHb4Y/HeNFCTJLFVxaq6wH4YuVdsUOr75U=
 gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c h1:Hei/4ADfdWqJk1ZMxUNpqntNwaWcugrBjAiHlqqRiVk=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c/go.mod h1:JHkPIbrfpd72SG/EVd6muEfDQjcINNoR0C8j2r3qZ4Q=
 gopkg.in/errgo.v2 v2.1.0/go.mod h1:hNsd1EY+bozCKY1Ytp96fpM3vjJbqLJn88ws8XvfDNI=
 gopkg.in/fsnotify.v1 v1.4.7/go.mod h1:Tz8NjZHkW78fSQdbUxIjBTcgA1z1m8ZHf0WmKUhAMys=
@@ -1415,10 +1422,6 @@ honnef.co/go/tools v0.0.0-20190418001031-e561f6794a2a/go.mod h1:rf3lG4BRIbNafJWh
 honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.1-2019.2.3 h1:3JgtbtFHMiCmsznwGVTUWbgGov+pVqnlf1dEJTNAXeM=
 honnef.co/go/tools v0.0.1-2019.2.3/go.mod h1:a3bituU0lyd329TUQxRnasdCoJDkEUEAqEt0JzvZhAg=
-icode.baidu.com/baidu/blockchain/PaddleDTX/crypto v0.0.0-20211116114245-2c492c5a07ae h1:MHa+a3vyEHSe836bKfFD7TzOzRaJqJDT/GKp/8+/zO4=
-icode.baidu.com/baidu/blockchain/PaddleDTX/crypto v0.0.0-20211116114245-2c492c5a07ae/go.mod h1:1aRQvMrXkvHDsfArUE3pLmzDPvlvf6gNp0WPDw7HT/4=
-icode.baidu.com/baidu/blockchain/PaddleDTX/xdb v0.0.0-20211116114245-2c492c5a07ae h1:jWTdK0sqFFtm7GbTnTAURChZGLsUeogno9AbWHqj1+w=
-icode.baidu.com/baidu/blockchain/PaddleDTX/xdb v0.0.0-20211116114245-2c492c5a07ae/go.mod h1:ReqluMLktW1NZnTuARYpXYeKLFtLAaxqD56VyfxTZHU=
 k8s.io/kubernetes v1.13.0/go.mod h1:ocZa8+6APFNC2tX1DZASIbocyYT5jHzqFVsY5aoB7Jk=
 moul.io/http2curl v1.0.0/go.mod h1:f6cULg+e4Md/oW1cYmwW4IWQOVl2lGbmCNGOHvzX2kE=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
