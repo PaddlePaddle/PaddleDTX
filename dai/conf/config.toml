@@ -1,0 +1,78 @@
+#########################################################################
+#
+#  [executor] defines the network features of the trusted computing server, which
+#  serves user clients and other servers.
+#
+#########################################################################
+[executor]
+# Define a name of the trusted computing server, for readability
+name = "executor1"
+
+# The Address this server will listen on
+listenAddress = ":8184"
+
+# The endpoint can be connected by other trusted computing servers, and showed in blockchain.
+# In essence, it is the same with [server].listenAddress.
+# If your network mode is 'host', it is the machine's ip and the port in [server].listenAddress in before section.
+publicAddress = "10.144.94.17:8184"
+
+# The private key of the trusted computing server.
+# Different key express different identity.
+privateKey = "14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21"
+
+# [mpc] defines the features of the mpc process.
+[executor.mpc]
+    # trainTaskLimit limits the max number of executing training tasks concurrently
+    trainTaskLimit = 100
+
+    # predictTaskLimit limits the max number of executing predicting tasks concurrently
+    predictTaskLimit = 100
+
+    # Rpc request timeout
+    # unit: second
+    rpcTimeout = 3
+
+    # Maximum time that task can be executed.
+    # unit: second
+    taskLimitTime = 3600
+
+# [storage] defines the storage used by the executor, include the persistent secure storage and the temporary local storage.
+[executor.storage]                               ## 计算节点存储
+    # The temporary local storage, local file system's path.
+    localStoragePath = "./models"
+
+    # Type of the persistent secure storage, currently only supports 'XuperDB'.
+    type = 'XuperDB'
+    [executor.storage.XuperDB]
+        # The XuperDB's endpoint this server uses to connect
+        host = "http://10.144.94.17:8009"
+
+        # When storage a file, you must have a namespace in XuperDB.
+        # It defines which namespace in XuperDB prediction file will be stored,
+        # and must be created before storage.
+        namespace = "mpc"
+
+        # The expiration time of the files stored in XuperDB, from the moment it's stored.
+        # unit: hour
+        expiretime = 72
+
+# Blockchain used by the executor.
+# Blockchain records the computing and scheduling process of task, to enhance the credibility of the system.
+[executor.blockchain]
+    # blockchain type, 'xchain' or 'fabric'
+    type = 'xchain'
+    [executor.blockchain.xchain]
+        mnemonic = "助 应 讨 乳 拔 夏 弃 从 干 歌 吊 像 目 那 革 摩 姜 扣 赵 秘 扬 杜 烷 法"
+        contractName = "mpc4"
+        contractAccount = "XC1111111111111111@xuper"
+        chainAddress = "10.144.94.17:37104"
+        chainName = "xuper"
+
+#########################################################################
+#
+#   [log] sets the log related options
+#
+#########################################################################
+[log]
+level = "debug"
+path = "./logs"

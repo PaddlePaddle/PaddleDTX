@@ -1,0 +1,13 @@
+
+# Blockchain used by the executor.
+# Client initiate a task to the executor by the blockchain.
+[blockchain]
+# blockchain type, 'xchain' or 'fabric'
+type = 'xchain'
+
+[blockchain.xchain]
+    mnemonic = "助 应 讨 乳 拔 夏 弃 从 干 歌 吊 像 目 那 革 摩 姜 扣 赵 秘 扬 杜 烷 法"
+    contractName = "mpc3"
+    contractAccount = "XC1111111111111111@xuper"
+    chainAddress = "10.144.94.17:37104"
+    chainName = "xuper"

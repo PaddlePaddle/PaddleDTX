@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package common;
+option go_package = "github.com/PaddlePaddle/PaddleDTX/dai/protos/common";
+
+// Algorithm is a list of algorithms offered
+enum Algorithm {
+    LINEAR_REGRESSION_VL = 0;      // vertical linear regression
+    LOGIC_REGRESSION_VL = 1;       // vertical logistic regression
+}
+
+// TaskType defines types of task
+enum TaskType {
+    LEARN = 0;      // type of learning  
+    PREDICT = 1;       // type of prediction 
+}
+
+// RegMode regulation mode for training
+enum RegMode {
+    Reg_None = 0;               // non-reg
+    Reg_Lasso = 1;              // L1-reg
+    Reg_Ridge =2;               // L2-reg
+}
+
+// TrainParams lists all the parameters for training
+message TrainParams {
+    string label = 1;
+    string labelName = 2;        // for LogReg
+    RegMode regMode = 3;
+    double regParam = 4;
+    double alpha = 5;
+    double amplitude = 6;
+    int64 accuracy = 7;
+    bool isTagPart = 8;
+    string idName = 9;            // for vertical learning PSI
+    int64 BatchSize = 10;         // for train loop
+}
+
+// TrainModels is final result of distributed training
+message TrainModels {
+    map<string,double> thetas = 1;
+    map<string,double> xbars = 2;
+    map<string,double> sigmas = 3;
+    string label = 4;
+    bool isTagPart = 5;
+    string idName = 6; // for vertical learning PSI
+
+}
+
+// TaskParams lists all the parameters in a task
+message TaskParams {
+    Algorithm algo = 1;
+    TaskType taskType = 2;
+    TrainParams trainParams = 3;
+    string modelTaskID = 4;
+    TrainModels modelParams = 5;
+} 
+
+// TrainTaskResult defines final result of training 
+message TrainTaskResult {
+    string taskID = 1; 
+    bool success = 2; // successful or not 
+    bytes model = 3 ; // training outcomes
+    string errMsg = 4; // reason of failure
+}
+
+// PredictTaskResult defines final result of prediction
+message PredictTaskResult {
+    string taskID = 1;
+    bool success = 2; // successful or not
+    bytes outcomes = 3; // prediction outcomes
+    string errMsg = 4; // reason of failure
+}
+
+// StartTaskRequest is message sent to a cluster member to start a training task or predicting task.
+message StartTaskRequest {
+    string taskID = 2;
+    bytes file = 3;
+    repeated string hosts = 4;
+    TaskParams params = 5; 
+}
+
+// StopTaskRequest is message sent to a cluster member to stop a training task or predicting task.
+message StopTaskRequest {
+    string taskID = 2;
+    TaskParams params = 4; 
+}

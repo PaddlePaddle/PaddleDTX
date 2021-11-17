@@ -1,0 +1,73 @@
+# The type of the running node, can be set with 'leasee' or 'storage'.
+# The type of the running node, can be set with 'dataOwner' or 'storage'.
+type = "storage"
+
+#########################################################################
+#
+#  [storage] defines features of the node as a storage.
+#  [storage] defines features of a storage node.
+#
+#########################################################################
+[storage]
+# Define a name of the node, for readability
+name = "node1"
+
+# The Address this server will listen on
+listenAddress = ":8122"
+
+# The private key of the node.
+# Different key express different identity.
+privateKey = "5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79"
+
+# The endpoint can be connected by other node, and showed in blockchain.
+# If your network mode is 'host', it is the machine's ip and the port in publicAddress in before section.
+publicAddress = "10.144.94.17:8122"
+
+# Blockchain used by the storage node.
+[storage.blockchain]
+    # blockchain type, 'xchain' or 'fabric'
+    type = "xchain"
+
+    # The configuration of how to invoke contracts using xchain. It is necessary when type is 'xchain'.
+    [storage.blockchain.xchain]
+        mnemonic = "臂 袁 饿 莫 新 棉 骗 矩 巨 愿 稍 造"
+        contractName = "dstorage1"
+        contractAccount = "XC7142093261616521@dstorage"
+        chainAddress = "106.12.139.7:15022"
+        chainName = "dstorage"
+
+    # The configuration of how to invoke contracts using fabric. It is necessary when type is 'fabric'.
+    [storage.blockchain.fabric]
+        configFile = "./config/fabric/config.yaml"
+        channelId = "mychannel"
+        chaincode = "mycc"
+        userName = "Admin"
+        orgName = "org1"
+
+# The storage mode used by the storage node, currently only supports local file system.
+[storage.mode]
+    type = "local"
+    [storage.mode.local]
+        # Location of file fragment file
+        rootPath = "/root/xdata/data/slices"
+
+# The monitor will query new tasks in blockchain regularlly, and trigger the task handler's operations
+# The monitor will query new tasks in blockchain regularly, and trigger the task handler's operations
+[storage.monitor]
+    # Whether to monitor the challenge requests from the leasee node.
+    # Whether to monitor the challenge requests from the dataOwner node.
+    challengingSwitch = "on"
+
+    # Whether to monitor the node's change， such as  HeartBeat etc.
+    nodemaintainerSwitch = "on"
+    # Interval time of the node maintainer to clear file slice
+    fileclearInterval = 24
+
+#########################################################################
+#
+#   [log] sets the log related options
+#
+#########################################################################
+[log]
+level = "debug"
+path = "./logs"

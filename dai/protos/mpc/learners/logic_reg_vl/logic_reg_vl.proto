@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+import "mpc/psi.proto";
+
+package logic_reg_vl;
+
+option go_package = "github.com/PaddlePaddle/PaddleDTX/dai/protos/mpc/learners/logic_reg_vl";
+
+//MessageType defines the type of message with which communicate with nodes in cluster,
+// and in some way it indicates the phase of learning
+//Some types are for local message which is not passed between nodes
+enum MessageType {
+    MsgPsiEnc                   = 0; // local message
+    MsgPsiAskReEnc              = 1; // local message
+	MsgPsiReEnc                 = 2;
+	MsgPsiIntersect             = 3; // local message
+    MsgTrainHup                 = 4; // local message
+    MsgHomoPubkey               = 5;
+    MsgTrainLoop                = 6; // local message
+    MsgTrainCalLocalGradCost    = 7; // local message
+    MsgTrainPartBytes           = 8; 
+    MsgTrainCalEncGradCost      = 9; // local message
+    MsgTrainEncGradCost         = 10;
+    MsgTrainDecLocalGradCost    = 11; // local message
+    MsgTrainGradAndCost         = 12; 
+    MsgTrainUpdCostGrad         = 13; // local message
+    MsgTrainStatus              = 14;
+    MsgTrainCheckStatus         = 15; // local message
+    MsgTrainModels              = 16; // local message
+
+    MsgPredictHup               = 17; // local message
+    MsgPredictPart              = 18; 
+    MsgPredictFinal             = 19; // local message
+}
+
+message Message {
+    MessageType                 type                    = 1;
+    string                      to                      = 2;
+    string                      from                    = 3;
+    uint64                      loopRound               = 4; //loopRound is used for MsgTrainLoop and message about Train
+    mpc.VLPsiReEncIDsRequest    vlLPsiReEncIDsReq       = 5; 
+    mpc.VLPsiReEncIDsResponse   vlLPsiReEncIDsResp      = 6;
+    bytes                       homoPubkey              = 7;
+    bytes                       PartBytes               = 8;
+    bytes                       encGradFromOther        = 9;
+    bytes                       encCostFromOther        =10;
+    bytes                       gradBytes               =11;
+    bytes                       costBytes               =12;
+    bool                        stopped                 =13;                      
+}
+
+message PredictMessage {
+    MessageType                 type                    = 1;
+    string                      to                      = 2;
+    string                      from                    = 3;     
+    mpc.VLPsiReEncIDsRequest    vlLPsiReEncIDsReq       = 4; 
+    mpc.VLPsiReEncIDsResponse   vlLPsiReEncIDsResp      = 5;
+    repeated double             predictPart             = 6; //PredictPart defines the local prediction outcomes which will be sent to remote node to calculate the final result
+}
