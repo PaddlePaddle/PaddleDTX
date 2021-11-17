@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Joker/hpp v1.0.0 // indirect
-	github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-00010101000000-000000000000
+	github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20211117095239-166020adc84f
 	github.com/Shopify/sarama v1.30.0 // indirect
 	github.com/cjqpker/slidewindow v1.0.2
 	github.com/google/go-querystring v1.1.0 // indirect
@@ -32,7 +32,5 @@ require (
 	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
 )
-
-replace github.com/PaddlePaddle/PaddleDTX/crypto => icode.baidu.com/baidu/blockchain/PaddleDTX/crypto v0.0.0-20211116093930-d6b8f54cc171
 
 replace github.com/go-kit/kit => github.com/go-kit/kit v0.8.0

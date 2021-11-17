@@ -10,9 +10,8 @@ docker run -it --rm \
     -v ${PWD}:/workspace \
     -v ~/.ssh:/root/.ssh \
     -w /workspace \
-    -e GONOPROXY=**.baidu.com** \
     -e GONOSUMDB=* \
-    -e GOPROXY=https://goproxy.baidu-int.com \
+    -e GOPROXY=https://goproxy.io,direct \
     -e GO111MODULE=on \
     golang:1.13.4 bash -c "go build -o ./$serverBinary && go build -o ./$clientBinary cmd/client/main.go"
 # build image 
