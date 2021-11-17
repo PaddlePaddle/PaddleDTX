@@ -11,9 +11,8 @@ docker run -it --rm \
     -v ${PWD}:/workspace \
     -v ~/.ssh:/root/.ssh \
     -w /workspace \
-    -e GONOPROXY=**.baidu.com** \
     -e GONOSUMDB=* \
-    -e GOPROXY=https://goproxy.baidu-int.com \
+    -e GOPROXY=https://goproxy.cn \
     -e GO111MODULE=on \
     golang:1.13.4 bash -c "go build -o ./bin/$executorBinary && go build -o ./bin/$executorClientBinary ./executor/cmd \
     && go build -o ./bin/$requesterClientBinary ./requester/cmd && chmod 777 ./bin" \
