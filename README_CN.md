@@ -70,7 +70,7 @@ make
 您可以在`./output`中获取安装包，然后手动安装。
 
 ## 四、测试
-我们提供了 [测试脚本] (./scripts/README.md)方便您测试、了解和使用PaddleDTX。
+我们提供了 [测试脚本](./scripts/README.md)方便您测试、了解和使用PaddleDTX。
 
 ## 五、参考资料
 [1] Konečný J, McMahan H B, Yu F X, et al. Federated learning: Strategies for improving communication efficiency[J]. arXiv preprint arXiv:1610.05492, 2016.
