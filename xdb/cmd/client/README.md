@@ -1,176 +1,396 @@
-# XuperDB 命令行工具
+[中文](./README_CN.md) | English
 
-## 一、存储节点操作
+# Command-line Tool: xdata-cli 
+The `xdata-cli` is a command-line tool to use the decentralized storage network by a DataOwner node.
+There are three major subcommands of `xdata-cli` as follows.
 
-### 存储节点操作命令说明 [./bin/client nodes]
-| command    |        说明      |
+| command    |        explanation      | 
+| :----------: |   :-----------:   | 
+| nodes    |  control actions related to storage nodes | 
+| files    | file operations on the decentralized storage network | 
+| challenge    | challenge operations used to check file integrity in the storage node |  
+
+
+## Command Parsing: `xdata-cli nodes`
+
+| command    |        explanation      |
 | ---------- |   -----------   |
-| add        | add node into xuper db  |
-| genkey     | generate a pair of node key |
+| add        | add a storage node into XuperDB  |
+| genkey     | generate a pair of key |
 | genpdpkeys | generate pdp keys |
-| get        | get node of xuper db by id  |
-| health     | get node health status by id  |
-| list       | list nodes of xuper db  |
+| get        | get the storage node by id  |
+| health     | get the storage node's health status by id  |
+| list       | list storage nodes |
 | mrecords   | get node slice migrate records  |
-| heartbeat  | heartbeatnum of given day, example '2021-07-10 12:00:00' |   
-| offline    | get node of xuper db offline by privatekey |
-| online     | get node of xuper db online by privatekey |    
+| heartbeat  | get storage node heart beat number of one day, example '2021-07-10 12:00:00' |   
+| offline    | set a storage node offline |
+| online     | set a storage node online |   
 
-### 为节点生成公私钥
-```shell
-$ ./bin/client nodes genkey
+| global flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :------: | 
+|   --host |      -h    |   the storage node's host | yes |
+
+### add
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --address  |      -a   |   network address can be accessed |    yes    |
+|   --name  |      -n    |   node's name |    yes    |
+|   --privateKey  |      -k    |   private key |    yes    |
+|   --description  |      -d    |   description |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli nodes add -a http://127.0.0.2:8123 -n storage1 -k 0e632dfe60f6a70ae5230e963780c581499beccf6d04133c2dd1e59e27cb6404 -d 'a storage node'  --host http://localhost:8122
 ```
 
-### 为租赁节点生成基于双线性对挑战的公私钥
-```shell
-$ ./bin/client nodes genpdpkeys
+### genkey
+
+```
+DEMO:
+$ ./xdata-cli nodes genkey
 ```
 
-### 获取节点列表
-```shell
-$ ./bin/client --host http://localhost:8001 nodes list
+### genpdpkeys
+
+```
+DEMO:
+$ ./xdata-cli nodes genpdpkeys
 ```
 
-### 获取节点信息
-```shell
-$ ./bin/client --host http://localhost:8001 nodes get --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+### get
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --id  |      -i   | storage node's id |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli nodes get --host http://localhost:8122 -i 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
 ```
 
-### 节点上线
-```shell
-$ ./bin/client --host http://localhost:8001 nodes online -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+### health
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --id  |      -i   |  storage node's id |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli nodes health --host http://localhost:8122 -i 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
 ```
 
-### 节点下线
-```shell
-$ ./bin/client --host http://localhost:8001 nodes offline -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+### list
+
+```
+DEMO:
+$ ./xdata-cli nodes list --host http://localhost:8122
 ```
 
-### 节点健康度查询
-```shell
-$ ./bin/client --host http://localhost:8001 nodes health --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+### mrecords
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --id  |      -i   |   storage node's id |    yes    |
+|   --limit  |  -l   |   limit for list slice migrate records|    no    |
+|   --start  |      -s   |   start time of the slice migrate' query |    no    |
+|   --end  |      -e   |   end time of the slice migrate' query |    no    |
+
+```
+DEMO:
+$ ./xdata-cli nodes mrecords --host http://localhost:8122 --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
 ```
 
-### 节点迁移记录查询
-```shell
-$ ./bin/client --host http://localhost:8001 nodes mrecords --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+### heartbeat
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --id  |    -i   | storage node's id |    yes    |
+|   --ctime  |   -c |  storage node heart beat number of one day |    yes    |
+
+
+```
+DEMO:
+$ ./xdata-cli nodes heartbeat --host http://localhost:8122 --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -c "2021-08-04 17:29:00"
 ```
 
-### 节点心跳检测数量
-```shell
-$./bin/client --host http://localhost:8001 nodes heartbeat --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -c "2021-08-04 17:29:00"
+### offline
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --privateKey  |      -k    |   private key |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 nodes offline -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
 ```
 
-## 二、文件操作
+### online
 
-### 文件操作命令说明 [./bin/client files]：
-| command    |        说明      |
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --privateKey  |      -k    |   private key |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 nodes online -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+```
+
+## Command Parsing: `xdata-cli files`
+
+| command    |        explanation      |
 | ---------- |   -----------   |
-| addns      | add file namespace into xuper db  |
-| download   | download file from xuper db  |
-| getbyid    | get file of xuper db by id  |
-| getbyname  | get file of xuper db by name  |
-| getns      | get file namespace detail of xuper db  |
-| list       | list files of xuper db |
-| listexp    | list expired but valid files of xuper db |
-| listns     | list file namespaces of owner |
-| syshealth  | get files sys health of xuper db  |
-| upload     | upload file into xuper db  |
-| ureplica   | update file replica of xuper db |
-| utime      | update file expiretime by id  |
- 
+| addns      | add a file namespace into XuperDB  |
+| download   | download the file from XuperDB  |
+| getbyid    | get the file by id from XuperDB  |
+| getbyname  | get the file by name from XuperDB |
+| getns      | get the file namespace detail in XuperDB  |
+| list       | list files in XuperDB |
+| listexp    | list expired but valid files in XuperDB |
+| listns     | list file namespaces of the DataOwner |
+| syshealth  | get the DataOwner's health status  |
+| upload     | save a file into XuperDB |
+| ureplica   | update file replica of XuperDB |
+| utime      | update file's expiretime by the id |  
 
-### 文件命名空间新增
-```shell
-$ ./bin/client --host http://localhost:8001 files addns -n py1  -r 1 -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 
+| global flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :------: | 
+|   --host |      -h    |   the storage node's host | yes |
+
+
+### addns
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --privateKey  |      -k    |   private key |    yes    |
+|   --namespace  |      -n    |   namespace |    yes    |
+|   --description  |      -d    |   description |    no    |
+|   --replica  |      -r    |   replica |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files addns -n testns  -r 1 -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 
 ```
 
-### 命名空间详情查询
-```shell
-$ ./bin/client --host http://localhost:8001 files getns -n py1  -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 
+### download
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --fileid  |      -f    |  file's id in XuperDB |   no    |
+|   --filename  |      -m    |  file's name in XuperDB |    no    |
+|   --namespace  |      -n    |   namespace |    yes    |
+|   --output  |      -o    |   output file path |    yes    |
+|   --privkey  |      -k    |   private key |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files download -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 -n test -m bigfile -o ./testdata/bigfile 
 ```
 
-### 查看命名空间列表
-```shell
-$ ./bin/client --host http://localhost:8001 files listns -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 
+### getbyid
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --id  |      -i   |  file's id in XuperDB |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files getbyid  --id d86737bf-97ac-427f-a835-871d307c3589
 ```
 
-### 修改命名空间副本数
-```shell
-$ ./bin/client --host http://localhost:8001 files ureplica -n py  -r 3 -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+### getbyname
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --filename  |      -m    |  file's name |    yes    |
+|   --namespace  |      -n    |   namespace |    yes    |
+|   --owner  |      -o    |  DataOwner's private key |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files getbyname  -n testns -m bigfile -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
 ```
 
-### 文件上传
-```shell
-$ ./bin/client --host http://localhost:8001 files upload -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 -n test -m bigfile -i ./bin/client -e "2021-06-30 15:00:00" -d "this is a test file"
+### getns
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --namespace  |      -n    |   namespace |    yes    |
+|   --owner  |      -o    |  DataOwner's private key |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files getns -n testns  -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 
 ```
 
-### 文件续期
-```shell
-$ ./bin/client --host http://localhost:8001 files utime -e '2021-08-08 15:15:04' -i b87b588f-2e46-4ee5-8128-888592ada4fd -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+### list
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --namespace  |      -n    |   namespace |    yes    |
+|   --limit  |  -l   |   limit for list, 0 for unlimited|    no    |
+|   --start  |      -s   |   start time of the slice migrate' query |    no    |
+|   --end  |      -e   |   end time of the slice migrate' query |    no    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files list -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n test -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00" --ext "{'FileType':'csv','Features':'room,price', 'TotalRows':400}"
 ```
 
-### 文件下载：依据文件名下载
-```shell
-$ ./bin/client --host http://localhost:8001 files download -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 -n test -m bigfile -o ./testdata/bigfile
+
+### listexp
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --namespace  |      -n    |   namespace |    yes    |
+|   --limit  |  -l   |   limit for list, 0 for unlimited|    no    |
+|   --start  |      -s   |   start time of the slice migrate' query |    no    |
+|   --end  |      -e   |   end time of the slice migrate' query |    no    |
+
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files listexp -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n test -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```
 
-### 文件下载：依据文件ID下载
-```shell
-$ ./bin/client --host http://localhost:8001 files download -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 --fileid 2695c0c5-5a30-4184-bf15-94df43857070 -o ./testdata/bigfile
+### listns
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --limit  |  -l   |   limit for list, 0 for unlimited|    no    |
+|   --start  |      -s   |   start time of the slice migrate' query |    no    |
+|   --end  |      -e   |   end time of the slice migrate' query |    no    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files listns -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 
 ```
 
-### 查看文件列表
-```shell
-$ ./bin/client --host http://localhost:8001 files list -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n test -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00" --ext "{'FileType':'csv','Features':'room,price', 'TotalRows':400}"
+### syshealth
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --owner  |      -o    |  DataOwner's private key |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files syshealth -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+```
+### upload
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --description  |      -d    |   description |    yes    |
+|   --privkey  |      -k    |   private key |    yes    |
+|   --expireTime  |      -e    |   expiretime of the file in XuperDB |    yes    |
+|   --ext  |        |   file extra info |    yes    |
+|   --filename  |      -m    |  file's name in XuperDB |    yes    |
+|   --namespace  |      -n    |   namespace |    yes    |
+|   --input  |      -i    |  input file path |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files upload -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 -n test -m bigfile -i ./bin/client -e "2021-06-30 15:00:00" -d "this is a test file"
 ```
 
-### 查看过期(仍在保留期内)文件列表
-```shell
-$ ./bin/client --host http://localhost:8001 files listexp -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n test -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
+### ureplica
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --namespace  |      -n    |   namespace |    yes    |
+|   --privkey  |      -k    |   private key |    yes    |
+|   --replica  |      -r    |   replica |    yes    |
+
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files ureplica -n py  -r 3 -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
 ```
 
-### 查看文件信息：依据文件ID
-```shell
-$ ./bin/client --host http://localhost:8001 files getbyid --id d86737bf-97ac-427f-a835-871d307c3589
+### utime
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --id  |      -i    |  file's id in XuperDB |   no    |
+|   --privkey  |      -k    |   private key |    yes    |
+|   --expireTime  |      -e    |   expiretime of the file in XuperDB |    yes    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 files utime -e '2021-08-08 15:15:04' -i b87b588f-2e46-4ee5-8128-888592ada4fd -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
 ```
 
-### 查看文件信息：依据文件名称
-```shell
-$ ./bin/client --host http://localhost:8001 files getbyname -n test -m bigfile -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
-```
+## Command Parsing: `xdata-cli challenge`
 
-### 查看文件系统健康度
-```shell
-$ ./bin/client --host http://localhost:8001 files syshealth -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
-```
-
-## 三、挑战操作
-
-### 挑战操作命令说明[./bin/client challenge]
-| command    |        说明      |
+| command    |        explanation      |
 | ---------- |   -----------   |
 | failed     | get failed challenges by filters  |
 | get        | get pdp challenge by id   |
 | proved     | get proved challenges by filters  |        
 | toprove    | get ToProve challenges by filters  |        
 
-### 获取挑战
-```shell
-$ ./bin/client --host http://localhost:8001 challenge get --id ff334622-1442-425c-8d57-3f1b915b84e8 
+### get
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --id  |      -i    |  challenge's id |   no    |
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 challenge get --id ff334622-1442-425c-8d57-3f1b915b84e8 
 ```
 
-### 获取成功的挑战列表
-```shell
-$ ./bin/client --host http://localhost:8001 challenge proved -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
+### proved
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --file  |      -f    |  file's id in XuperDB |   no    |
+|   --limit  |  -l   |   limit for list num|    no    |
+|   --list  |   |  whether or not show challenges list, 0:not show |  default 1  |
+|   --node  |  -n  |  storage node's id |    yes    |
+|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --start  |      -s   |   start time of the query |    no    |
+|   --end  |      -e   |   end time of the query |    no    |
+
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 challenge proved -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```
 
-### 获取失败的挑战列表
-```shell
-$ ./bin/client --host http://localhost:8001 challenge failed -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
+### failed
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --file  |      -f    |  file's id in XuperDB |   no    |
+|   --limit  |  -l   |   limit for list num|    no    |
+|   --list  |   |  whether or not show challenges list, 0:not show |  default 1  |
+|   --node  |  -n  |  storage node's id |    yes    |
+|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --start  |      -s   |   start time of the query |    no    |
+|   --end  |      -e   |   end time of the query |    no    |
+
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:8122 challenge failed -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```
 
-### 获取待挑战的列表
-```shell
-$ ./bin/client --host http://localhost:8001 challenge toprove -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00" --list 0
+### toprove
+
+|  flag  | short flag | explanation | necessary |
+| :------: | :----------: | :------------: | :---------: |
+|   --file  |      -f    |  file's id in XuperDB |   no    |
+|   --limit  |  -l   |   limit for list num|    no    |
+|   --list  |   |  whether or not show challenges list, 0:not show |  default 1  |
+|   --node  |  -n  |  storage node's id |    yes    |
+|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --start  |      -s   |   start time of the query |    no    |
+|   --end  |      -e   |   end time of the query |    no    |
+
+
+```
+DEMO:
+$ ./xdata-cli --host http://localhost:81221 challenge toprove -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00" --list 0
 ```
