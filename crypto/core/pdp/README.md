@@ -10,8 +10,5 @@ Protocol PDP consists of four treatments: pre-process, inquiry, confirmation, ch
 - The server generates a proof in response. This calculation requires the possession of the original data and the data of the current request, to avoid repeated attacks. 
 - Upon receipt, the client compares the evidence with a locally stored file metadata.
 
-## protocol
-http://wiki.baidu.com/display/BlockChainLaboratory/tips
-
 ## Reference
 Proof of data possession: http://cryptowiki.net/index.php?title=Proof_of_data_possession

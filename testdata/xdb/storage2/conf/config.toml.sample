@@ -9,9 +9,9 @@ publicAddress = "storage2.node.com:80"
 [storage.blockchain]
     type = "xchain"
     [storage.blockchain.xchain]
-        mnemonic = "MNEMONIC"
-        contractName = "CONTRACTNAME"
-        contractAccount = "XCCONTRACTACCOUNT@xuper"
+        mnemonic = "${MNEMONIC}"
+        contractName = "${CONTRACT_NAME}"
+        contractAccount = "XC${CONTRACT_ACCOUNT}@xuper"
         chainAddress = "xchain1.node.com:37101"
         chainName = "xuper"
     [storage.blockchain.fabric]

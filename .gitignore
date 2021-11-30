@@ -1,1 +1,15 @@
+.svn
+.tmp
+.download
+output
+*/output
+bin
+*/bin
+scripts/*.csv
+**/testdatatmp
+.*.swp
+.*.swo
 /.project
+/docs/build
+**/.DS_Store
+*/.ideaproject

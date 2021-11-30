@@ -28,7 +28,7 @@ Usage: ./paddledtx_test.sh {upload_sample_files | start_vl_linear_train | start_
 ### 2.2 启动纵向线性回归训练任务
 - vlLinTrainfiles 取值为步骤2.1获取到的 vertical linear train sample files
 ```shell
-./paddledtx_test.sh start_vl_linear_train $vlLinTrainfiles
+./paddledtx_test.sh start_vl_linear_train -f $vlLinTrainfiles
 ```
 
 ### 2.3 启动纵向线性回归预测任务
@@ -36,13 +36,13 @@ Usage: ./paddledtx_test.sh {upload_sample_files | start_vl_linear_train | start_
 - linearModelTaskId 取值为步骤2.2的模型任务ID
 - *请确保2.2训练任务已经完成*
 ```shell
-./paddledtx_test.sh start_vl_linear_predict $vlLinPredictfiles $linearModelTaskId
+./paddledtx_test.sh start_vl_linear_predict -f $vlLinPredictfiles -m $linearModelTaskId
 ```
 
 ### 2.4 启动纵向逻辑回归训练任务
 - vlLogTrainfiles 取值为步骤2.1获取到的 vertical logistic train sample files
 ```shell
-./paddledtx_test.sh start_vl_logistic_train $vlLogTrainfiles
+./paddledtx_test.sh start_vl_logistic_train -f $vlLogTrainfiles
 ```
 
 ### 2.5 启动纵向逻辑回归预测任务
@@ -50,7 +50,7 @@ Usage: ./paddledtx_test.sh {upload_sample_files | start_vl_linear_train | start_
 - logisticModelTaskId 取值为步骤2.4的模型任务ID
 - *请确保2.4训练任务已经完成*
 ```shell
-./paddledtx_test.sh start_vl_logistic_predict $vlLogPredictfiles $logisticModelTaskId
+./paddledtx_test.sh start_vl_logistic_predict -f $vlLogPredictfiles -m $logisticModelTaskId
 ```
 
 ## 三、任务列表查询
@@ -70,7 +70,7 @@ docker exec -it executor1.node.com sh -c "
 ### 4.1 脚本方式
 - taskID 为目标任务ID
 ```shell
-./paddledtx_test.sh gettaskbyid $taskID
+./paddledtx_test.sh gettaskbyid -i $taskID
 ```
 
 ### 4.2 命令行方式

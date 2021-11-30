@@ -29,16 +29,12 @@ import (
 	flag "github.com/spf13/pflag"
 
 	fabricblockchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain/fabric"
-	mockblockchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain/mock"
 	xchainblockchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain/xchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine"
 	merklechallenger "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle"
-	mockchallenger "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/mock"
 	pdpchallenger "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/pdp"
-	mockcopier "github.com/PaddlePaddle/PaddleDTX/xdb/engine/copier/mock"
 	randomcopier "github.com/PaddlePaddle/PaddleDTX/xdb/engine/copier/random"
-	mockencryptor "github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor/mock"
 	softencryptor "github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor/soft"
 	simpleslicer "github.com/PaddlePaddle/PaddleDTX/xdb/engine/slicer/simple"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
@@ -169,8 +165,6 @@ func mustGetEncryptor(conf *config.DataOwnerEncryptorConf) engine.Encryptor {
 	var err error
 	var e engine.Encryptor
 	switch conf.Type {
-	case "mock":
-		e = mockencryptor.New()
 	case "softEncryptor":
 		e, err = softencryptor.New(conf.SoftEncryptor)
 	default:
@@ -185,14 +179,12 @@ func mustGetEncryptor(conf *config.DataOwnerEncryptorConf) engine.Encryptor {
 }
 
 // mustGetChallenger initiates Challenger
-//  PDP-based and MerkleTree-based are both supported
+//  Pairing-based and MerkleTree-based are both supported
 //  see more from engine.challenger
 func mustGetChallenger(conf *config.DataOwnerChallenger, signer ecdsa.PrivateKey) engine.Challenger {
 	var err error
 	var c engine.Challenger
 	switch conf.Type {
-	case "mock":
-		c = mockchallenger.New()
 	case "pdp":
 		c, err = pdpchallenger.New(conf.Pdp, signer)
 	case "merkle":
@@ -214,8 +206,6 @@ func mustGetBlockchain(conf *config.BlockchainConf) engine.Blockchain {
 	var b engine.Blockchain
 	var err error
 	switch conf.Type {
-	case "mock":
-		b = mockblockchain.New(&mockblockchain.NewMockchainOptions{Persistent: true})
 	case "xchain":
 		b, err = xchainblockchain.New(conf.Xchain)
 	case "fabric":
@@ -235,8 +225,6 @@ func mustGetCopier(conf *config.DataOwnerCopierConf, signer ecdsa.PrivateKey) en
 	var c engine.Copier
 	copierType := conf.Type
 	switch copierType {
-	case "mock":
-		c = mockcopier.New()
 	case "random-copier":
 		c = randomcopier.New(signer)
 	default:
