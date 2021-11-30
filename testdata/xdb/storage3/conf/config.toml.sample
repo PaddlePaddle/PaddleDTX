@@ -1,17 +1,17 @@
 type = "storage"
 
 [storage]
-name = "storage-node1"
+name = "storage-node3"
 listenAddress = ":80"
-privateKey = "b7ba7d04fe47a308f3730f3cf14cb2719f14b700b1bbf9f50889541bd79249cb"
-publicAddress = "storage1.node.com:80"
+privateKey = "c8f56724151a4d318ecdb0812b3b52a940bb3bd1711c14ff9c4b18e8d60019df"
+publicAddress = "storage3.node.com:80"
 
 [storage.blockchain]
     type = "xchain"
     [storage.blockchain.xchain]
-        mnemonic = "MNEMONIC"
-        contractName = "CONTRACTNAME"
-        contractAccount = "XCCONTRACTACCOUNT@xuper"
+        mnemonic = "${MNEMONIC}"
+        contractName = "${CONTRACT_NAME}"
+        contractAccount = "XC${CONTRACT_ACCOUNT}@xuper"
         chainAddress = "xchain1.node.com:37101"
         chainName = "xuper"
     [storage.blockchain.fabric]

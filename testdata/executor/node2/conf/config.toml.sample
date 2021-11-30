@@ -2,7 +2,7 @@
 name = "exe-node2"
 listenAddress = ":80"
 publicAddress = "executor2.node.com:80"
-privateKey = "EXECUTOR2PRIVATEKEY"
+privateKey = "${EXECUTOR2_PRIVATEKEY}"
 
 [executor.mpc]
     trainTaskLimit = 100
@@ -16,16 +16,16 @@ privateKey = "EXECUTOR2PRIVATEKEY"
     type = 'XuperDB'
     [executor.storage.XuperDB]
         host = "http://dataowner2.node.com:80"
-        namespace = "FILESNAMESPACES"
+        namespace = "${NAMESPACE}"
         expiretime = 72
 
 
 [executor.blockchain]
     type = 'xchain'
     [executor.blockchain.xchain]
-        mnemonic = "MNEMONIC"
-        contractName = "CONTRACTNAME"
-        contractAccount = "XCCONTRACTACCOUNT@xuper"
+        mnemonic = "${MNEMONIC}"
+        contractName = "${CONTRACT_NAME}"
+        contractAccount = "XC${CONTRACT_ACCOUNT}@xuper"
         chainAddress = "xchain1.node.com:37101"
         chainName = "xuper"
 
