@@ -19,7 +19,7 @@ SMPC是一个支持多个学习过程并行运行的框架，会陆续集成更�
 ### 1.3 区块链网络
 训练任务和预测任务通过区块链网络广播到任务执行节点，后者继而执行训练任务和预测任务。数据持有节点和存储节点在副本保持证明、健康状态监控过程中，通过区块链网络实现信息交换。
 
-目前支持的底链技术为XuperChain。
+目前，支持的底链技术为XuperChain。
 
 ![Image text](./images/architecture.png)
 
@@ -36,7 +36,7 @@ PaddleDTX 开源部分目前支持两方的纵向联邦学习算法，包括多�
 ### 2.2 样本对齐
 纵向的模型训练或预测任务，都需要对数据进行样本对齐，即：根据各自样本ID找到多个参与方的样本交集，用交集样本进行训练或预测。
 
-项目采用了PSI（隐私求交）技术，可以在不泄露各方样本ID的情况下，实现样本求交的功能。PSI算法原理和实现详见 [crypto/psi](./crypto/core/machine_learning/linear_regression/gradient_descent/mpc_vertical/psi.go)。
+项目采用了PSI（隐私求交）技术，可以在不泄露各方样本ID的前提下，实现样本求交的功能。PSI算法原理和实现详见 [crypto/psi](./crypto/core/machine_learning/linear_regression/gradient_descent/mpc_vertical/psi.go)。
 
 ### 2.3 训练过程
 模型训练是多次迭代和交互的过程，依赖于两方数据的协同计算，需要双方不断传递中间参数来计算出各自的模型。
