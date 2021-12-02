@@ -19,12 +19,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/xuperchain/xuperchain/core/contractsdk/go/code"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 // PublishFile publishes file on xchain
@@ -686,7 +686,7 @@ func (x *Xdata) checkSign(sign, owner, mes []byte) (err error) {
 	var sig [ecdsa.SignatureLength]byte
 	copy(pubkey[:], owner)
 	copy(sig[:], sign)
-	if err := ecdsa.Verify(pubkey, hash.Hash(mes), sig); err != nil {
+	if err := ecdsa.Verify(pubkey, hash.HashUsingSha256(mes), sig); err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "failed to verify signature")
 	}
 	return nil

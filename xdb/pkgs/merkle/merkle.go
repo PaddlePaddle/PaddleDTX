@@ -16,7 +16,7 @@ package merkle
 import (
 	"math"
 
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 )
 
 // BuildMerkleTreeStore creates a merkle tree from a slice of transactions,
@@ -115,8 +115,8 @@ func HashMerkleBranches(left []byte, right []byte) []byte {
 
 // DoubleHashH calculates hash(hash(b)) and returns the resulting bytes as a Hash
 func DoubleHashH(b []byte) []byte {
-	first := hash.Hash(b)
-	return hash.Hash(first[:])
+	first := hash.HashUsingSha256(b)
+	return hash.HashUsingSha256(first[:])
 }
 
 // GetMerkleRoot calculate merkle root of several objects

@@ -26,7 +26,7 @@ import (
 // nsListCmd represents the command to list namespaces
 var nsListCmd = &cobra.Command{
 	Use:   "listns",
-	Short: "list file namespaces of owner",
+	Short: "list file namespaces of the DataOwner",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

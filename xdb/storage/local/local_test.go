@@ -15,8 +15,9 @@ package local
 
 import (
 	"bytes"
-	"context"
 	"io/ioutil"
+	"log"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,21 +28,30 @@ import (
 var storage *Storage
 
 func TestMain(m *testing.M) {
-	conf := &config.LocalConf{}
-	storage, _ = New(conf)
+	os.RemoveAll("slices")
+	conf := &config.LocalConf{
+		RootPath: "slices",
+	}
+	stor, err := New(conf)
+	if err != nil {
+		log.Panic(err)
+	}
+	storage = stor
 	m.Run()
+	os.RemoveAll("slices")
 }
 
 func TestSave(t *testing.T) {
 	content := "test file content"
-	err := storage.Save(context.TODO(), "18f168b6-2ef2-491e-8b26-4aa6df18378a", bytes.NewReader([]byte(content)))
+	err := storage.Save("18f168b6-2ef2-491e-8b26-4aa6df18378a", bytes.NewReader([]byte(content)))
 	require.NoError(t, err)
 }
 
 func TestLoad(t *testing.T) {
-	f, err := storage.Load(context.TODO(), "18f168b6-2ef2-491e-8b26-4aa6df18378a")
+	f, err := storage.Load("18f168b6-2ef2-491e-8b26-4aa6df18378a")
 	require.NoError(t, err)
 	b, err := ioutil.ReadAll(f)
+	f.Close()
 	require.NoError(t, err)
 	require.Equal(t, "test file content", string(b))
 }
@@ -59,17 +69,18 @@ func TestDelete(t *testing.T) {
 }
 
 func TestSaveAndUpdate(t *testing.T) {
-	err := storage.SaveAndUpdate(context.TODO(), "18f168b6-2ef2-491e-8b26-4aa6df18378a", "1244")
+	err := storage.SaveAndUpdate("18f168b6-2ef2-491e-8b26-4aa6df18378a", "1244")
 	require.NoError(t, err)
-	f, err := storage.Load(context.TODO(), "18f168b6-2ef2-491e-8b26-4aa6df18378a")
+	f, err := storage.Load("18f168b6-2ef2-491e-8b26-4aa6df18378a")
 	require.NoError(t, err)
 	b, err := ioutil.ReadAll(f)
+	f.Close()
 	require.NoError(t, err)
 	require.Equal(t, "1244", string(b))
 }
 
 func TestLoadStr(t *testing.T) {
-	s, err := storage.LoadStr(context.TODO(), "18f168b6-2ef2-491e-8b26-4aa6df18378a")
+	s, err := storage.LoadStr("18f168b6-2ef2-491e-8b26-4aa6df18378a")
 	require.NoError(t, err)
 	require.Equal(t, "1244", s)
 }

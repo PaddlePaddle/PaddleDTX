@@ -25,7 +25,7 @@ import (
 // getNodeHealthCmd represents the command to get node health status
 var getNodeHealthCmd = &cobra.Command{
 	Use:   "health",
-	Short: "get node health status by id",
+	Short: "get the storage node's health status by id",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

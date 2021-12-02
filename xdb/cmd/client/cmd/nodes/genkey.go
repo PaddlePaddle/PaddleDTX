@@ -17,10 +17,9 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/spf13/cobra"
 	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
-
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/spf13/cobra"
 )
 
 var xchainClient = new(fl_crypto.XchainCryptoClient)
@@ -28,7 +27,7 @@ var xchainClient = new(fl_crypto.XchainCryptoClient)
 // genKeyCmd randomly generates node private/public key pair
 var genKeyCmd = &cobra.Command{
 	Use:   "genkey",
-	Short: "generate a pair of node key",
+	Short: "generate a pair of key",
 	Run: func(cmd *cobra.Command, args []string) {
 		prikey, pubkey, err := ecdsa.GenerateKeyPair()
 		if err != nil {

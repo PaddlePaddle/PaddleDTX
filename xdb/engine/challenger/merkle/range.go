@@ -22,6 +22,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
@@ -29,15 +31,13 @@ import (
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/merkle"
 )
 
 var (
 	logger = logrus.WithField("module", "merkle-challenger")
 
-	defaultLDBRoot            = "/root/xdata/data/challenger"
+	defaultLDBRoot            = "/root/xdb/data/challenger"
 	defaultShrinkSize         = 500
 	defaultSegmentSize        = 5
 	MerkleChallengeSetUpRange = 20000
@@ -78,9 +78,9 @@ func New(conf *config.ChallengerMerkleConf, privkey ecdsa.PrivateKey) (*RandChal
 	logger.WithField("segment-size", segmentSize).Info("challenger initialization")
 
 	// create dir if not exist
-	// only create the outer dir, for example "challenger" in "/root/xdata/data/challenger"
-	// if "/root/xdata/data" is not exist, we should panic
-	// because maybe the operator forgot to mount "/root/xdata/data" from host machine
+	// only create the outer dir, for example "challenger" in "/root/xdb/data/challenger"
+	// if "/root/xdb/data" is not exist, we should panic
+	// because maybe the operator forgot to mount "/root/xdb/data" from host machine
 	if _, err := os.Stat(ldbRoot); err != nil {
 		if err := os.Mkdir(ldbRoot, 0777); err != nil {
 			return nil, errorx.NewCode(err, errorx.ErrCodeConfig, "failed to mkdir for ldb")
@@ -225,7 +225,7 @@ func (m *RandChallenger) generateMerkleRanges(sliceData []byte, rangeAmount, len
 				Start: uint64(start),
 				End:   uint64(end),
 			})
-			h := hash.Hash(sliceData[start:end])
+			h := hash.HashUsingSha256(sliceData[start:end])
 			hs = append(hs, h)
 		}
 		// calculate merkle root

@@ -26,7 +26,7 @@ import (
 // listFilesCmd represents the command to list files by namespace
 var listFilesCmd = &cobra.Command{
 	Use:   "list",
-	Short: "list files of xuper db",
+	Short: "list files in XuperDB",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {
@@ -78,7 +78,7 @@ var listFilesCmd = &cobra.Command{
 // listExpFilesCmd represents the list expired but valid files by namespace command
 var listExpFilesCmd = &cobra.Command{
 	Use:   "listexp",
-	Short: "list expired but valid files of xuper db",
+	Short: "list expired but valid files in XuperDB",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

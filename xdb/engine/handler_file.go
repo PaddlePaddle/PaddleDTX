@@ -19,14 +19,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 // ListFiles lists files from blockchain
@@ -243,7 +243,7 @@ func (e *Engine) UpdateNsReplica(ctx context.Context, opt types.UpdateNsOptions)
 	localPrv := e.monitor.challengingMonitor.PrivateKey
 	localPub := ecdsa.PublicKeyFromPrivateKey(localPrv)
 	m := fmt.Sprintf("%s,%d,%d", opt.Namespace, opt.Replica, opt.CurrentTime)
-	if err := verifyUserToken(localPub.String(), opt.Token, hash.Hash([]byte(m))); err != nil {
+	if err := verifyUserToken(localPub.String(), opt.Token, hash.HashUsingSha256([]byte(m))); err != nil {
 		return err
 	}
 	sig, err := ecdsa.DecodeSignatureFromString(opt.Token)

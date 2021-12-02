@@ -20,6 +20,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
@@ -30,8 +32,6 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	etype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/http"
 )
 
@@ -127,7 +127,7 @@ func (m *RandomCopier) Pull(ctx context.Context, id, fileId string, node *blockc
 	// 新增签名
 	timestamp := time.Now().UnixNano()
 	msg := fmt.Sprintf("%s,%s,%d", id, fileId, timestamp)
-	sig, err := ecdsa.Sign(m.privateKey, hash.Hash([]byte(msg)))
+	sig, err := ecdsa.Sign(m.privateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to sign sile pull ")
 	}

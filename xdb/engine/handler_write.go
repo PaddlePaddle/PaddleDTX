@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 
@@ -35,8 +37,6 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/slicer"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 const (
@@ -65,7 +65,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	}
 	// verify token
 	msg := fmt.Sprintf("%s:%s:%s", opt.User, opt.Namespace, opt.FileName)
-	if err := verifyUserToken(opt.User, opt.Token, hash.Hash([]byte(msg))); err != nil {
+	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(msg))); err != nil {
 		return resp, errorx.Wrap(err, "failed to verify token")
 	}
 
@@ -212,7 +212,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	if err != nil {
 		return resp, errorx.Wrap(err, "failed to marshal File")
 	}
-	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.Hash(s))
+	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.HashUsingSha256(s))
 	if err != nil {
 		return resp, errorx.Wrap(err, "failed to sign File")
 	}

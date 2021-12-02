@@ -26,7 +26,7 @@ import (
 // getNodeCmd gets storage node by id
 var getNodeCmd = &cobra.Command{
 	Use:   "get",
-	Short: "get node of xuper db by id",
+	Short: "get the storage node by id",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

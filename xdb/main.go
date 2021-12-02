@@ -24,6 +24,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
@@ -39,7 +40,6 @@ import (
 	simpleslicer "github.com/PaddlePaddle/PaddleDTX/xdb/engine/slicer/simple"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/peer"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/server"
 	localstorage "github.com/PaddlePaddle/PaddleDTX/xdb/storage/local"
 )

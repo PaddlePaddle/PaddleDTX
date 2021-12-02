@@ -20,11 +20,11 @@ import (
 	"io"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 // Push receive slices from others
@@ -41,7 +41,7 @@ func (e *Engine) Push(ctx context.Context, opt types.PushOptions, r io.Reader) (
 		return types.PushResponse{}, nil
 	}
 
-	if err := e.storage.Save(ctx, opt.SliceID, r); err != nil {
+	if err := e.storage.Save(opt.SliceID, r); err != nil {
 		logger.WithError(err).Errorf("push %s", opt.SliceID)
 		return types.PushResponse{}, errorx.Wrap(err, "failed to save slice")
 	}
@@ -71,7 +71,7 @@ func (e *Engine) Pull(ctx context.Context, opt types.PullOptions) (io.ReadCloser
 
 	// verify token
 	msg := fmt.Sprintf("%s,%s,%d", opt.SliceID, opt.FileID, opt.Timestamp)
-	msgDigest := hash.Hash([]byte(msg))
+	msgDigest := hash.HashUsingSha256([]byte(msg))
 	if err := verifyUserToken(hex.EncodeToString(file.Owner), opt.Signature, msgDigest); err != nil {
 		return nil, errorx.Wrap(err, "failed to verify slice pull  token")
 	}
@@ -84,7 +84,7 @@ func (e *Engine) Pull(ctx context.Context, opt types.PullOptions) (io.ReadCloser
 		return nil, errorx.New(errorx.ErrCodeNotFound, "slice not found")
 	}
 
-	rc, err := e.storage.Load(ctx, opt.SliceID)
+	rc, err := e.storage.Load(opt.SliceID)
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to load slice")
 	}

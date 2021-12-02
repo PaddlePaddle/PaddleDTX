@@ -20,6 +20,8 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
@@ -27,8 +29,6 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 // loopAnswer listens challenge requests and answer them in order to prove it's storing related files
@@ -39,7 +39,7 @@ func (c *ChallengingMonitor) loopAnswer(ctx context.Context) {
 	defer func() {
 		nonce := time.Now().UnixNano()
 		m := fmt.Sprintf("%s,%d", pubkey.String(), nonce)
-		sig, err := ecdsa.Sign(c.PrivateKey, hash.Hash([]byte(m)))
+		sig, err := ecdsa.Sign(c.PrivateKey, hash.HashUsingSha256([]byte(m)))
 		if err != nil {
 			l.WithError(err).Error("failed to sign node")
 			return
@@ -160,7 +160,7 @@ func (c *ChallengingMonitor) doPDPCalculateProof(ctx context.Context, l *logrus.
 
 	var content [][]byte
 	for _, sliceID := range req.SliceIDs {
-		dataReader, err := c.sliceStorage.Load(ctx, sliceID)
+		dataReader, err := c.sliceStorage.Load(sliceID)
 		if err != nil {
 			return randomProof{}, errorx.Wrap(err, "failed to load local slice %s", sliceID)
 		}
@@ -184,7 +184,7 @@ func (c *ChallengingMonitor) doPDPCalculateProof(ctx context.Context, l *logrus.
 	signMsg := []byte(req.ID)
 	signMsg = append(signMsg, sigma...)
 	signMsg = append(signMsg, mu...)
-	signMsg = hash.Hash(signMsg)
+	signMsg = hash.HashUsingSha256(signMsg)
 	sig, err := ecdsa.Sign(privkey, signMsg)
 	if err != nil {
 		return randomProof{}, errorx.NewCode(err, errorx.ErrCodeCrypto, "failed to sign")
@@ -201,7 +201,7 @@ func (c *ChallengingMonitor) doPDPCalculateProof(ctx context.Context, l *logrus.
 func (c *ChallengingMonitor) doMerkleCalculation(ctx context.Context, l *logrus.Entry,
 	privkey ecdsa.PrivateKey, req *blockchain.Challenge) (rangeProof, error) {
 
-	dataReader, err := c.sliceStorage.Load(ctx, req.SliceID)
+	dataReader, err := c.sliceStorage.Load(req.SliceID)
 	if err != nil {
 		return rangeProof{}, errorx.Wrap(err, "faield to load local slice %s", req.SliceID)
 	}
@@ -221,7 +221,7 @@ func (c *ChallengingMonitor) doMerkleCalculation(ctx context.Context, l *logrus.
 			return rangeProof{}, errorx.New(errorx.ErrCodeParam,
 				"invalid range. length[%d] end[%d]", len(data), rr.End)
 		}
-		h := hash.Hash(data[rr.Start:rr.End])
+		h := hash.HashUsingSha256(data[rr.Start:rr.End])
 		hs = append(hs, h)
 	}
 

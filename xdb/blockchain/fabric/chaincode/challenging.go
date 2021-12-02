@@ -20,16 +20,15 @@ import (
 	"fmt"
 	"strconv"
 
+	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
-	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/monitor/challenging"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/merkle"
 )
 
@@ -246,7 +245,7 @@ func (x *xdata) ChallengeAnswer(stub shim.ChaincodeStubInterface, args []string)
 			Timestamp: aopt.Timestamp,
 		}
 		proof := challenging.Calculate(&cOpt)
-		hashOfProof := hash.Hash(proof)
+		hashOfProof := xchainClient.HashUsingSha256(proof)
 		if !bytes.Equal(hashOfProof, c.HashOfProof) {
 			e := fmt.Errorf("hash not equal, supposed to be %v, got: %v", c.HashOfProof, hashOfProof)
 			verifyErr = errorx.NewCode(e, errorx.ErrCodeCrypto, "verification failed")
@@ -370,7 +369,7 @@ func (x *xdata) pdpOptCheck(opt blockchain.ChallengeRequestOptions) error {
 	var sig [ecdsa.SignatureLength]byte
 	copy(pubkey[:], opt.FileOwner)
 	copy(sig[:], opt.Sig)
-	if err := ecdsa.Verify(pubkey, hash.Hash(content), sig); err != nil {
+	if err := ecdsa.Verify(pubkey, xchainClient.HashUsingSha256(content), sig); err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "failed to verify Challenge")
 	}
 	return nil
@@ -401,7 +400,7 @@ func (x *xdata) merkleOptCheck(opt blockchain.ChallengeRequestOptions) error {
 	var sig [ecdsa.SignatureLength]byte
 	copy(pubkey[:], opt.FileOwner)
 	copy(sig[:], opt.Sig)
-	if err := ecdsa.Verify(pubkey, hash.Hash(content), sig); err != nil {
+	if err := ecdsa.Verify(pubkey, xchainClient.HashUsingSha256(content), sig); err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "failed to verify Challenge")
 	}
 	return nil
@@ -411,7 +410,7 @@ func (x *xdata) pdpAnswerOptCheck(opt blockchain.ChallengeAnswerOptions, c block
 	digest := []byte(c.ID)
 	digest = append(digest, opt.Sigma...)
 	digest = append(digest, opt.Mu...)
-	digest = hash.Hash(digest)
+	digest = xchainClient.HashUsingSha256(digest)
 	targetNode, err := hex.DecodeString(string(c.TargetNode))
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeParam, "pdp wrong target node")

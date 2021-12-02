@@ -33,7 +33,7 @@ var (
 // rootCmd represents the root command
 var rootCmd = &cobra.Command{
 	Use:   "nodes",
-	Short: "A command helps to manage tasks",
+	Short: "control actions related to storage nodes",
 }
 
 func RootCmd() *cobra.Command {

@@ -29,7 +29,7 @@ var (
 // addNsCmd represents the command to add namespace
 var addNsCmd = &cobra.Command{
 	Use:   "addns",
-	Short: "add file namespace into xuper db",
+	Short: "add a file namespace into XuperDB",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {
