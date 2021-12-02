@@ -92,7 +92,6 @@ $ sh paddledtx_test.sh start_vl_logistic_predict -f 96140537-8c7a-46cb-b2d3-0540
 
 # 命令返回
 Requester published logistic prediction task: TaskID: f86ff72b-fb94-4f8a-9797-9b42ae3ade84
-Root mean square error of Iris plants prediction is: 0.190585893649115
 Accuracy of Iris plants prediction is: 1.00
 ```
 
