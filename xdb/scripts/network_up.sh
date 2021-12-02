@@ -215,7 +215,6 @@ function generateVendor() {
       -v $(dirname ${PWD}):/workspace \
       -v ~/.ssh:/root/.ssh \
       -w /workspace \
-      -e GONOPROXY=**.baidu.com** \
       -e GONOSUMDB=* \
       -e GOPROXY=https://goproxy.cn \
       -e GO111MODULE=on \
