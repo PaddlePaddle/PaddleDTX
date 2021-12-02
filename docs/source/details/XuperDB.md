@@ -19,7 +19,8 @@ XuperDB 具备高安全、高可用、可审计的特点：
 
 ## 架构设计
 XuperDB 系统架构如下图所示：
-![Image text](../_static/xdb.png)
+
+<img src='../_static/xdb.png' width = "100%" height = "100%" align="middle"/>
 
 XuperDB 网络由三类节点构成：
 - **数据持有节点**(DataOwner Node)：数据的归属方，有存储需求，将自己的隐私数据进行加密、切分、副本制作后分发到存储节点；
@@ -51,4 +52,4 @@ XuperDB 系统目前主要具备文件上传下载、链上存证、副本保持
 为保证文件的安全和高可用，数据持有方会定期检查己方文件的健康状态，并将非健康的文件切片从不健康的存储节点迁移到健康节点，保证每个文件都处于健康且可随时恢复的状态。
 
 ## 如何使用
-XuperDB 的使用方法详见[接口使用部分](../quickstart/client.md).
+XuperDB 的使用方法详见 [接口使用部分](../quickstart/client.md) 。

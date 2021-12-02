@@ -24,8 +24,8 @@
 本案例我们模拟分别持有部分特征变量数据的两方进行联合训练和预测。
 
 具体样本文件说明如下：
-1. 训练任务：任务执行节点 A 参与模型训练样本文件 [train_dataA.csv](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/mpc/testdata/vl/logic_iris_plants/train_dataA.csv)，任务执行节点 B 参与模型训练样本文件 [train_dataB.csv](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/mpc/testdata/vl/logic_iris_plants/train_dataB.csv)
-2. 预测任务：任务执行节点 A 参与模型预测样本文件 [predict_dataA.csv](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/mpc/testdata/vl/logic_iris_plants/predict_dataA.csv)，任务执行节点 B 参与模型预测样本文件 [predict_dataB.csv](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/mpc/testdata/vl/logic_iris_plants/predict_dataB.csv)
+1. 训练任务：任务执行节点 A 参与模型训练样本文件 [train_dataA.csv](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/mpc/testdata/vl/logic_iris_plants/train_dataA.csv) ，任务执行节点 B 参与模型训练样本文件 [train_dataB.csv](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/mpc/testdata/vl/logic_iris_plants/train_dataB.csv)
+2. 预测任务：任务执行节点 A 参与模型预测样本文件 [predict_dataA.csv](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/mpc/testdata/vl/logic_iris_plants/predict_dataA.csv) ，任务执行节点 B 参与模型预测样本文件 [predict_dataB.csv](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/mpc/testdata/vl/logic_iris_plants/predict_dataB.csv)
 
 ## 测试脚本说明
 
@@ -73,8 +73,8 @@ Requester published logistic train task: TaskID: 95104913-c6cc-4520-bab1-2be814f
     1. 计算需求方发布鸢尾花品种分类训练任务
     2. 数据持有方A/B授权任务执行节点A/B确认任务
     3. 计算需求方启动任务
-    <br>
-    每个步骤对应的客户端命令详情参考 [操作 Distributed AI](./client.md)。
+
+每个步骤对应的客户端命令详情参考 [操作 Distributed AI](./client.md) 。
 
 查看训练任务：
 
@@ -104,8 +104,8 @@ Accuracy of Iris plants prediction is: 1.00
     4. 计算需求方下载预测结果
     5. 计算模型的均方根误差
     6. 计算预测的准确率
-    <br>
-    每个步骤对应的客户端命令详情参考 [操作 Distributed AI](./client.md)。
+
+每个步骤对应的客户端命令详情参考 [操作 Distributed AI](./client.md) 。
 
 ## 模型评估
 
