@@ -2,7 +2,7 @@
 
 PaddleDTX 主要由计算需求方、任务执行节点、数据持有节点、存储节点和区块链节点组成，部署架构如下图所示：
 
-![Image text](../_static/deployment.png)
+<img src='../_static/deployment.png' width = "100%" height = "100%" align="middle"/>
 
 ### 计算需求方(Requester)
 计算需求方是机器学习模型或预测结果的需求方，需求方可能没有存储能力、没有数据资源和计算资源。需求方利用PaddleDTX网络中的资源，完成自己所需的计算并获得最终结果。

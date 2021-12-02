@@ -67,9 +67,9 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 
 	PaddleDTX 使用区块链网络支撑计算层和去中心化存储网络，底层依赖可以使用同一个区块链网络。
 	<br>
-	这里我们使用的百度超级链 xchain v3.9 作为底层区块链网络，可参考[XuperChain环境部署](https://xuperchain.readthedocs.io/zh/latest/quickstart.html)来搭建区块链网络。
+	这里我们使用的百度超级链 xchain v3.9 作为底层区块链网络，可参考 [XuperChain环境部署](https://xuperchain.readthedocs.io/zh/latest/quickstart.html) 来搭建区块链网络。
 	<br>
-	您需要了解如何创建合约账户、部署智能合约，详细参考[部署 native 合约](https://xuperchain.readthedocs.io/zh/latest/advanced_usage/create_contracts.html)，注意这里我们使用的是 golang native 合，需要修改xchain.yaml来支持 native 合约。
+	您需要了解如何创建合约账户、部署智能合约，详细参考 [部署 native 合约](https://xuperchain.readthedocs.io/zh/latest/advanced_usage/create_contracts.html) ，注意这里我们使用的是 golang native 合，需要修改xchain.yaml来支持 native 合约。
 	<br>
 	合约安装过程如下：
 	```

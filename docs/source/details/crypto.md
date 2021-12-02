@@ -40,7 +40,7 @@ PaddleDTX 目前支持两方的纵向联邦学习算法，包括多元线性回�
 
 纵向联邦训练和预测步骤如下：
 
-![Image text](../_static/vertical_learning.png)
+<img src='../_static/vertical_learning.png' width = "100%" height = "100%" align="middle"/>
 
 ### 2.1 数据准备
 计算任务会指定参与方的样本数据，数据存在去中心化存储系统(XuperDB)中。任务启动前，任务计算方(即数据持有方)需要从XuperDB获取自己的样本数据。

@@ -13,7 +13,7 @@ PaddleDTX实现的多方安全计算框架，具备以下特征：
 - 可扩展，方便集成各种联邦学习算法
 - 以区块链、隐私计算、ACL技术为支撑，保证数据、模型的隐私性和可信性
 
-![Image text](../_static/smpc.png)
+<img src='../_static/smpc.png' width = "100%" height = "100%" align="middle"/>
 
 ## 可信联邦学习
 PaddleDTX中，联邦学习分为训练过程和预测过程。计算需求方通过发布训练任务，任务执行节点会向数据持有节点做数据可信性背书，继而触发训练过程，最终得到满足条件的模型。如果有预测需求，计算需求方发布预测任务，任务执行节点会向数据持有节点做数据可信性背书，继而触发预测过程，最终得到预测结果。目前已集成的算法及其原理和实现，在 [crypto](./crypto.html#id2) 部分有更多体现。
@@ -29,6 +29,6 @@ PaddleDTX中，联邦学习分为训练过程和预测过程。计算需求方�
 [Executor配置](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/conf/config.toml)
 
 ## 命令行工具
-[Requester命令使用说明](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/requester/cmd/README.md)
+<a href="https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/requester/cmd/README.md">Requester命令使用说明</a>
 
-[Executor命令使用说明](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/executor/cmd/README.md)
+<a href="https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/executor/cmd/README.md">Executor命令使用说明</a>
