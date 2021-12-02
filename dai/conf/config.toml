@@ -59,7 +59,7 @@ privateKey = "14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21"
 # Blockchain used by the executor.
 # Blockchain records the computing and scheduling process of task, to enhance the credibility of the system.
 [executor.blockchain]
-    # blockchain type, 'xchain' or 'fabric'
+    # blockchain type, only 'xchain' supported currently
     type = 'xchain'
     [executor.blockchain.xchain]
         mnemonic = "助 应 讨 乳 拔 夏 弃 从 干 歌 吊 像 目 那 革 摩 姜 扣 赵 秘 扬 杜 烷 法"

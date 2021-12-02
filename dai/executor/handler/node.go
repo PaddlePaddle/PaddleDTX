@@ -18,11 +18,11 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	xdatachain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/peer"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
@@ -86,7 +86,7 @@ func (n *Node) autoregister(ctx context.Context, chain Blockchain) error {
 	if err != nil {
 		return errorx.Wrap(err, "failed to marshal node")
 	}
-	sig, err := ecdsa.Sign(n.PrivateKey, hash.Hash(s))
+	sig, err := ecdsa.Sign(n.PrivateKey, hash.HashUsingSha256(s))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign node")
 	}

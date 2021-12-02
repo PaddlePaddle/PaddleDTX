@@ -12,8 +12,8 @@ option go_package = "github.com/PaddlePaddle/PaddleDTX/dai/protos/mpc/learners/l
 enum MessageType {
     MsgPsiEnc                   = 0; // local message
     MsgPsiAskReEnc              = 1; // local message
-	MsgPsiReEnc                 = 2;
-	MsgPsiIntersect             = 3; // local message
+    MsgPsiReEnc                 = 2;
+    MsgPsiIntersect             = 3; // local message
     MsgTrainHup                 = 4; // local message
     MsgHomoPubkey               = 5;
     MsgTrainLoop                = 6; // local message

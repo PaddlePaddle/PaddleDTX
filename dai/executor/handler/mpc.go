@@ -24,9 +24,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
@@ -261,7 +261,7 @@ func (m *MpcModelHandler) sendTaskStartRequest(executorHost, taskID string) (err
 	pubkey := ecdsa.PublicKeyFromPrivateKey(m.Node.PrivateKey)
 	signMsg := fmt.Sprintf("%x,%s", pubkey[:], taskID)
 
-	sig, err := ecdsa.Sign(m.Node.PrivateKey, hash.Hash([]byte(signMsg)))
+	sig, err := ecdsa.Sign(m.Node.PrivateKey, hash.HashUsingSha256([]byte(signMsg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign fl start task")
 	}
@@ -323,7 +323,7 @@ func (m *MpcModelHandler) UpdateTaskFinishStatus(taskId, taskErr, taskResult str
 	baseMes := fmt.Sprintf("%x,%s,%d", execTaskOptions.Executor, execTaskOptions.TaskID, execTaskOptions.CurrentTime)
 	signFinishMes := baseMes + fmt.Sprintf("%s,%x", execTaskOptions.ErrMessage, execTaskOptions.Result)
 
-	sig, err := ecdsa.Sign(m.Node.PrivateKey, hash.Hash([]byte(signFinishMes)))
+	sig, err := ecdsa.Sign(m.Node.PrivateKey, hash.HashUsingSha256([]byte(signFinishMes)))
 	if err != nil {
 		return err
 	}
@@ -350,7 +350,7 @@ func (m *MpcModelHandler) SaveModel(result *pbCom.TrainTaskResult) error {
 		return nil
 	}
 	r := bytes.NewReader(result.Model)
-	if err := m.Storage.Save(context.TODO(), result.TaskID, r); err != nil {
+	if err := m.Storage.Save(result.TaskID, r); err != nil {
 		err := errorx.New(errorx.ErrCodeInternal, "failed to locally save task model")
 		m.updateTaskStatusAndStopLocalMpc(result.TaskID, err.Error(), "")
 		return err
@@ -456,6 +456,8 @@ func (m *MpcModelHandler) getTaskParticipantParam(task blockchain.FLTask) (partP
 				return partParam, err
 			}
 			fileText, err := m.getTextByReader(reader)
+			reader.Close()
+
 			if err != nil {
 				return partParam, err
 			}
@@ -495,16 +497,16 @@ func (m *MpcModelHandler) getTextByReader(reader io.ReadCloser) ([]byte, error) 
 	if err != nil {
 		return nil, errorx.New(errorx.ErrCodeInternal, "failed to get task type")
 	}
-	defer reader.Close()
 	return text, nil
 }
 
 // getTaskModel get model for prediction task
 func (m *MpcModelHandler) getTaskModel(taskId string) (*pbCom.TrainModels, error) {
-	model, err := m.Storage.Load(context.TODO(), taskId)
+	model, err := m.Storage.Load(taskId)
 	if err != nil {
 		return nil, err
 	}
+	defer model.Close()
 	trainModel, err := m.getTextByReader(model)
 	if err != nil {
 		return nil, err

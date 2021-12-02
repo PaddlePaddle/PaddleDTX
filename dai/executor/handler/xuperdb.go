@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 )
 
 type XuperDB struct {
