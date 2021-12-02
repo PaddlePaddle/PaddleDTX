@@ -19,10 +19,10 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/stretchr/testify/require"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 func TestEncrypt(t *testing.T) {
@@ -43,7 +43,7 @@ func TestEncrypt(t *testing.T) {
 	es, err := se.Encrypt(context.TODO(), bytes.NewReader(data), &eopt)
 	require.NoError(t, err)
 
-	require.Equal(t, es.CipherHash, hash.Hash(es.CipherText))
+	require.Equal(t, es.CipherHash, hash.HashUsingSha256(es.CipherText))
 	require.Equal(t, int(es.Length), len(es.CipherText))
 	require.Equal(t, nodeID, es.NodeID)
 	require.Equal(t, sliceID, es.SliceID)

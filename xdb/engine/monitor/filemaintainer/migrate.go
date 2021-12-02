@@ -22,6 +22,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
@@ -29,8 +31,6 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 var l = logger.WithField("runner", "file migrate loop")
@@ -446,7 +446,7 @@ func (m FileMaintainer) rearrangeSlices(ctx context.Context, oldSlices []blockch
 	if err != nil {
 		return nil, err
 	}
-	newSliceHash := hash.Hash(ciphertext)
+	newSliceHash := hash.HashUsingSha256(ciphertext)
 	newNodeSlice := blockchain.PublicSliceMeta{
 		ID:         sliceID,
 		CipherHash: newSliceHash,
@@ -463,7 +463,7 @@ func (m FileMaintainer) rearrangeSlices(ctx context.Context, oldSlices []blockch
 func (m FileMaintainer) migrateRecordOnChain(ctx context.Context, nodeID, fileID, sliceID string) {
 	now := time.Now().UnixNano()
 	msg := fileID + sliceID + nodeID + fmt.Sprintf("%d", now)
-	sign, err := ecdsa.Sign(m.localNode.PrivateKey, hash.Hash([]byte(msg)))
+	sign, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		l.WithFields(logrus.Fields{
 			"file_id":     fileID,
@@ -487,7 +487,7 @@ func (m FileMaintainer) updateFileSlicesOnChain(ctx context.Context, fileID stri
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal slices")
 	}
-	sign, err := ecdsa.Sign(m.localNode.PrivateKey, hash.Hash(msg))
+	sign, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256(msg))
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeCrypto, "failed to sign slices")
 	}

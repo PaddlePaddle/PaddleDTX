@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 // updateNsFilesCap updates files capacity of namespaces on blockchain
@@ -63,7 +63,7 @@ func (m *FileMaintainer) updateNsFilesCap(ctx context.Context) {
 		for _, ns := range nsList {
 			timestamp := time.Now().UnixNano()
 			mes := fmt.Sprintf("%s,%d", ns.Name, timestamp)
-			sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.Hash([]byte(mes)))
+			sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(mes)))
 			if err != nil {
 				l.WithError(err).Warn("failed to sign ns files cap")
 				continue

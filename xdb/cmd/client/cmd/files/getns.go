@@ -26,7 +26,7 @@ import (
 // getNsCmd represents the command to get file namespace details
 var getNsCmd = &cobra.Command{
 	Use:   "getns",
-	Short: "get file namespace detail of xuper db",
+	Short: "get the file namespace detail in XuperDB",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

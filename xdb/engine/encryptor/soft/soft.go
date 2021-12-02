@@ -18,11 +18,12 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/aes"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
+
 	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/aes"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 // SoftEncryptor encrypts data or decrypts encoded data
@@ -50,7 +51,7 @@ func (se *SoftEncryptor) Encrypt(ctx context.Context, r io.Reader, opt *encrypto
 	key := se.getKey(opt.SliceID, opt.NodeID)
 
 	salt := append(append([]byte{}, []byte(opt.SliceID)...), opt.NodeID...)
-	nonce := hash.Hash(salt)[:12]
+	nonce := hash.HashUsingSha256(salt)[:12]
 
 	aesKey := aes.AESKey{
 		Key:   key,
@@ -67,7 +68,7 @@ func (se *SoftEncryptor) Encrypt(ctx context.Context, r io.Reader, opt *encrypto
 	if err != nil {
 		return encryptor.EncryptedSlice{}, errorx.Wrap(err, "failed to encrypt")
 	}
-	h := hash.Hash(ciphertext)
+	h := hash.HashUsingSha256(ciphertext)
 
 	es := encryptor.EncryptedSlice{
 		EncryptedSliceMeta: encryptor.EncryptedSliceMeta{
@@ -89,7 +90,7 @@ func (se *SoftEncryptor) Recover(ctx context.Context, r io.Reader, opt *encrypto
 	key := se.getKey(opt.SliceID, opt.NodeID)
 
 	salt := append(append([]byte{}, []byte(opt.SliceID)...), opt.NodeID...)
-	nonce := hash.Hash(salt)[:12]
+	nonce := hash.HashUsingSha256(salt)[:12]
 
 	aesKey := aes.AESKey{
 		Key:   key,

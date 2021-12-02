@@ -26,7 +26,7 @@ import (
 // listNodesCmd list storage nodes
 var listNodesCmd = &cobra.Command{
 	Use:   "list",
-	Short: "list nodes of xuper db",
+	Short: "list storage nodes",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

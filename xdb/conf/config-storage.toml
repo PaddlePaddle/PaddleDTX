@@ -49,7 +49,7 @@ publicAddress = "10.144.94.17:8122"
     type = "local"
     [storage.mode.local]
         # Location of file fragment file
-        rootPath = "/root/xdata/data/slices"
+        rootPath = "/root/xdb/data/slices"
 
 # The monitor will query new tasks in blockchain regularlly, and trigger the task handler's operations
 # The monitor will query new tasks in blockchain regularly, and trigger the task handler's operations

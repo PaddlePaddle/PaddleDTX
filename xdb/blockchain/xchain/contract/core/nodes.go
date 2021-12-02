@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/xuperchain/xuperchain/core/contractsdk/go/code"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 )
 
 // AddNode adds a node to xchain
