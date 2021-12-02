@@ -1,29 +1,52 @@
 [English](./README.md) | 中文
 
 # XuperDB
-敬请期待
+XuperDB是一个基于区块链技术的去中心化存储系统，专注于解决海量的重要、高价值、隐私数据的安全存储问题。
 
 ## 一、项目简介
-敬请期待
+下面列举了XuperDB有别于其他数据存储系统的特征，我们将持续对此进行完善和优化。
+- **安全存储**：隐私数据经过加密、切分、副本制作后分散存储，既能防止单个存储节点被攻击导致数据泄漏，又能防止多个存储节点串谋获得原始数据；
+  
+- **高效利用存储资源、抵御存储作弊**：由区块链网络支撑整个存储网络，实现去中心化管理节点。充分利用闲置的存储资源，支持无上限数据纳管。通过副本保持证明算法，以及挑战-应答-自动化验证机制，抵御存储节点作弊；
+
+- **故障容错、自动修复**：切片多副本、多机存储，部分存储节点突然宕机，仍然可以获取存储数据。对存储节点进行健康状态监控，及时将处于异常节点的数据迁移到健康节点；
+
+- **资源访问控制**：通过区块链技术和隐私计算技术，实现去中心化数据访问控制。
+
+目前，XuperDB采用XuperChain作为底层的区块链框架，同时支持Fabric。
 
 ### 1.1 架构概览
-敬请期待
+XuperDB中有三类节点：
+- **数据持有节点**（DataOwner Nodes）是数据的归属方，有存储需求；将自己的隐私数据进行加密、切分、副本制作后分发到存储节点；
+- **存储节点**（Storage Nodes）有丰富的闲置的存储资源，可以提供存储服务；通过应答数据持有节点的挑战证明自己持有数据分片；
+- **区块链节点** 构成区块链网络(Blockchain Network)，支撑整个存储网络的去中心化治理；数据持有节点和存储节点在副本保持证明、健康状态监控过程中，通过区块链网络实现信息交换。
+
+在[PaddleDTX](../README_CN.md)中，扩展了网络结构，增加：
+- **任务执行节点** 提供联邦学习计算能力。
 
 ![Image text](./images/architecture_overview.png)
 
-### 1.2 核心技术
-敬请期待
+
+### 1.2 加密分片生成过程
+数据持有节点将隐私数据经过加密、切分、副本复制、随机分组、再针对不同存储节点加密后生成加密分片，分发到不同的存储节点。采用这一系列手段，保证每个节点存储的分片都不相同，存储节点之间不可能复用一个存储证明（PoRH），从而抵御单副本攻击。多副本多地存储使得系统具备故障自愈能力。攻击者无法通过存储节点获取数据明文，多个存储节点串谋获取数据也需要巨大的成本。算法原理和实现详见 [slicer](./engine/slicer/README_cn.md)、[copier](./engine/copier/README_cn.md)、[encryptor](./engine/encryptor/README_cn.md)。
+
+### 1.3 副本保持证明算法
+抵御存储作弊的机制可简述为：数据持有节点发布挑战到区块链网络，存储节点提交证明到区块链网络以应答挑战，智能合约对应答信息进行自动化验证，如果通过，可证明存储节点保存着数据切片。
+
+该机制的核心是[副本保持证明算法](./engine/challenger/README_cn.md)。XuperDB实现了两种副本保持证明算法：
+- **基于双线性对** 详见[Pairing-based PoRH](../crypto/core/pdp/prove.go)
+- **基于梅克尔树** 详见[MerkleTree-based PoRH](./pkgs/merkle/merkle.go) 
 
 ## 二、安装
 XuperDB包含：
-* xdata DataOwner或者Storage节点服务程序
-* client DataOwner或者Storage节点命令行工具
+- **xdb** DataOwner或者Storage节点服务程序
+- **xdb-cli** DataOwner或者Storage节点命令行工具
 
 我们提供两种方式安装XuperDB，您可以根据自己的实际情况进行选择：
 
 ### 2.1 通过Docker安装
 **强烈建议**您通过docker安装XuperDB。
-您可以参考 [XuperDB镜像制作脚本](./build_image.sh) 制作docker镜像，也可以使用我们提供的镜像构建系统，请参考 [docker-compose部署XuperDB](./testdata/docker-compose.yml)。
+您可以参考 [XuperDB镜像制作脚本](./build_image.sh) 制作docker镜像，也可以使用我们提供的镜像构建系统，请参考 [docker-compose部署XuperDB](./testdata/README.md)。
 
 ### 2.2 源码安装
 编译依赖
@@ -37,4 +60,4 @@ make
 您可以在 `./output` 中获取安装包，然后手动安装。
 
 ## 三、测试
-请参考 [命令行工具说明](./cmd/client/README.md) 了解和测试XuperDB。
+我们提供了 [测试脚本](./scripts/README.md) 方便您测试、了解和使用XuperDB。

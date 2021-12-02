@@ -9,7 +9,7 @@ PaddleDTX is a solution that focused on **distributed machine learning** technol
 The computing layer of PaddleDTX is a network that composed of nodes of three kinds: **Requester**, **Executor** and **DataOwner**. The training samples and prediction dataset are stored in a decentralized storage network composed of DataOwner and **Storage** nodes. This decentralized storage network and the computing layer are supported by a underlying blockchain network.
 
 ### Secure Multi-party Computation Network
-The Requester is a party with prediction demand, and the Executor is a party that is authorized by the DataOwner to gain access permit to the sample data for possible model training and result predicting. Multiple Executor nodes form an SMPC (secure multi-party computation) network. The Requester nodes publish the task to the blockchain network, and Executor nodes execute the task after authorization. The Executor nodes obtain sample data through the DataOwner, and usually they are deployed together.
+The Requester is a party with prediction demand, and the Executor is a party that is authorized by the DataOwner to gain access permit to the sample data for possible model training and result predicting. Multiple Executor nodes form an SMPC (secure multi-party computation) network. The Requester nodes publish the task to the blockchain network, and Executor nodes execute the task after authorization. The Executor nodes obtain sample data through the DataOwner, and the latter endorses the trust of data.
 
 SMPC network is the framework that supports multiple distributed learning processes running in parallel. More vertical federated learning and horizontal federated learning algorithms will be supported in the future.
 
