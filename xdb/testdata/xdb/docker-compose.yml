@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  data_owner:
+    image: registry.baidubce.com/paddledtx/xdb-dataowner:1.0
+    container_name: dataowner.node.com
+    networks:
+        - blockchain_network
+    ports:
+        - 38001:80
+    volumes:
+        - ./dataowner/conf:/home/conf
+        - ./dataowner/logs:/home/logs
+
+  storage1:
+    image: registry.baidubce.com/paddledtx/xdb-storage:1.0
+    container_name: storage1.node.com
+    networks:
+        - blockchain_network
+    ports:
+        - 38002:80
+    volumes:
+        - ./storage1/conf:/home/conf
+        - ./storage1/logs:/home/logs
+
+  storage2:
+    image: registry.baidubce.com/paddledtx/xdb-storage:1.0
+    container_name: storage2.node.com
+    networks:
+        - blockchain_network
+    depends_on:
+      - storage1
+    ports:
+        - 38003:80
+    volumes:
+        - ./storage2/conf:/home/conf
+        - ./storage2/logs:/home/logs
+
+  storage3:
+    image: registry.baidubce.com/paddledtx/xdb-storage:1.0
+    container_name: storage3.node.com
+    networks:
+       - blockchain_network
+    depends_on:
+      - storage2
+    ports:
+        - 38004:80
+    volumes:
+        - ./storage3/conf:/home/conf
+        - ./storage3/logs:/home/logs
+
+networks:
+ blockchain_network:
+   external: true
