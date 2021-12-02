@@ -1,0 +1,36 @@
+type = "storage"
+
+[storage]
+name = "storage-node2"
+listenAddress = ":80"
+privateKey = "69d69ea9596ea930ce36ca22d3a7919186d1a7e380e379035b7eb0259ff9e72e"
+publicAddress = "storage2.node.com:80"
+
+[storage.blockchain]
+    type = "${BLOCKCHAIN_TYPE}"
+    [storage.blockchain.xchain]
+        mnemonic = "${MNEMONIC}"
+        contractName = "${CONTRACT_NAME}"
+        contractAccount = "XC${CONTRACT_ACCOUNT}@xuper"
+        chainAddress = "xchain1.node.com:37101"
+        chainName = "xuper"
+    [storage.blockchain.fabric]
+        configFile = "/home/conf/fabric/config.yaml"
+        channelId = "${CHANNEL_NAME}"
+        chaincode = "${CONTRACT_NAME}"
+        userName = "Admin"
+        orgName = "Org1"
+
+[storage.mode]
+    type = "local"
+    [storage.mode.local]
+        rootPath = "/home/data/slices"
+
+[storage.monitor]
+    challengingSwitch = "on"
+    nodemaintainerSwitch = "on"
+    fileclearInterval = 24
+
+[log]
+level = "debug"
+path = "./logs"
