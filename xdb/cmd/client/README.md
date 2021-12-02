@@ -1,5 +1,3 @@
-[中文](./README_CN.md) | English
-
 # Command-line Tool: xdata-cli 
 The `xdata-cli` is a command-line tool to use the decentralized storage network by a DataOwner node.
 There are three major subcommands of `xdata-cli` as follows.

@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
@@ -182,7 +182,7 @@ func (t *TaskMonitor) updateTaskExecStatus(taskId string) error {
 	}
 	// sign request
 	signExecMes := fmt.Sprintf("%x,%s,%d", execTaskOptions.Executor, execTaskOptions.TaskID, execTaskOptions.CurrentTime)
-	sig, err := ecdsa.Sign(t.PrivateKey, hash.Hash([]byte(signExecMes)))
+	sig, err := ecdsa.Sign(t.PrivateKey, hash.HashUsingSha256([]byte(signExecMes)))
 	if err != nil {
 		logger.WithError(err).Errorf("failed to sign exec task options, taskId: %s", taskId)
 		return err

@@ -16,8 +16,8 @@ package main
 import (
 	"encoding/json"
 
-	"github.com/xuperchain/xuperchain/core/contractsdk/go/code"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	"github.com/xuperchain/xuperchain/core/contractsdk/go/code"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
 )

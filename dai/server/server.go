@@ -18,8 +18,8 @@ import (
 	"net"
 	"time"
 
-	"google.golang.org/grpc"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	"google.golang.org/grpc"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/config"
 )

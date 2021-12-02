@@ -24,9 +24,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 
@@ -83,7 +83,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 		}
 		task, err := c.GetTaskById(context.TODO(), opt.AlgoParam.ModelTaskID)
 		if err != nil || task.Status != blockchain.TaskFinished {
-			return nil, errorx.Wrap(err, "failed to get task or task status is not finished")
+			return nil, errorx.New(errorx.ErrCodeParam, "failed to get task or task status is not finished")
 		}
 	} else {
 		if opt.AlgoParam.TrainParams.Label == "" {
@@ -196,7 +196,7 @@ func (c *Client) Publish(ctx context.Context, opt PublishOptions) (taskId string
 	if err != nil {
 		return taskId, errorx.Wrap(err, "failed to marshal fl task")
 	}
-	sig, err := ecdsa.Sign(privkey, hash.Hash(s))
+	sig, err := ecdsa.Sign(privkey, hash.HashUsingSha256(s))
 	if err != nil {
 		return taskId, errorx.Wrap(err, "failed to sign fl task")
 	}
@@ -250,7 +250,7 @@ func (c *Client) StartTask(ctx context.Context, privateKey, id string) (err erro
 	}
 
 	msg := fmt.Sprintf("%s,%x", id, pubkey[:])
-	sig, err := ecdsa.Sign(privkey, hash.Hash([]byte(msg)))
+	sig, err := ecdsa.Sign(privkey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign fl task")
 	}
@@ -305,7 +305,7 @@ func (c *Client) GetPredictResult(ctx context.Context, privateKey, taskID, outpu
 
 	// verify signature
 	msg := fmt.Sprintf("%x,%s", in.Owner, in.TaskID)
-	sig, err := ecdsa.Sign(privkey, hash.Hash([]byte(msg)))
+	sig, err := ecdsa.Sign(privkey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign predict task")
 	}

@@ -14,8 +14,8 @@
 package client
 
 import (
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/config"
 )

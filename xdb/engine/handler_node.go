@@ -19,12 +19,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
+
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 // AddNode adds storage node into blockchain
@@ -34,7 +35,7 @@ func (e *Engine) AddNode(ctx context.Context, opt types.AddNodeOptions) (err err
 	}
 
 	msg := fmt.Sprintf("%s:%s", opt.Name, opt.Address)
-	h := hash.Hash([]byte(msg))
+	h := hash.HashUsingSha256([]byte(msg))
 	if err := verifyUserToken(opt.NodeID, opt.Token, h); err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func (e *Engine) AddNode(ctx context.Context, opt types.AddNodeOptions) (err err
 	if err != nil {
 		return errorx.Wrap(err, "failed to marshal node")
 	}
-	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.Hash(s))
+	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.HashUsingSha256(s))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign node")
 	}

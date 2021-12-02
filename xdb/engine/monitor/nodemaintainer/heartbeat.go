@@ -19,10 +19,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
-
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 // heartbeat sends heartbeats regularly in order to claim it's alive
@@ -46,7 +45,7 @@ func (m *NodeMaintainer) heartbeat(ctx context.Context) {
 		}
 		timestamp := time.Now().UnixNano()
 		mes := fmt.Sprintf("%s,%d", pubkey.String(), timestamp)
-		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.Hash([]byte(mes)))
+		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(mes)))
 		if err != nil {
 			l.WithError(err).Warn("failed to sign heartbeat")
 			continue

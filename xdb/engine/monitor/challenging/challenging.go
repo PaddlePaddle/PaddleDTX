@@ -18,13 +18,13 @@ import (
 	"io"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 )
 
 const (
@@ -48,7 +48,7 @@ type ChallengeDB interface {
 }
 
 type SliceStorage interface {
-	Load(ctx context.Context, key string) (io.ReadCloser, error)
+	Load(key string) (io.ReadCloser, error)
 }
 
 type Blockchain interface {

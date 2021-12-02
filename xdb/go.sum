@@ -33,8 +33,11 @@ github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5/go.mod h1:tT
 github.com/Microsoft/hcsshim v0.8.7-0.20191101173118-65519b62243c/go.mod h1:7xhjOwRV2+0HXGmM0jxaEu+ZiXJFoVZOTfL/dmqbrD8=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/OneOfOne/xxhash v1.2.5/go.mod h1:eZbhyaAYD41SGSSsnmcpxVoRiQ/MPUTjUdIIOT9Um7Q=
+github.com/PaddlePaddle/PaddleDTX v0.0.0-20211202074501-05fa32f34982 h1:fdGaCf/BxfPXR8G5NMMusijtTsZsoGvVL00YQZ6yO5E=
 github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20211117095239-166020adc84f h1:L7HQb0073H8iAj70p1Cq9U3TlqkJoNG9XvgjLsGqSNs=
 github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20211117095239-166020adc84f/go.mod h1:1aRQvMrXkvHDsfArUE3pLmzDPvlvf6gNp0WPDw7HT/4=
+github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20211202080943-4401412692d4 h1:cDHBgwINx+8wEPnXthe7tlOhMmODdlarvzCvV4AQQGw=
+github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20211202080943-4401412692d4/go.mod h1:1rr8S/onukcMU9IwAoeD2HpitNR8RK2g9NtqFoGzrfY=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398 h1:WDC6ySpJzbxGWFh4aMxFFC28wwGp5pEuoTtvA4q/qQ4=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
 github.com/Shopify/sarama v1.30.0/go.mod h1:zujlQQx1kzHsh4jfV1USnptCQrHAEZ2Hk8fTKCulPVs=

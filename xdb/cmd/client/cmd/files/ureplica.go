@@ -25,7 +25,7 @@ import (
 // updateNsReplicaCmd represents the command to update replica
 var updateNsReplicaCmd = &cobra.Command{
 	Use:   "ureplica",
-	Short: "update file replica of xuper db",
+	Short: "update file replica of XuperDB",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

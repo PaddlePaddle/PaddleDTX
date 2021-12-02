@@ -34,7 +34,7 @@ var (
 // uploadDataCmd represents the command to upload file into xuper db
 var uploadCmd = &cobra.Command{
 	Use:   "upload",
-	Short: "upload file into xuper db",
+	Short: "save a file into XuperDB",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

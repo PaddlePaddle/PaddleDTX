@@ -34,7 +34,7 @@ var (
 // rootCmd represents the task command
 var rootCmd = &cobra.Command{
 	Use:   "challenge",
-	Short: "A command helps to manage tasks",
+	Short: "challenge operations used to check file integrity in the storage node",
 }
 
 func RootCmd() *cobra.Command {

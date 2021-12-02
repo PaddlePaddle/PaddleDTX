@@ -2,7 +2,7 @@
 # Blockchain used by the executor.
 # Client initiate a task to the executor by the blockchain.
 [blockchain]
-# blockchain type, 'xchain' or 'fabric'
+# blockchain type, only 'xchain' supported currently
 type = 'xchain'
 
 [blockchain.xchain]

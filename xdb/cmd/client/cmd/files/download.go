@@ -32,7 +32,7 @@ var (
 // downloadCmd represents the command to download file from xuper db
 var downloadCmd = &cobra.Command{
 	Use:   "download",
-	Short: "download file from xuper db",
+	Short: "download the file from XuperDB",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

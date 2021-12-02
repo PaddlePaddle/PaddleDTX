@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 	"google.golang.org/grpc"
 
 	pbTask "github.com/PaddlePaddle/PaddleDTX/dai/protos/task"
@@ -110,7 +110,7 @@ func (c *Client) ConfirmTask(ctx context.Context, privkey, id string) (err error
 	currentTime := time.Now().UnixNano()
 	m := fmt.Sprintf("%x,%s,%d", pubkey[:], id, currentTime)
 
-	sig, err := ecdsa.Sign(privateKey, hash.Hash([]byte(m)))
+	sig, err := ecdsa.Sign(privateKey, hash.HashUsingSha256([]byte(m)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign fl task")
 	}

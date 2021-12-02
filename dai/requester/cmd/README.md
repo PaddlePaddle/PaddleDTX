@@ -1,6 +1,11 @@
-# PaddleDTX 计算需求方 命令行工具
+# Command-line Tool: requester-cli
+The `requester-cli` is the client of Requester. It can help users begin work on the 
+training and predicting.
 
-## 任务相关操作命令 [./bin/client task]
+## Command Parsing
+The `requester-cli` only has one subcommand `requester-cli task`, related to task's management.
+The detailed explanation is shown as follows.
+
 | command    |        explanation      | 
 | :----------: |   :-----------:   | 
 | getbyid    | get the task by id |  
@@ -53,7 +58,7 @@ $  ./bin/requester-cli task list -p 4637ef79f14b036ced59b76408b0d88453ac9e5baa52
 |   --files  |    -f      |  files IDs with ',' as delimiter |   yes   |
 |   --label  |      -l    |   training task's target feature  |    yes in training task, no in prediction task   |
 |   --labelName  |          |   target variable required in logistic-vl training task | yes in logistic-vl training task, no in others    |
-|   --PSILabel  |      -p    |   task type, 'train' or 'predict' |   yes    |
+|   --PSILabel  |      -p    |  labels used by PSI process |   yes    |
 |   --taskId  |      -i   |   algorithm assigned to task, 'linear-vl' or 'logistic-vl' |    yes    |
 |   --regMode  |          | regularization mode of training task, can be l1(L1-norm) or l2(L2-norm)  |   no, default no regularization   |
 |   --regParam  |          | regularization parameter |   no, default is 0.1   |

@@ -22,6 +22,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 
@@ -29,8 +31,6 @@ import (
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 // loopRequest publishes challenge requests if local node is dataOwner-node,
@@ -185,7 +185,7 @@ func (c *ChallengingMonitor) doPDPChallengeRequest(ctx context.Context, challeng
 		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to marshal request")
 		return err
 	}
-	sig, err := ecdsa.Sign(c.PrivateKey, hash.Hash(content))
+	sig, err := ecdsa.Sign(c.PrivateKey, hash.HashUsingSha256(content))
 	if err != nil {
 		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to sign request")
 		return err
@@ -230,7 +230,7 @@ func (c *ChallengingMonitor) doMerkleChallengeRequest(ctx context.Context, chall
 	}
 	proof := Calculate(&cOpt)
 
-	hashOfProof := hash.Hash(proof)
+	hashOfProof := hash.HashUsingSha256(proof)
 
 	// select some parts of slices and send challenge requests
 	var branges []blockchain.Range
@@ -260,7 +260,7 @@ func (c *ChallengingMonitor) doMerkleChallengeRequest(ctx context.Context, chall
 		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to marshal request")
 		return err
 	}
-	sig, err := ecdsa.Sign(c.PrivateKey, hash.Hash(content))
+	sig, err := ecdsa.Sign(c.PrivateKey, hash.HashUsingSha256(content))
 	if err != nil {
 		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to sign request")
 		return err

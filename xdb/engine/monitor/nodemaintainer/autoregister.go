@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 // autoregister storage-node automatically register in blockchain
@@ -39,7 +39,7 @@ func (m *NodeMaintainer) autoregister(ctx context.Context) error {
 	} else if err == nil && !node.Online {
 		nonce := time.Now().UnixNano()
 		mes := fmt.Sprintf("%s,%d", pubkey.String(), nonce)
-		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.Hash([]byte(mes)))
+		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(mes)))
 		if err != nil {
 			return errorx.Wrap(err, "failed to sign File")
 		}
@@ -71,7 +71,7 @@ func (m *NodeMaintainer) autoregister(ctx context.Context) error {
 		if err != nil {
 			return errorx.Wrap(err, "failed to marshal node")
 		}
-		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.Hash(s))
+		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256(s))
 		if err != nil {
 			return errorx.Wrap(err, "failed to sign node")
 		}

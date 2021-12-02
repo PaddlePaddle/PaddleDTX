@@ -16,8 +16,9 @@ package challenging
 import (
 	"strconv"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
+
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 type randomProof struct {
@@ -35,5 +36,5 @@ func Calculate(opt *ctype.CalculateOptions) []byte {
 	ts := strconv.FormatInt(opt.Timestamp, 10)
 	data := append(append([]byte{}, opt.RangeHash...), []byte(ts)...)
 
-	return hash.Hash(data)
+	return hash.HashUsingSha256(data)
 }

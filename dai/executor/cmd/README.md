@@ -1,7 +1,11 @@
-# PaddleDTX 任务计算方 命令行工具
+# Command-line Tool: executor-cli
+The `executor-cli` is the client of Executor. It was used to control executor's behavior on the task.
 
-### 任务操作命令说明 [./bin/client task]
-| command    |        说明      |
+### Command Parsing [./bin/executor-cli task]
+The `executor-cli` only has one subcommand `executor-cli task`, related to task's management.
+The detailed explanation is shown as follows.
+
+| command    |        explanation      |
 | :----------: |   :-----------:   |
 | confirm    | confirm task in Ready status |
 | getbyid    | get a task by id |
