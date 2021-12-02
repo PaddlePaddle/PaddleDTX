@@ -11,24 +11,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package hash
+package aes
 
 import (
 	"crypto/sha256"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-var DefaultHasher = sha256.New
+func TestAES(t *testing.T) {
+	key := sha256.Sum256([]byte("test key"))
+	nonce := sha256.Sum256([]byte("test nonce"))
+	plaintext := []byte("aes plaintext")
+	aesKey := AESKey{
+		Key:   key[:],
+		Nonce: nonce[:12],
+		AD:    nil,
+	}
 
-// HashUsingSha256 使用标准SHA2-256算法计算哈希
-func HashUsingSha256(data []byte) []byte {
-	h := sha256.New()
-	h.Write(data)
-	out := h.Sum(nil)
+	cipher, err := EncryptUsingAESGCM(aesKey, plaintext, nil)
+	if err != nil {
+		t.Error(err)
+	}
 
-	return out
-}
+	plain, err := DecryptUsingAESGCM(aesKey, cipher, nil)
+	if err != nil {
+		t.Error(err)
+	}
 
-// DoubleSha256 执行2次SHA256
-func DoubleSha256(data []byte) []byte {
-	return HashUsingSha256(HashUsingSha256(data))
+	require.Equal(t, plain, plaintext)
 }

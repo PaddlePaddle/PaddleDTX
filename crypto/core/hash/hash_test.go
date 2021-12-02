@@ -14,21 +14,15 @@
 package hash
 
 import (
-	"crypto/sha256"
+	"encoding/hex"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-var DefaultHasher = sha256.New
-
-// HashUsingSha256 使用标准SHA2-256算法计算哈希
-func HashUsingSha256(data []byte) []byte {
-	h := sha256.New()
-	h.Write(data)
-	out := h.Sum(nil)
-
-	return out
-}
-
-// DoubleSha256 执行2次SHA256
-func DoubleSha256(data []byte) []byte {
-	return HashUsingSha256(HashUsingSha256(data))
+func TestHash(t *testing.T) {
+	msg := []byte("test")
+	correctHashHex := "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+	hash := HashUsingSha256(msg)
+	require.Equal(t, hex.EncodeToString(hash), correctHashHex)
 }

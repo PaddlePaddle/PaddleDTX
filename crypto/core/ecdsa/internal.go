@@ -11,24 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package hash
+package ecdsa
 
-import (
-	"crypto/sha256"
-)
+// padStart pad bytes into to specific length
+// padding zero at the beginning of the bytes
+func padStart(s []byte, newLen int) []byte {
+	if len(s) >= newLen {
+		return s
+	}
 
-var DefaultHasher = sha256.New
-
-// HashUsingSha256 使用标准SHA2-256算法计算哈希
-func HashUsingSha256(data []byte) []byte {
-	h := sha256.New()
-	h.Write(data)
-	out := h.Sum(nil)
-
-	return out
-}
-
-// DoubleSha256 执行2次SHA256
-func DoubleSha256(data []byte) []byte {
-	return HashUsingSha256(HashUsingSha256(data))
+	t := make([]byte, newLen-len(s), newLen)
+	return append(t, s...)
 }
