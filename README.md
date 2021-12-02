@@ -53,7 +53,7 @@ There are two ways of installing PaddleDTX:
 
 ### Run PaddleDTX in docker
 We **highly recommend** to run PaddleDTX in Docker.
-You could install all the components with docker images provided by us. Please refer to [starting network](./testdata/README.md). If you want to build docker images locally, please refer to [building image of PaddleDTX](./dai/build_image.sh) and [building image of XuperDB](./xdb/build_img.sh). 
+You could install all the components with docker images provided by us. Please refer to [starting network](./testdata/README.md). If you want to build docker images locally, please refer to [building image of PaddleDTX](./dai/build_image.sh) and [building image of XuperDB](./xdb/build_image.sh).
 
 ### Install PaddleDTX from source code
 To build PaddleDTX from source code, you need:

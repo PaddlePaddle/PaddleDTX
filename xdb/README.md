@@ -47,7 +47,7 @@ XuperDB contains:
 There are two ways of installing XuperDB:
 ### Run XuperDB in docker
 We **highly recommend** to run XuperDB in Docker.
-You could install all the components with docker images provided by us. Please refer to [deployment with docker-compose](./testdata/README.md). If you want to build docker images locally, please refer to [building image of XuperDB](./build_img.sh). 
+You could install all the components with docker images provided by us. Please refer to [deployment with docker-compose](./testdata/README.md). If you want to build docker images locally, please refer to [building image of XuperDB](./build_image.sh).
 
 ### Install XuperDB from source code
 To build XuperDB from source code, you need:
