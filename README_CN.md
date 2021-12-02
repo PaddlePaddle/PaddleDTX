@@ -53,7 +53,7 @@ PaddleDTX 开源部分目前支持两方的纵向联邦学习算法，包括多�
 
 ### 3.1 通过Docker安装
 **强烈建议**您通过docker安装PaddleDTX。
-您可以参考 [PaddleDTX镜像制作脚本](./dai/build_image.sh) 和 [XuperDB镜像制作脚本](./xdb/build_img.sh) 制作docker镜像，也可以使用我们提供的镜像构建系统，请参考 [docker-compose部署PaddleDTX](./testdata/README.md)。
+您可以参考 [PaddleDTX镜像制作脚本](./dai/build_image.sh) 和 [XuperDB镜像制作脚本](./xdb/build_image.sh) 制作docker镜像，也可以使用我们提供的镜像构建系统，请参考 [docker-compose部署PaddleDTX](./testdata/README.md)。
 
 ### 3.2 源码安装
 编译依赖
