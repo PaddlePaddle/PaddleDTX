@@ -16,8 +16,8 @@ package engine
 import (
 	"bytes"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 )
 
 // verifyUserID checks if request userID is valid and equal to local nodeID
