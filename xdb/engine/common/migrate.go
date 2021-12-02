@@ -22,16 +22,15 @@ import (
 	"io/ioutil"
 	"math/big"
 
-	"github.com/sirupsen/logrus"
 	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/copier"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 // MigrateChain defines several contract/chaincode methods related to file migration
@@ -76,7 +75,7 @@ func PullAndDec(ctx context.Context, copier MigrateCopier, encrypt MigrateEncryp
 	if len(cipherText) != int(slice.Length) {
 		return nil, errorx.New(errorx.ErrCodeCrypto, "cipherText not match")
 	}
-	hashReceived := hash.Hash(cipherText)
+	hashReceived := xchainClient.HashUsingSha256(cipherText)
 	if !bytes.Equal(hashReceived, slice.CipherHash) {
 		return nil, errorx.New(errorx.ErrCodeCrypto, "hash not match")
 	}
@@ -173,7 +172,7 @@ func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp MigrateC
 	if err != nil {
 		return errorx.Wrap(err, "failed to marshal slices")
 	}
-	sig, err := ecdsa.Sign(privkey, hash.Hash(s))
+	sig, err := ecdsa.Sign(privkey, xchainClient.HashUsingSha256(s))
 	if err != nil {
 		return errorx.Wrap(err, "failed to marshal slices")
 	}

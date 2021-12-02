@@ -30,7 +30,7 @@ func (e *Error) Error() string {
 	return string(s)
 }
 
-// New Create a tc error from code and message
+// New Create an error from code and message
 func New(code, format string, args ...interface{}) error {
 	return &Error{
 		Code:    code,
@@ -38,7 +38,7 @@ func New(code, format string, args ...interface{}) error {
 	}
 }
 
-// NewCode Create a tc error by wrapping a existed error from outer package
+// NewCode Create an error by wrapping a existed error from outer package
 //  will drop original code
 func NewCode(err error, code, format string, args ...interface{}) error {
 	return &Error{
@@ -66,10 +66,10 @@ func Is(err error, code string) bool {
 	return c == code
 }
 
-// Parse retrive code and message
-// 1、try to retrieve errorx.Error from err chain
-// 2、try to unmarshal err.Error() into errorx.Error
-// 3、or else an internal error with original err.Error()
+// Parse retrieve code and message
+// 1. try to retrieve errorx.Error from err chain
+// 2. try to unmarshal err.Error() into errorx.Error
+// 3. or else an internal error with original err.Error()
 func Parse(err error) (code, message string) {
 	var newErr *Error
 	if errors.As(err, &newErr) {

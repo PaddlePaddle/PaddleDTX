@@ -17,10 +17,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 )
 
 var (
@@ -30,7 +30,7 @@ var (
 // addNodeCmd adds new node
 var addNodeCmd = &cobra.Command{
 	Use:   "add",
-	Short: "add node into xuper db",
+	Short: "add a storage node into XuperDB",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

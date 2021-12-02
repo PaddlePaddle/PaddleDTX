@@ -13,7 +13,7 @@
 
 package peer
 
-import "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
+import "github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 
 // Local defines local node
 type Local struct {

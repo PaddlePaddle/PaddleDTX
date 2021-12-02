@@ -21,8 +21,8 @@ import (
 	"math"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
+	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"

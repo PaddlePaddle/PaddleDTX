@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/cjqpker/slidewindow"
 	"github.com/sirupsen/logrus"
 
@@ -30,7 +31,6 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 var defaultConcurrency uint64 = 10
@@ -49,7 +49,7 @@ func verifyReadToken(ctx context.Context, opt types.ReadOptions) error {
 	} else {
 		msg = fmt.Sprintf("%s:%s:%s:%d", opt.User, opt.Namespace, opt.FileName, opt.Timestamp)
 	}
-	msgDigest := hash.Hash([]byte(msg))
+	msgDigest := hash.HashUsingSha256([]byte(msg))
 	if err := verifyUserToken(opt.User, opt.Token, msgDigest); err != nil {
 		return errorx.Wrap(err, "failed to verify token")
 	}
@@ -163,7 +163,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 					Warn("invalid slice length.")
 				continue
 			}
-			hGot := hash.Hash(cipherText)
+			hGot := hash.HashUsingSha256(cipherText)
 			if !bytes.Equal(hGot, target.CipherHash) {
 				logger.WithFields(logrus.Fields{"expected": target.CipherHash, "got": hGot}).
 					Warn("invalid slice hash.")

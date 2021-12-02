@@ -18,7 +18,7 @@ import (
 
 	"golang.org/x/crypto/hkdf"
 
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 )
 
 // getKey derive encrypt key by password, sliceID and NodeID using key derivation function

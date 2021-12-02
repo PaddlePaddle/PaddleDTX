@@ -18,12 +18,12 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/kataras/iris/v12"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	etype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/server/types"
 )
 

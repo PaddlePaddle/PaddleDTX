@@ -20,11 +20,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 )
 
 // sliceclear cleans expired encrypted slices
@@ -96,7 +96,7 @@ func (m *NodeMaintainer) sliceclear(ctx context.Context) {
 			l.WithError(err).Warn("failed to delete node slice")
 			continue
 		}
-		err = m.sliceStorage.SaveAndUpdate(ctx, clearKey, strconv.FormatInt(endTime, 10))
+		err = m.sliceStorage.SaveAndUpdate(clearKey, strconv.FormatInt(endTime, 10))
 		if err != nil {
 			l.WithError(err).Warn("failed to update clear slice time ")
 		}
@@ -115,13 +115,13 @@ func (m *NodeMaintainer) getExpireRangeTime(ctx context.Context, pubkey, clearKe
 	var startTime, endTime int64
 	exist, _ := m.sliceStorage.Exist(clearKey)
 	if !exist {
-		if err := m.sliceStorage.SaveAndUpdate(ctx, clearKey, strconv.FormatInt(regTime, 10)); err != nil {
+		if err := m.sliceStorage.SaveAndUpdate(clearKey, strconv.FormatInt(regTime, 10)); err != nil {
 			return 0, 0, errorx.Wrap(err, "failed to save and update slice")
 		}
 		endTime = m.getEndExpireTime(regTime, latestTime)
 		return regTime, endTime, nil
 	}
-	ftime, err := m.sliceStorage.LoadStr(ctx, clearKey)
+	ftime, err := m.sliceStorage.LoadStr(clearKey)
 	if err != nil {
 		return 0, 0, errorx.Wrap(err, "failed to load expire time")
 	}

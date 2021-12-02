@@ -17,16 +17,16 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 )
 
 // nodeOnlineCmd represents the command to get node of xuper db online
 var nodeOnlineCmd = &cobra.Command{
 	Use:   "online",
-	Short: "get node of xuper db online by privatekey",
+	Short: "set a storage node online",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

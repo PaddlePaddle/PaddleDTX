@@ -25,7 +25,7 @@ import (
 // getFileSysHealthCmd represents the command to get system health of xuper db
 var getFileSysHealthCmd = &cobra.Command{
 	Use:   "syshealth",
-	Short: "get files sys health of xuper db",
+	Short: "get the DataOwner's health status",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

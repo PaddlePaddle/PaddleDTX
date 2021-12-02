@@ -17,13 +17,13 @@ import (
 	"context"
 	"io"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/slicer"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 )
 
 const (
@@ -108,7 +108,7 @@ func (ss *SimpleSlicer) GetBlockSize() int {
 
 // makeSlice digests a slice by sha256 to make a SliceMeta
 func makeSlice(bs []byte) slicer.Slice {
-	h := hash.Hash(bs)
+	h := hash.HashUsingSha256(bs)
 	id, _ := uuid.NewRandom()
 	return slicer.Slice{
 		SliceMeta: slicer.SliceMeta{

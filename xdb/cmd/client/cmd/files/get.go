@@ -27,7 +27,7 @@ import (
 // getByIDCmd represents the command to get file by id
 var getByIDCmd = &cobra.Command{
 	Use:   "getbyid",
-	Short: "get file of xuper db by id",
+	Short: "get the file by id from XuperDB",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {
@@ -52,7 +52,7 @@ var getByIDCmd = &cobra.Command{
 // getByNameCmd represents the get file by ns+name command
 var getByNameCmd = &cobra.Command{
 	Use:   "getbyname",
-	Short: "get file of xuper db by name",
+	Short: "get the file by name from XuperDB",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

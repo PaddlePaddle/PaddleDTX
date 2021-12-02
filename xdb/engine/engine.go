@@ -19,6 +19,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
@@ -29,7 +30,6 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/peer"
-	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
 )
 
 var (
@@ -54,7 +54,7 @@ type Encryptor interface {
 }
 
 // Challenger generates challenge requests as dataOwner-node for storage-nodes to answer
-//  PDP-based and MerkleTree-based are both supported
+//  Pairing-based and MerkleTree-based are both supported
 //  see more from engine.challenger
 type Challenger interface {
 	// pdp Challenge
@@ -121,12 +121,12 @@ type Blockchain interface {
 
 // Storage stores files locally
 type Storage interface {
-	Save(ctx context.Context, key string, value io.Reader) error
-	Load(ctx context.Context, key string) (io.ReadCloser, error)
+	Save(key string, value io.Reader) error
+	Load(key string) (io.ReadCloser, error)
 	Delete(key string) (bool, error)
 	Exist(key string) (bool, error)
-	LoadStr(ctx context.Context, key string) (string, error)
-	SaveAndUpdate(ctx context.Context, key, value string) error
+	LoadStr(key string) (string, error)
+	SaveAndUpdate(key, value string) error
 }
 
 type Engine struct {

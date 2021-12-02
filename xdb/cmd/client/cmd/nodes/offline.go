@@ -17,16 +17,16 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 )
 
 // nodeOfflineCmd represents the command to get node offline by privatekey
 var nodeOfflineCmd = &cobra.Command{
 	Use:   "offline",
-	Short: "get node of xuper db offline by privatekey",
+	Short: "set a storage node offline",
 	Run: func(cmd *cobra.Command, args []string) {
 		client, err := httpclient.New(host)
 		if err != nil {

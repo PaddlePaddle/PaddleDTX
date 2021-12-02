@@ -14,8 +14,9 @@
 package engine
 
 import (
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
 )
 
 // verifyUserToken check user's token is valid or not

@@ -42,12 +42,12 @@ type Blockchain interface {
 }
 
 type SliceStorage interface {
-	Load(ctx context.Context, key string) (io.ReadCloser, error)
+	Load(key string) (io.ReadCloser, error)
 	Delete(key string) (bool, error)
 	Exist(key string) (bool, error)
 
-	LoadStr(ctx context.Context, key string) (string, error)
-	SaveAndUpdate(ctx context.Context, key, value string) error
+	LoadStr(key string) (string, error)
+	SaveAndUpdate(key, value string) error
 }
 
 type NewNodeMaintainerOptions struct {

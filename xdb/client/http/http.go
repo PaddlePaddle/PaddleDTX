@@ -23,10 +23,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
+
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/crypto/hash"
 	httpkg "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/http"
 	servertypes "github.com/PaddlePaddle/PaddleDTX/xdb/server/types"
 )
@@ -74,7 +75,7 @@ func (c *Client) Write(ctx context.Context, r io.Reader, opt WriteOptions) (
 	owner := pubkey.String()
 
 	msg := fmt.Sprintf("%s:%s:%s", owner, opt.Namespace, opt.FileName)
-	h := hash.Hash([]byte(msg))
+	h := hash.HashUsingSha256([]byte(msg))
 
 	sig, err := ecdsa.Sign(privkey, h)
 	if err != nil {
@@ -128,7 +129,7 @@ func (c *Client) Read(ctx context.Context, opt ReadOptions) (io.ReadCloser, erro
 	} else {
 		msg = fmt.Sprintf("%s:%s:%s:%s", owner, opt.Namespace, opt.FileName, tm)
 	}
-	h := hash.Hash([]byte(msg))
+	h := hash.HashUsingSha256([]byte(msg))
 
 	sig, err := ecdsa.Sign(privkey, h)
 	if err != nil {
@@ -169,7 +170,7 @@ func (c *Client) AddNode(ctx context.Context, opt AddNodeOptions) error {
 	nodeID := pubkey.String()
 
 	msg := fmt.Sprintf("%s:%s", opt.Name, opt.Address)
-	h := hash.Hash([]byte(msg))
+	h := hash.HashUsingSha256([]byte(msg))
 
 	sig, err := ecdsa.Sign(opt.PrivateKey, h)
 	if err != nil {
@@ -273,7 +274,7 @@ func (c *Client) setNodeOnlineStatus(ctx context.Context, privateKey string, onl
 
 	nonce := time.Now().UnixNano()
 	m := fmt.Sprintf("%s,%d", nodeID, nonce)
-	sig, err := ecdsa.Sign(private, hash.Hash([]byte(m)))
+	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(m)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign")
 	}
@@ -398,7 +399,7 @@ func (c *Client) UpdateExpTimeByID(ctx context.Context, id, privateKey string, e
 
 	currentTime := time.Now().UnixNano()
 	m := fmt.Sprintf("%s,%d,%d", id, expireTime, currentTime)
-	sig, err := ecdsa.Sign(private, hash.Hash([]byte(m)))
+	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(m)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign file expire time")
 	}
@@ -441,7 +442,7 @@ func (c *Client) AddFileNs(ctx context.Context, priKey, ns, des string, replica 
 		return errorx.Wrap(err, "failed to marshal namespace")
 	}
 	// sign ns info
-	sig, err := ecdsa.Sign(private, hash.Hash(s))
+	sig, err := ecdsa.Sign(private, hash.HashUsingSha256(s))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign file expire time")
 	}
@@ -472,7 +473,7 @@ func (c *Client) UpdateFileNsReplica(ctx context.Context, priKey, ns string, rep
 
 	currentTime := time.Now().UnixNano()
 	m := fmt.Sprintf("%s,%d,%d", ns, replica, currentTime)
-	sig, err := ecdsa.Sign(private, hash.Hash([]byte(m)))
+	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(m)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign update ns replica param")
 	}
