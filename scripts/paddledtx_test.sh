@@ -405,7 +405,6 @@ function logisticVlPredict() {
   irisTargetFile=`docker exec -it dataowner1.node.com sh -c "
   cat /home/mpc-data/logic_iris_plants/targetValues.csv | awk 'NR>1'
   " | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1'`
-  calculateRMSE "$irisPredictFile" "$irisTargetFile" "IrisPlants" "Root mean square error of Iris plants prediction is"
   calculateLogisticPredictAccuracy "$irisPredictFile" "$irisTargetFile" "Accuracy of Iris plants prediction is"
 }
 
