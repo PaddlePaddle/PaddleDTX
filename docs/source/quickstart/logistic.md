@@ -87,7 +87,7 @@ $ sh paddledtx_test.sh gettaskbyid -i 95104913-c6cc-4520-bab1-2be814f0d81e
 发布和启动预测任务：
 
 ```
-# -f 取值样本上传upload_sample_files命令返回的Vertical logistic prediction sample files
+# -f 取值样本上传upload_sample_files命令返回的Vertical logistic prediction sample files，-m 取值为训练任务返回的TaskID
 $ sh paddledtx_test.sh start_vl_logistic_predict -f 96140537-8c7a-46cb-b2d3-0540e8cadc0e,abacaded-afdd-419d-bc52-0d90b5641aa2 -m 95104913-c6cc-4520-bab1-2be814f0d81e
 
 # 命令返回

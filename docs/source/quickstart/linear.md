@@ -139,7 +139,7 @@ $ sh paddledtx_test.sh gettaskbyid -i 91d9c0b7-996b-4954-86e8-95048e91a3b8
 发布和启动波士顿房价预测任务：
 
 ```
-# -f 取值样本上传upload_sample_files命令返回的Vertical linear prediction sample files
+# -f 取值样本上传upload_sample_files命令返回的Vertical linear prediction sample files，-m 取值为训练任务返回的TaskID
 $ sh paddledtx_test.sh start_vl_linear_predict -f 9196f040-0743-4ae6-a1aa-b37f08c9bd3b,6d34fa49-5aac-409f-8973-a648d9309378 -m 91d9c0b7-996b-4954-86e8-95048e91a3b8
 
 # 命令返回
