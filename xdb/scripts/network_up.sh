@@ -305,9 +305,12 @@ function stop() {
   # 停止区块链网络
   if [ $BLOCKCHAIN_TYPE = "fabric" ];then
     print_blue "==========> Stop fabric network ..."
-    docker-compose -f ../$TMP_CONF_NAME/blockchain/fabric/docker-compose.yaml down
+    IMAGE_TAG=$IMAGETAG docker-compose -f ../$TMP_CONF_NAME/blockchain/fabric/docker-compose.yaml down
     docker rm -f $(docker ps -a | grep "$CONTRACT_NAME/*" | awk "{print \$1}")
     clearToolContainer
+    # Cleanup chaincode images
+    # 清除链码容器镜像
+    removeChaincodeImages
   else 
     print_blue "==========> Stop xchain network ..."
     docker-compose -f ../$TMP_CONF_NAME/blockchain/xchain/docker-compose.yml down
@@ -317,7 +320,7 @@ function stop() {
   docker run -it --rm \
     -v $(dirname ${PWD}):/workspace \
     golang:1.13.4 sh -c "cd /workspace && rm -rf $TMP_CONF_NAME"
-  yes | docker volume prune
+  docker volume rm $(docker volume ls -qf dangling=true)
   print_green "==========> Xdb network stopped !"
 }
 
@@ -329,6 +332,18 @@ function clearToolContainer() {
     print_blue "==========> Fabric-network-start-tool containers available for deletion ..."
   else
     docker rm -f $CONTAINERID
+  fi
+}
+
+# Delete any images that were generated as a part of this setup
+# specifically the following images are often left behind:
+# 清除链码容器镜像
+function removeChaincodeImages() {
+  DOCKER_IMAGE_IDS=$(docker images | grep "$CONTRACT_NAME/*" | awk "{print \$1}")
+  if [ -z "$DOCKER_IMAGE_IDS" -o "$DOCKER_IMAGE_IDS" == " " ]; then
+    print_blue "==========> No images available for deletion ..."
+  else
+    docker rmi -f $DOCKER_IMAGE_IDS
   fi
 }
 

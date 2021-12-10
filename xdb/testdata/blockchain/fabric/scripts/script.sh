@@ -94,8 +94,8 @@ if [ "${NO_CHAINCODE}" != "true" ]; then
 	echo "Installing chaincode on peer0.org2..."
 	installChaincode 0 2
 
-	# Instantiate chaincode on peer0.org2
-	echo "Instantiating chaincode on peer0.org2..."
+	# Instantiate chaincode on peer0.org1
+	echo "Instantiating chaincode on peer0.org1..."
 	instantiateChaincode 0 1
 	sleep 3
 

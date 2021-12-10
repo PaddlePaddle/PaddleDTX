@@ -369,16 +369,15 @@ function logisticVlTrain() {
 function logisticVlPredict() {
   # List of sample files involved in logistic prediction
   # 纵向逻辑预测所需的预测样本文件
-  paramCheck "$VLLOG_PREDICT_FILES" "Sample files of linear prediction cannot be empty"
+  paramCheck "$VLLOG_PREDICT_FILES" "Sample files of logistic prediction cannot be empty"
   # Training task model ID required for logistic prediction
   # 纵向逻辑预测所需的模型ID
   paramCheck "$LOGISTIC_MODEL_TASKID" "Training task model ID cannot be empty"
-  # Requester published linear training task
+  # Requester published logistic training task
   # 计算需求方发布纵向逻辑预测任务
   result=`docker exec -it executor1.node.com sh -c " 
     ./requester-cli task publish -p $PSI -a $VLLOGALGO -f $VLLOG_PREDICT_FILES -k $REQUESTERKEY -t predict -n $VLLOGTASKPREDICTNAME -c $CONFIG -i $LOGISTIC_MODEL_TASKID
     " | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1'`
-  echo "======> Requester published logistic prediction task: $result "
 
   checkOperateResult "$result"
   echo "======> Requester published logistic prediction task: $result "
