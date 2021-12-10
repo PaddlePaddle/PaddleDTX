@@ -6,7 +6,8 @@ mirrorAddr=registry.baidubce.com/paddledtx
 executorBinary=executor
 executorClientBinary=executor-cli
 requesterClientBinary=requester-cli
-#使用临时容器编译私有化产出，使得工作镜像更精简
+
+# use temporary container to compile output, making working image more simplified
 docker run -it --rm \
     -v ${PWD}:/workspace \
     -v ~/.ssh:/root/.ssh \
