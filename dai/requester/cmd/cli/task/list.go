@@ -14,7 +14,6 @@
 package task
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -61,7 +60,7 @@ var listTasksCmd = &cobra.Command{
 			fmt.Printf("invalid limit, the value must less than %v \n", blockchain.TaskListMaxNum)
 			return
 		}
-		tasks, err := client.ListTask(context.Background(), pubkey, status, startTime, endTime.UnixNano(), limit)
+		tasks, err := client.ListTask(pubkey, status, startTime, endTime.UnixNano(), limit)
 		if err != nil {
 			fmt.Printf("ListTask failed：%v\n", err)
 			return

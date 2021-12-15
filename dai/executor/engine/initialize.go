@@ -61,7 +61,7 @@ func initEngine(conf *config.ExecutorConf) (e *Engine, err error) {
 		return e, err
 	}
 	// get XuperDB instance to upload and download files
-	xuperDB, err := newXuperdb(conf.Storage.XuperDB, node.PrivateKey)
+	xuperDB, err := newXuperDB(conf.Storage.XuperDB, node.PrivateKey)
 	if err != nil {
 		return e, err
 	}
@@ -128,7 +128,7 @@ func newStorage(conf *config.ExecutorStorageConf) (t *storage.Storage, err error
 }
 
 // newXuperDB initiates xuperDB client used to fetch samples
-func newXuperdb(conf *config.XuperDBConf, privateKey ecdsa.PrivateKey) (d handler.XuperDB, err error) {
+func newXuperDB(conf *config.XuperDBConf, privateKey ecdsa.PrivateKey) (d handler.XuperDB, err error) {
 	expiretime := time.Duration(conf.ExpireTime) * time.Hour
 	if expiretime == 0 {
 		expiretime = DefaultFileRetentionTime

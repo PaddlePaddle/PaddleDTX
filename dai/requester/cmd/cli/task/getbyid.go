@@ -14,7 +14,6 @@
 package task
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -34,7 +33,7 @@ var getByIDCmd = &cobra.Command{
 			fmt.Printf("GetRequestClient failed: %v\n", err)
 			return
 		}
-		task, err := client.GetTaskById(context.Background(), id)
+		task, err := client.GetTaskById(id)
 		if err != nil {
 			fmt.Printf("GetTaskById failed：%v\n", err)
 			return

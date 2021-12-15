@@ -41,6 +41,8 @@ github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20211117105727-938628bc17b5 h1:prUP
 github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20211117105727-938628bc17b5/go.mod h1:5Y4gX6XSar8viN/JmmXFu/ybjAIrgojIzvvcUfX8mfA=
 github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20211202083534-81ab838da42e h1:2JxDDcbqJwPVASLDOLuObhqAy35NMwXZKWqy5TfGP9k=
 github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20211202083534-81ab838da42e/go.mod h1:wWtocHF3iUJk8+de6v2DBQm1S1O85FyXHH21fva/hl0=
+github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20211215072908-7e1a97aa66ed h1:NFgEslsl5VYG6uWLtDtRnTKTB2hht+IkJK2OMf1Od2c=
+github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20211215072908-7e1a97aa66ed/go.mod h1:wWtocHF3iUJk8+de6v2DBQm1S1O85FyXHH21fva/hl0=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
 github.com/Shopify/sarama v1.30.0/go.mod h1:zujlQQx1kzHsh4jfV1USnptCQrHAEZ2Hk8fTKCulPVs=
 github.com/Shopify/toxiproxy/v2 v2.1.6-0.20210914104332-15ea381dcdae/go.mod h1:/cvHQkZ1fst0EmZnA5dFtiQdWCNCFYzb+uE2vqVgvx0=

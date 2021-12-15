@@ -14,7 +14,6 @@
 package xchain
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
@@ -23,8 +22,7 @@ import (
 )
 
 // RegisterDataNode registers Executor node to xchain
-func (x *XChain) RegisterDataNode(ctx context.Context,
-	opt *blockchain.AddNodeOptions) error {
+func (x *XChain) RegisterDataNode(opt *blockchain.AddNodeOptions) error {
 	opts, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -41,7 +39,7 @@ func (x *XChain) RegisterDataNode(ctx context.Context,
 }
 
 // ListDataNodes gets all Executor nodes from from xchain
-func (x *XChain) ListDataNodes(ctx context.Context) (blockchain.DataNodes, error) {
+func (x *XChain) ListDataNodes() (blockchain.DataNodes, error) {
 	var nodes blockchain.DataNodes
 	args := map[string]string{}
 	mName := "ListDataNodes"
@@ -57,7 +55,7 @@ func (x *XChain) ListDataNodes(ctx context.Context) (blockchain.DataNodes, error
 }
 
 // GetDataNodeByID gets Executor node by ID
-func (x *XChain) GetDataNodeByID(ctx context.Context, id []byte) (node blockchain.DataNode, err error) {
+func (x *XChain) GetDataNodeByID(id []byte) (node blockchain.DataNode, err error) {
 	args := map[string]string{
 		"id": string(id),
 	}

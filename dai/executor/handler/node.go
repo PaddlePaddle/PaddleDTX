@@ -14,7 +14,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"time"
 
@@ -29,22 +28,22 @@ import (
 )
 
 // Blockchain defines some contract methods
-//  see more from blockchain.xchain
+//  refer blockchain module for more
 type Blockchain interface {
 	// executor operation
-	RegisterDataNode(ctx context.Context, opt *blockchain.AddNodeOptions) error
-	GetDataNodeByID(ctx context.Context, id []byte) (blockchain.DataNode, error)
-	ListDataNodes(ctx context.Context) (blockchain.DataNodes, error)
+	RegisterDataNode(opt *blockchain.AddNodeOptions) error
+	GetDataNodeByID(id []byte) (blockchain.DataNode, error)
+	ListDataNodes() (blockchain.DataNodes, error)
 	// task operation
-	ListTask(ctx context.Context, opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error)
-	PublishTask(ctx context.Context, opt *blockchain.PublishFLTaskOptions) error
-	GetTaskById(ctx context.Context, id string) (blockchain.FLTask, error)
-	ConfirmTask(ctx context.Context, opt *blockchain.FLTaskConfirmOptions) error
-	RejectTask(ctx context.Context, opt *blockchain.FLTaskConfirmOptions) error
-	ExecuteTask(ctx context.Context, opt *blockchain.FLTaskExeStatusOptions) error
-	FinishTask(ctx context.Context, opt *blockchain.FLTaskExeStatusOptions) error
+	ListTask(opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error)
+	PublishTask(opt *blockchain.PublishFLTaskOptions) error
+	GetTaskById(id string) (blockchain.FLTask, error)
+	ConfirmTask(opt *blockchain.FLTaskConfirmOptions) error
+	RejectTask(opt *blockchain.FLTaskConfirmOptions) error
+	ExecuteTask(opt *blockchain.FLTaskExeStatusOptions) error
+	FinishTask(opt *blockchain.FLTaskExeStatusOptions) error
 	// gets file stored in xuperDB by id
-	GetFileByID(ctx context.Context, id string) (xdatachain.File, error)
+	GetFileByID(id string) (xdatachain.File, error)
 
 	Close()
 }
@@ -54,8 +53,8 @@ type Node struct {
 }
 
 // Register registers local node to blockchain
-func (n *Node) Register(ctx context.Context, chain Blockchain) error {
-	if err := n.autoregister(ctx, chain); err != nil {
+func (n *Node) Register(chain Blockchain) error {
+	if err := n.autoRegister(chain); err != nil {
 		logrus.WithError(err).Error("failed to register node into chain")
 		return err
 	}
@@ -63,12 +62,12 @@ func (n *Node) Register(ctx context.Context, chain Blockchain) error {
 	return nil
 }
 
-// autoregister automatically registers executor node on blockchain when server starts
-func (n *Node) autoregister(ctx context.Context, chain Blockchain) error {
+// autoRegister automatically registers executor node on blockchain when server starts
+func (n *Node) autoRegister(chain Blockchain) error {
 	logrus.WithField("module", "handler.node")
 
 	pubkey := ecdsa.PublicKeyFromPrivateKey(n.PrivateKey)
-	if _, err := chain.GetDataNodeByID(ctx, pubkey[:]); err == nil {
+	if _, err := chain.GetDataNodeByID(pubkey[:]); err == nil {
 		logrus.Info("node already registered on blockchain")
 		return nil
 	}
@@ -92,7 +91,7 @@ func (n *Node) autoregister(ctx context.Context, chain Blockchain) error {
 	}
 
 	opt.Signature = sig[:]
-	if err := chain.RegisterDataNode(ctx, &opt); err != nil {
+	if err := chain.RegisterDataNode(&opt); err != nil {
 		logrus.Error("failed to register node automatically")
 		return errorx.Wrap(err, "failed to register node automatically")
 	}

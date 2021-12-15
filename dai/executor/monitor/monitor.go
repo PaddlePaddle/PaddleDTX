@@ -30,8 +30,8 @@ var (
 
 type Blockchain interface {
 	// task operation
-	ListTask(ctx context.Context, opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error)
-	ExecuteTask(ctx context.Context, opt *blockchain.FLTaskExeStatusOptions) error
+	ListTask(opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error)
+	ExecuteTask(opt *blockchain.FLTaskExeStatusOptions) error
 }
 
 type MpcHandler interface {

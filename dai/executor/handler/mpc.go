@@ -45,7 +45,7 @@ var (
 	logger = logrus.WithField("module", "handler.mpc")
 )
 
-// MpcHandler starts mpc-training or mpc-prediction when gets task from blokchain,
+// MpcHandler starts mpc-training or mpc-prediction when gets task from blockchain,
 //  persists the trained models and prediction outcomes.
 type MpcHandler interface {
 	// SaveModel persists a model
@@ -298,7 +298,7 @@ func (m *MpcModelHandler) sendTaskStartRequest(executorHost, taskID string) (err
 // UpdateTaskFinishStatus updates task status in blockchain when task finished
 func (m *MpcModelHandler) UpdateTaskFinishStatus(taskId, taskErr, taskResult string) error {
 	// get task details from chain
-	task, err := m.Chain.GetTaskById(context.TODO(), taskId)
+	task, err := m.Chain.GetTaskById(taskId)
 	if err != nil {
 		return err
 	}
@@ -328,7 +328,7 @@ func (m *MpcModelHandler) UpdateTaskFinishStatus(taskId, taskErr, taskResult str
 		return err
 	}
 	execTaskOptions.Signature = sig[:]
-	if err := m.Chain.FinishTask(context.TODO(), execTaskOptions); err != nil {
+	if err := m.Chain.FinishTask(execTaskOptions); err != nil {
 		return err
 	}
 	return nil
@@ -386,7 +386,7 @@ func (m *MpcModelHandler) SavePredictOut(result *pbCom.PredictTaskResult) error 
 
 	// save prediction result by xuper db
 	r := bytes.NewReader(result.Outcomes)
-	fileId, err := m.XuperDB.Write(context.TODO(), r, result.TaskID+".csv")
+	fileId, err := m.XuperDB.Write(r, result.TaskID+".csv")
 	if err != nil {
 		err := errorx.Wrap(err, "failed to save task predict result into xuper db, taskId: %s", result.TaskID)
 		m.updateTaskStatusAndStopLocalMpc(result.TaskID, err.Error(), "")
@@ -451,7 +451,7 @@ func (m *MpcModelHandler) getTaskParticipantParam(task blockchain.FLTask) (partP
 			if err != nil {
 				return partParam, err
 			}
-			reader, err := m.XuperDB.Read(context.TODO(), dataset.DataID)
+			reader, err := m.XuperDB.Read(dataset.DataID)
 			if err != nil {
 				return partParam, err
 			}
@@ -476,7 +476,7 @@ func (m *MpcModelHandler) getTaskParticipantParam(task blockchain.FLTask) (partP
 
 // getTargetPart determine whether local sample has label by parsing file extra information
 func (m *MpcModelHandler) getTargetPart(fileID, labelName string) (bool, error) {
-	sampleFile, err := m.Chain.GetFileByID(context.TODO(), fileID)
+	sampleFile, err := m.Chain.GetFileByID(fileID)
 	if err != nil {
 		return false, errorx.New(errorx.ErrCodeInternal, "failed to get file")
 	}
