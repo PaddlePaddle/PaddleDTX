@@ -61,7 +61,7 @@ func (c *ChallengingMonitor) loopRequest(ctx context.Context) {
 			TimeEnd:     time.Now().UnixNano(),
 			CurrentTime: time.Now().UnixNano(),
 		}
-		nss, err := c.blockchain.ListFileNs(ctx, &nsopt)
+		nss, err := c.blockchain.ListFileNs(&nsopt)
 		if err != nil {
 			l.WithError(err).Warn("failed to list file ns from blockchain")
 			continue
@@ -90,7 +90,7 @@ func (c *ChallengingMonitor) loopRequest(ctx context.Context) {
 				TimeEnd:     time.Now().UnixNano(),
 				CurrentTime: time.Now().UnixNano(),
 			}
-			files, err = c.blockchain.ListFiles(ctx, &listOpt)
+			files, err = c.blockchain.ListFiles(&listOpt)
 			if err != nil {
 				l.WithError(err).Warn("failed to list files from blockchain")
 				isContinue = true
@@ -114,15 +114,15 @@ func (c *ChallengingMonitor) loopRequest(ctx context.Context) {
 		if len(files) == 0 {
 			continue
 		}
-		if challengeAlgorithm == types.PDPChallengAlgorithm {
-			c.doPDPChallengeRequest(ctx, challengeAlgorithm, files, pubkey, l)
+		if challengeAlgorithm == types.PDPChallengeAlgorithm {
+			c.doPDPChallengeRequest(challengeAlgorithm, files, pubkey, l)
 		} else {
-			c.doMerkleChallengeRequest(ctx, challengeAlgorithm, files, pubkey, l)
+			c.doMerkleChallengeRequest(challengeAlgorithm, files, pubkey, l)
 		}
 	}
 }
 
-func (c *ChallengingMonitor) doPDPChallengeRequest(ctx context.Context, challengeAlgorithm string, files []blockchain.File,
+func (c *ChallengingMonitor) doPDPChallengeRequest(challengeAlgorithm string, files []blockchain.File,
 	pubkey ecdsa.PublicKey, l *logrus.Entry) error {
 
 	// select just one file and nodeID
@@ -167,16 +167,16 @@ func (c *ChallengingMonitor) doPDPChallengeRequest(ctx context.Context, challeng
 
 	// publish challenge request
 	requestOpt := blockchain.ChallengeRequestOptions{
-		ChallengeID:       uuid.NewString(),
-		FileOwner:         pubkey[:],
-		TargetNode:        sliceSelected.NodeID,
-		FileID:            fileSelected.ID,
-		SliceIDs:          sliceIDs,
-		ChallengeTime:     time.Now().UnixNano(),
-		Indices:           indices,
-		Vs:                vs,
-		Sigmas:            sigmas,
-		ChallengAlgorithm: challengeAlgorithm,
+		ChallengeID:        uuid.NewString(),
+		FileOwner:          pubkey[:],
+		TargetNode:         sliceSelected.NodeID,
+		FileID:             fileSelected.ID,
+		SliceIDs:           sliceIDs,
+		ChallengeTime:      time.Now().UnixNano(),
+		Indices:            indices,
+		Vs:                 vs,
+		Sigmas:             sigmas,
+		ChallengeAlgorithm: challengeAlgorithm,
 	}
 
 	// sign request
@@ -192,7 +192,7 @@ func (c *ChallengingMonitor) doPDPChallengeRequest(ctx context.Context, challeng
 	}
 	requestOpt.Sig = sig[:]
 
-	if err := c.blockchain.ChallengeRequest(ctx, &requestOpt); err != nil {
+	if err := c.blockchain.ChallengeRequest(&requestOpt); err != nil {
 		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to publish challenge request")
 		return err
 	}
@@ -205,14 +205,14 @@ func (c *ChallengingMonitor) doPDPChallengeRequest(ctx context.Context, challeng
 	return nil
 }
 
-func (c *ChallengingMonitor) doMerkleChallengeRequest(ctx context.Context, challengeAlgorithm string, files []blockchain.File,
+func (c *ChallengingMonitor) doMerkleChallengeRequest(challengeAlgorithm string, files []blockchain.File,
 	pubkey ecdsa.PublicKey, l *logrus.Entry) error {
 	// select just one slice
 	fileSelected := files[rand.Int()%len(files)]
 	sliceSelected := fileSelected.Slices[rand.Int()%len(fileSelected.Slices)]
 
 	// take one range
-	rangeSelected, err := c.challengeDB.Take(ctx, fileSelected.ID, sliceSelected.ID, sliceSelected.NodeID)
+	rangeSelected, err := c.challengeDB.Take(fileSelected.ID, sliceSelected.ID, sliceSelected.NodeID)
 	if err != nil {
 		if !errors.Is(err, errorx.ErrNotFound) {
 			l.WithError(err).Warn("failed to take range material")
@@ -243,15 +243,15 @@ func (c *ChallengingMonitor) doMerkleChallengeRequest(ctx context.Context, chall
 
 	// publish challenge request
 	requestOpt := blockchain.ChallengeRequestOptions{
-		ChallengeID:       uuid.NewString(),
-		FileOwner:         pubkey[:],
-		TargetNode:        sliceSelected.NodeID,
-		FileID:            fileSelected.ID,
-		SliceID:           sliceSelected.ID,
-		Ranges:            branges,
-		ChallengeTime:     timestamp,
-		HashOfProof:       hashOfProof,
-		ChallengAlgorithm: challengeAlgorithm,
+		ChallengeID:        uuid.NewString(),
+		FileOwner:          pubkey[:],
+		TargetNode:         sliceSelected.NodeID,
+		FileID:             fileSelected.ID,
+		SliceID:            sliceSelected.ID,
+		Ranges:             branges,
+		ChallengeTime:      timestamp,
+		HashOfProof:        hashOfProof,
+		ChallengeAlgorithm: challengeAlgorithm,
 	}
 
 	// sign request
@@ -267,7 +267,7 @@ func (c *ChallengingMonitor) doMerkleChallengeRequest(ctx context.Context, chall
 	}
 	requestOpt.Sig = sig[:]
 
-	if err := c.blockchain.ChallengeRequest(ctx, &requestOpt); err != nil {
+	if err := c.blockchain.ChallengeRequest(&requestOpt); err != nil {
 		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to publish challenge request")
 		return err
 	}

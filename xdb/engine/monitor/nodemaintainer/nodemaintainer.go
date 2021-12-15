@@ -34,11 +34,11 @@ var (
 )
 
 type Blockchain interface {
-	AddNode(ctx context.Context, opt *blockchain.AddNodeOptions) error
-	GetNode(ctx context.Context, id []byte) (blockchain.Node, error)
-	NodeOnline(ctx context.Context, opt *blockchain.NodeOperateOptions) error
-	Heartbeat(ctx context.Context, id, sig []byte, timestamp int64) error
-	ListNodesExpireSlice(ctx context.Context, opt *blockchain.ListNodeSliceOptions) ([]string, error)
+	AddNode(opt *blockchain.AddNodeOptions) error
+	GetNode(id []byte) (blockchain.Node, error)
+	NodeOnline(opt *blockchain.NodeOperateOptions) error
+	Heartbeat(id, sig []byte, timestamp int64) error
+	ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error)
 }
 
 type SliceStorage interface {
@@ -123,13 +123,13 @@ func (m *NodeMaintainer) StopHeartBeat() {
 }
 
 // NodeAutoRegister storage-node automatically register in blockchain
-func (m *NodeMaintainer) NodeAutoRegister(ctx context.Context) error {
-	return m.autoregister(ctx)
+func (m *NodeMaintainer) NodeAutoRegister() error {
+	return m.autoRegister()
 }
 
 // StartFileClear starts task to clear files
 func (m *NodeMaintainer) StartFileClear(ctx context.Context) {
-	go m.sliceclear(ctx)
+	go m.sliceClear(ctx)
 }
 
 // StopFileClear stops task clearing files

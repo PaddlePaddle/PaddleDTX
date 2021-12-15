@@ -95,16 +95,13 @@ func (s *Server) read(ictx iris.Context) {
 func (s *Server) push(ictx iris.Context) {
 	sliceID := ictx.URLParam("slice_id")
 	sourceId := ictx.URLParam("source_id")
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
 
 	opt := etype.PushOptions{
 		SliceID:  sliceID,
 		SourceId: sourceId,
 	}
 
-	_, err := s.handler.Push(ctx, opt, ictx.Request().Body)
+	_, err := s.handler.Push(opt, ictx.Request().Body)
 	if err != nil {
 		responseError(ictx, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to push slice"))
 		return
@@ -121,10 +118,6 @@ func (s *Server) pull(ictx iris.Context) {
 	timestamp := ictx.URLParamUint64("timestamp")
 	sig := ictx.URLParam("signature")
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-
 	opt := etype.PullOptions{
 		SliceID:   sliceID,
 		FileID:    fileId,
@@ -132,7 +125,7 @@ func (s *Server) pull(ictx iris.Context) {
 		Signature: sig,
 	}
 
-	resultReader, err := s.handler.Pull(ctx, opt)
+	resultReader, err := s.handler.Pull(opt)
 	if err != nil {
 		responseError(ictx, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to pull slice"))
 		return
@@ -151,11 +144,8 @@ func (s *Server) addNode(ictx iris.Context) {
 		Online:  true,
 		Token:   ictx.URLParam("token"),
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
 
-	if err := s.handler.AddNode(ctx, req); err != nil {
+	if err := s.handler.AddNode(req); err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to addnode"))
 		return
 	}
@@ -165,10 +155,7 @@ func (s *Server) addNode(ictx iris.Context) {
 
 // listNodes list storage nodes
 func (s *Server) listNodes(ictx iris.Context) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-	resp, err := s.handler.ListNodes(ctx)
+	resp, err := s.handler.ListNodes()
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to list nodes"))
 		return
@@ -180,11 +167,7 @@ func (s *Server) listNodes(ictx iris.Context) {
 func (s *Server) getNode(ictx iris.Context) {
 	id := ictx.URLParam("id")
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-
-	resp, err := s.handler.GetNode(ctx, []byte(id))
+	resp, err := s.handler.GetNode([]byte(id))
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to getnode"))
 		return
@@ -205,11 +188,7 @@ func (s *Server) nodeOffline(ictx iris.Context) {
 		Token:  ictx.URLParam("token"),
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-
-	if err := s.handler.NodeOffline(ctx, req); err != nil {
+	if err := s.handler.NodeOffline(req); err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to take node offline"))
 		return
 	}
@@ -228,11 +207,7 @@ func (s *Server) nodeOnline(ictx iris.Context) {
 		Token:  ictx.URLParam("token"),
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-
-	if err := s.handler.NodeOnline(ctx, req); err != nil {
+	if err := s.handler.NodeOnline(req); err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to take node online"))
 		return
 	}
@@ -248,11 +223,7 @@ func (s *Server) getMRecord(ictx iris.Context) {
 		Limit:     ictx.URLParamUint64("limit"),
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-
-	resp, err := s.handler.GetSliceMigrateRecords(ctx, opt)
+	resp, err := s.handler.GetSliceMigrateRecords(opt)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to list slice migrate records"))
 		return
@@ -269,11 +240,7 @@ func (s *Server) getHeartbeatNum(ictx iris.Context) {
 	id := ictx.URLParam("id")
 	ctime := ictx.URLParamInt64Default("ctime", 0)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-
-	heartBeatTotal, heartBeatMax, err := s.handler.GetHeartbeatNum(ctx, []byte(id), ctime)
+	heartBeatTotal, heartBeatMax, err := s.handler.GetHeartbeatNum([]byte(id), ctime)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to getnode heartbeat num"))
 		return
@@ -305,10 +272,8 @@ func (s *Server) listFiles(ictx iris.Context) {
 		CurrentTime: ictx.URLParamInt64Default("ctime", time.Now().UnixNano()),
 		Limit:       ictx.URLParamUint64("limit"),
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-	resp, err := s.handler.ListFiles(ctx, req)
+
+	resp, err := s.handler.ListFiles(req)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to list files"))
 		return
@@ -336,10 +301,8 @@ func (s *Server) listExpiredFiles(ictx iris.Context) {
 		CurrentTime: ictx.URLParamInt64Default("ctime", time.Now().UnixNano()),
 		Limit:       ictx.URLParamUint64("limit"),
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-	resp, err := s.handler.ListExpiredFiles(ctx, req)
+
+	resp, err := s.handler.ListExpiredFiles(req)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to list expired files"))
 		return
@@ -430,11 +393,7 @@ func (s *Server) addFileNs(ictx iris.Context) {
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-
-	lresp, err := s.handler.ListNodes(ctx)
+	lresp, err := s.handler.ListNodes()
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to list nodes"))
 		return
@@ -451,7 +410,7 @@ func (s *Server) addFileNs(ictx iris.Context) {
 		CreateTime:  addTime,
 		Token:       ictx.URLParam("token"),
 	}
-	err = s.handler.AddFileNs(ctx, req)
+	err = s.handler.AddFileNs(req)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to add file ns"))
 		return
@@ -459,7 +418,7 @@ func (s *Server) addFileNs(ictx iris.Context) {
 	responseJSON(ictx, "success")
 }
 
-// updateNsReplica update file namespace relica
+// updateNsReplica update file namespace replica
 func (s *Server) updateNsReplica(ictx iris.Context) {
 	cTime, err := ictx.URLParamInt64("ctime")
 	if err != nil {
@@ -507,10 +466,8 @@ func (s *Server) listFileNs(ictx iris.Context) {
 		TimeEnd:   ictx.URLParamInt64Default("end", time.Now().UnixNano()),
 		Limit:     ictx.URLParamUint64("limit"),
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-	resp, err := s.handler.ListFileNs(ctx, req)
+
+	resp, err := s.handler.ListFileNs(req)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to listfiles"))
 		return
@@ -562,10 +519,7 @@ func (s *Server) getSysHealth(ictx iris.Context) {
 // getChallengeById get challenge by challenge id
 func (s *Server) getChallengeById(ictx iris.Context) {
 	id := ictx.URLParam("id")
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-	resp, err := s.handler.GetChallengeById(ctx, id)
+	resp, err := s.handler.GetChallengeById(id)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to get challenge by id"))
 		return
@@ -596,10 +550,8 @@ func (s *Server) getToProveChallenges(ictx iris.Context) {
 		TimeEnd:    ictx.URLParamInt64Default("end", time.Now().UnixNano()),
 		Limit:      ictx.URLParamUint64("limit"),
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-	resp, err := s.handler.GetChallenges(ctx, opt)
+
+	resp, err := s.handler.GetChallenges(opt)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to get proves challenge"))
 		return
@@ -631,10 +583,7 @@ func (s *Server) getProvedChallenges(ictx iris.Context) {
 		Limit:      ictx.URLParamUint64("limit"),
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-	resp, err := s.handler.GetChallenges(ctx, opt)
+	resp, err := s.handler.GetChallenges(opt)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to get proves challenge"))
 		return
@@ -665,10 +614,8 @@ func (s *Server) getFailedChallenges(ictx iris.Context) {
 		TimeEnd:    ictx.URLParamInt64Default("end", time.Now().UnixNano()),
 		Limit:      ictx.URLParamUint64("limit"),
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-	resp, err := s.handler.GetChallenges(ctx, opt)
+
+	resp, err := s.handler.GetChallenges(opt)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to get failed challenge"))
 		return
@@ -680,10 +627,7 @@ func (s *Server) getFailedChallenges(ictx iris.Context) {
 func (s *Server) getNodeHealth(ictx iris.Context) {
 	id := []byte(ictx.URLParam("id"))
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ictx.OnConnectionClose(func(iris.Context) { cancel() })
-	resp, err := s.handler.GetNodeHealth(ctx, id)
+	resp, err := s.handler.GetNodeHealth(id)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to get node health status"))
 		return

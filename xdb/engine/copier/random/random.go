@@ -179,7 +179,7 @@ func (m *RandomCopier) ReplicaExpansion(ctx context.Context, opt *copier.Replica
 				Length:     es.Length,
 				NodeID:     es.NodeID,
 			}
-			if challengeAlgorithm == types.PDPChallengAlgorithm {
+			if challengeAlgorithm == types.PDPChallengeAlgorithm {
 				// 4 gets SliceIdx
 				sindex := getNodeSliceIdx(opt.SliceMetas, string(es.NodeID))
 				// 5 generates messages about PDP(Proof of Data Possession) challenge

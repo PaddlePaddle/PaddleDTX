@@ -13,8 +13,6 @@
 
 package types
 
-import "context"
-
 type Range struct {
 	Start uint64
 	End   uint64
@@ -44,10 +42,10 @@ type AnswerCalculateOptions struct {
 }
 
 type MaterialStorage interface {
-	Save(ctx context.Context, cms []Material) error
-	Load(ctx context.Context, key []byte) (Material, error)
-	NewIterator(ctx context.Context, prefix []byte) ([][]byte, error)
-	Update(ctx context.Context, cms Material, key []byte) error
+	Save(cms []Material) error
+	Load(key []byte) (Material, error)
+	NewIterator(prefix []byte) ([][]byte, error)
+	Update(cms Material, key []byte) error
 
 	Close()
 }

@@ -26,19 +26,19 @@ import (
 
 // HealthChain defines several contract/chaincode methods related to file/nodes health
 type HealthChain interface {
-	ListNodes(ctx context.Context) (blockchain.Nodes, error)
-	GetNode(ctx context.Context, id []byte) (blockchain.Node, error)
-	GetNodeHealth(ctx context.Context, id []byte) (string, error)
-	GetHeartbeatNum(ctx context.Context, id []byte, timestamp int64) (int, error)
+	ListNodes() (blockchain.Nodes, error)
+	GetNode(id []byte) (blockchain.Node, error)
+	GetNodeHealth(id []byte) (string, error)
+	GetHeartbeatNum(id []byte, timestamp int64) (int, error)
 
-	ListFiles(ctx context.Context, opt *blockchain.ListFileOptions) ([]blockchain.File, error)
-	ListFileNs(ctx context.Context, opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
+	ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)
+	ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
 }
 
 // GetHealthNodes gets online healthy(green, yellow) nodes
-func GetHealthNodes(ctx context.Context, chain HealthChain) (nodes blockchain.NodeHs, err error) {
+func GetHealthNodes(chain HealthChain) (nodes blockchain.NodeHs, err error) {
 	// Prepare
-	allNodes, err := chain.ListNodes(ctx)
+	allNodes, err := chain.ListNodes()
 	if err != nil {
 		return nodes, errorx.Wrap(err, "failed to list nodes from blockchain")
 	}
@@ -48,7 +48,7 @@ func GetHealthNodes(ctx context.Context, chain HealthChain) (nodes blockchain.No
 			continue
 		}
 		// judge node health
-		health, err := chain.GetNodeHealth(ctx, n.ID)
+		health, err := chain.GetNodeHealth(n.ID)
 		if err != nil || blockchain.NodeHealthBad == health {
 			continue
 		}
@@ -104,7 +104,7 @@ func GetNsFilesHealth(ctx context.Context, ns blockchain.Namespace, chain Health
 		TimeEnd:     time.Now().UnixNano(),
 		CurrentTime: time.Now().UnixNano(),
 	}
-	files, err := chain.ListFiles(ctx, &listOpt)
+	files, err := chain.ListFiles(&listOpt)
 	if err != nil {
 		return nsh, errorx.Wrap(err, "failed to list file on blockchain")
 	}
@@ -187,7 +187,7 @@ func GetFileHealth(ctx context.Context, chain HealthChain, file blockchain.File,
 		// concurrent to get slice health
 		go func(nodes []string) {
 			defer wg.Done()
-			shealth, err := GetSliceAvgHealth(ctx, nodes, fileHealthNodes)
+			shealth, err := GetSliceAvgHealth(nodes, fileHealthNodes)
 			if err != nil {
 				return
 			}
@@ -203,7 +203,7 @@ func GetFileHealth(ctx context.Context, chain HealthChain, file blockchain.File,
 
 	greenSln := 0
 	for _, h := range sliceH {
-		// file cannot recover
+		// file cannot be recovered
 		if h == blockchain.NodeHealthBad {
 			return h, nil
 		}
@@ -222,7 +222,7 @@ func GetFileHealth(ctx context.Context, chain HealthChain, file blockchain.File,
 }
 
 // GetSliceAvgHealth get slice health status
-func GetSliceAvgHealth(ctx context.Context, nodes []string, fhns map[string]string) (health string, err error) {
+func GetSliceAvgHealth(nodes []string, fhns map[string]string) (health string, err error) {
 	var nhlist []string
 	for _, node := range nodes {
 		if _, exist := fhns[node]; !exist {
@@ -287,7 +287,7 @@ func GetFileSysHealth(ctx context.Context, nss []blockchain.Namespace, nodes blo
 		}
 		go func(n blockchain.Node) {
 			defer wg.Done()
-			status, err := chain.GetNodeHealth(ctx, n.ID)
+			status, err := chain.GetNodeHealth(n.ID)
 			if err != nil {
 				isErr = err
 				return
@@ -351,7 +351,7 @@ func getFileNodesHealth(ctx context.Context, nodes []string, chain HealthChain) 
 		// concurrent to get node health
 		go func(node string) {
 			defer wg.Done()
-			enh, err := chain.GetNodeHealth(ctx, []byte(node))
+			enh, err := chain.GetNodeHealth([]byte(node))
 			if err != nil {
 				isErr = err
 				return

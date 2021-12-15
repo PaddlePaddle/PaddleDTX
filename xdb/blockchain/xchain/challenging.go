@@ -14,7 +14,6 @@
 package xchain
 
 import (
-	"context"
 	"encoding/json"
 	"strconv"
 
@@ -23,8 +22,7 @@ import (
 )
 
 // ListChallengeRequests lists all challenge requests on blockchain
-func (x *XChain) ListChallengeRequests(ctx context.Context,
-	opt *blockchain.ListChallengeOptions) ([]blockchain.Challenge, error) {
+func (x *XChain) ListChallengeRequests(opt *blockchain.ListChallengeOptions) ([]blockchain.Challenge, error) {
 
 	opts, err := json.Marshal(*opt)
 	if err != nil {
@@ -48,8 +46,7 @@ func (x *XChain) ListChallengeRequests(ctx context.Context,
 }
 
 // ChallengeRequest sets a challenge request on chain
-func (x *XChain) ChallengeRequest(ctx context.Context,
-	opt *blockchain.ChallengeRequestOptions) error {
+func (x *XChain) ChallengeRequest(opt *blockchain.ChallengeRequestOptions) error {
 
 	opts, err := json.Marshal(*opt)
 	if err != nil {
@@ -67,8 +64,7 @@ func (x *XChain) ChallengeRequest(ctx context.Context,
 }
 
 // ChallengeAnswer sets a challenge answer on chain
-func (x *XChain) ChallengeAnswer(ctx context.Context,
-	opt *blockchain.ChallengeAnswerOptions) ([]byte, error) {
+func (x *XChain) ChallengeAnswer(opt *blockchain.ChallengeAnswerOptions) ([]byte, error) {
 
 	opts, err := json.Marshal(*opt)
 	if err != nil {
@@ -87,8 +83,7 @@ func (x *XChain) ChallengeAnswer(ctx context.Context,
 }
 
 // GetChallengeById gets a challenge by ID
-func (x *XChain) GetChallengeById(ctx context.Context,
-	id string) (blockchain.Challenge, error) {
+func (x *XChain) GetChallengeById(id string) (blockchain.Challenge, error) {
 
 	var c blockchain.Challenge
 	args := map[string]string{
@@ -108,8 +103,7 @@ func (x *XChain) GetChallengeById(ctx context.Context,
 }
 
 // GetChallengeNum gets challenge number given filter
-func (x *XChain) GetChallengeNum(ctx context.Context,
-	opt *blockchain.GetChallengeNumOptions) (uint64, error) {
+func (x *XChain) GetChallengeNum(opt *blockchain.GetChallengeNumOptions) (uint64, error) {
 
 	opts, err := json.Marshal(*opt)
 	if err != nil {

@@ -110,16 +110,16 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 
 	// make challenge
 	c := blockchain.Challenge{
-		ID:                opt.ChallengeID,
-		FileOwner:         opt.FileOwner,
-		TargetNode:        opt.TargetNode,
-		FileID:            opt.FileID,
-		Status:            blockchain.ChallengeToProve,
-		ChallengeTime:     opt.ChallengeTime,
-		ChallengAlgorithm: opt.ChallengAlgorithm,
+		ID:                 opt.ChallengeID,
+		FileOwner:          opt.FileOwner,
+		TargetNode:         opt.TargetNode,
+		FileID:             opt.FileID,
+		Status:             blockchain.ChallengeToProve,
+		ChallengeTime:      opt.ChallengeTime,
+		ChallengeAlgorithm: opt.ChallengeAlgorithm,
 	}
 
-	if opt.ChallengAlgorithm == "PDP" {
+	if opt.ChallengeAlgorithm == "PDP" {
 		if err := x.pdpOptCheck(opt); err != nil {
 			return code.Error(err)
 		}
@@ -128,7 +128,7 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 		c.Sigmas = opt.Sigmas
 		c.Vs = opt.Vs
 
-	} else if opt.ChallengAlgorithm == "Merkle" {
+	} else if opt.ChallengeAlgorithm == "Merkle" {
 		if err := x.merkleOptCheck(opt); err != nil {
 			return code.Error(err)
 		}
@@ -136,7 +136,7 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 		c.Ranges = opt.Ranges
 		c.HashOfProof = opt.HashOfProof
 	} else {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param:opt-challengAlgorithm"))
+		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param:opt-challengeAlgorithm"))
 	}
 
 	// marshal challenge
@@ -212,7 +212,7 @@ func (x *Xdata) ChallengeAnswer(ctx code.Context) code.Response {
 
 	// sig verification
 	var verifyErr error
-	if c.ChallengAlgorithm == "PDP" {
+	if c.ChallengeAlgorithm == "PDP" {
 		if err := x.pdpAnswerOptCheck(opt, c); err != nil {
 			return code.Error(err)
 		}
@@ -224,7 +224,7 @@ func (x *Xdata) ChallengeAnswer(ctx code.Context) code.Response {
 			verifyErr = errorx.NewCode(e, errorx.ErrCodeCrypto, "verification failed")
 			c.Status = blockchain.ChallengeFailed
 		}
-	} else if c.ChallengAlgorithm == "Merkle" {
+	} else if c.ChallengeAlgorithm == "Merkle" {
 		if err := x.merkleAnswerOptCheck(opt, c); err != nil {
 			return code.Error(err)
 		}
@@ -246,7 +246,7 @@ func (x *Xdata) ChallengeAnswer(ctx code.Context) code.Response {
 			c.Status = blockchain.ChallengeFailed
 		}
 	} else {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param:opt-challengAlgorithm"))
+		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param:opt-challengeAlgorithm"))
 	}
 
 	// marshal challenge
@@ -334,16 +334,16 @@ func (x *Xdata) GetChallengeNum(ctx code.Context) code.Response {
 func (x *Xdata) pdpOptCheck(opt blockchain.ChallengeRequestOptions) error {
 	// sig verification
 	challengeOpt := blockchain.ChallengeRequestOptions{
-		ChallengeID:       opt.ChallengeID,
-		FileOwner:         opt.FileOwner,
-		TargetNode:        opt.TargetNode,
-		FileID:            opt.FileID,
-		SliceIDs:          opt.SliceIDs,
-		ChallengeTime:     opt.ChallengeTime,
-		Indices:           opt.Indices,
-		Vs:                opt.Vs,
-		Sigmas:            opt.Sigmas,
-		ChallengAlgorithm: opt.ChallengAlgorithm,
+		ChallengeID:        opt.ChallengeID,
+		FileOwner:          opt.FileOwner,
+		TargetNode:         opt.TargetNode,
+		FileID:             opt.FileID,
+		SliceIDs:           opt.SliceIDs,
+		ChallengeTime:      opt.ChallengeTime,
+		Indices:            opt.Indices,
+		Vs:                 opt.Vs,
+		Sigmas:             opt.Sigmas,
+		ChallengeAlgorithm: opt.ChallengeAlgorithm,
 	}
 	content, err := json.Marshal(challengeOpt)
 	if err != nil {
@@ -365,15 +365,15 @@ func (x *Xdata) pdpOptCheck(opt blockchain.ChallengeRequestOptions) error {
 func (x *Xdata) merkleOptCheck(opt blockchain.ChallengeRequestOptions) error {
 	// sig verification
 	challengeOpt := blockchain.ChallengeRequestOptions{
-		ChallengeID:       opt.ChallengeID,
-		FileOwner:         opt.FileOwner,
-		TargetNode:        opt.TargetNode,
-		FileID:            opt.FileID,
-		SliceID:           opt.SliceID,
-		Ranges:            opt.Ranges,
-		ChallengeTime:     opt.ChallengeTime,
-		HashOfProof:       opt.HashOfProof,
-		ChallengAlgorithm: opt.ChallengAlgorithm,
+		ChallengeID:        opt.ChallengeID,
+		FileOwner:          opt.FileOwner,
+		TargetNode:         opt.TargetNode,
+		FileID:             opt.FileID,
+		SliceID:            opt.SliceID,
+		Ranges:             opt.Ranges,
+		ChallengeTime:      opt.ChallengeTime,
+		HashOfProof:        opt.HashOfProof,
+		ChallengeAlgorithm: opt.ChallengeAlgorithm,
 	}
 
 	content, err := json.Marshal(challengeOpt)

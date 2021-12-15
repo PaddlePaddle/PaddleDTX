@@ -37,18 +37,16 @@ var xchainClient = new(fl_crypto.XchainCryptoClient)
 type MerkleChallenger interface {
 	Setup(sliceData []byte, rangeAmount int) ([]ctype.RangeHash, error)
 	NewSetup(sliceData []byte, rangeAmount int, merkleMaterialQueue chan<- ctype.Material, cm ctype.Material) error
-	Save(ctx context.Context, cms []ctype.Material) error
-	Take(ctx context.Context, fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
+	Save(cms []ctype.Material) error
+	Take(fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
 
 	GetChallengeConf() (string, types.PDP)
 }
 
 // ChallengeEncryptor defines encryptor for file encryption and decryption when adding more merkle challenges
 type ChallengeEncryptor interface {
-	Encrypt(ctx context.Context, r io.Reader, opt *encryptor.EncryptOptions) (
-		encryptor.EncryptedSlice, error)
-	Recover(ctx context.Context, r io.Reader, opt *encryptor.RecoverOptions) (
-		[]byte, error)
+	Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (encryptor.EncryptedSlice, error)
+	Recover(r io.Reader, opt *encryptor.RecoverOptions) ([]byte, error)
 }
 
 // GetMCRange generate and save more merkle challenges
@@ -83,9 +81,9 @@ func GetAddFileMCRange(challenger MerkleChallenger, fileID string, es encryptor.
 }
 
 // SaveMerkleChallenger save challenge material
-func SaveMerkleChallenger(ctx context.Context, challenger MerkleChallenger, challengingMaterial []ctype.Material) error {
+func SaveMerkleChallenger(challenger MerkleChallenger, challengingMaterial []ctype.Material) error {
 	// Write challenging meta
-	if err := challenger.Save(ctx, challengingMaterial); err != nil {
+	if err := challenger.Save(challengingMaterial); err != nil {
 		return errorx.Wrap(err, "failed to save challenging materials")
 	}
 	return nil
@@ -95,7 +93,7 @@ func SaveMerkleChallenger(ctx context.Context, challenger MerkleChallenger, chal
 func AddFileNewMerkleChallenge(ctx context.Context, challenger MerkleChallenger, chain HealthChain, copier MigrateCopier,
 	chalEncryptor ChallengeEncryptor, file blockchain.File, startTime, interval int64, logger *logrus.Entry) error {
 	var challengingMaterial []ctype.Material
-	nodes, err := GetHealthNodes(ctx, chain)
+	nodes, err := GetHealthNodes(chain)
 	if err != nil {
 		return err
 	}
@@ -163,7 +161,7 @@ func AddFileNewMerkleChallenge(ctx context.Context, challenger MerkleChallenger,
 						SliceID: target.ID,
 						NodeID:  newNode.ID,
 					}
-					plain, err := chalEncryptor.Recover(ctx, r, opt)
+					plain, err := chalEncryptor.Recover(r, opt)
 					if err != nil {
 						logger.WithField("node_id", n).WithError(err).Warn("failed to recover slice from other node")
 						r.Close()
@@ -175,7 +173,7 @@ func AddFileNewMerkleChallenge(ctx context.Context, challenger MerkleChallenger,
 						SliceID: target.ID,
 						NodeID:  target.NodeID,
 					}
-					cipher, err := chalEncryptor.Encrypt(ctx, bytes.NewReader(plain), encOpt)
+					cipher, err := chalEncryptor.Encrypt(bytes.NewReader(plain), encOpt)
 					if err != nil {
 						logger.WithField("node_id", string(target.NodeID)).WithError(err).Warn("failed to encrypt slice by target node")
 						continue
@@ -200,14 +198,14 @@ func AddFileNewMerkleChallenge(ctx context.Context, challenger MerkleChallenger,
 	if len(file.Slices) != len(challengingMaterial) {
 		return errorx.New(errorx.ErrCodeInternal, "failed to add new merkle challenges, slices number and challenge material number not equal")
 	}
-	if err := SaveMerkleChallenger(ctx, challenger, challengingMaterial); err != nil {
+	if err := SaveMerkleChallenger(challenger, challengingMaterial); err != nil {
 		return err
 	}
 	return nil
 }
 
 // AddSlicesNewMerkleChallenge add merkle challenges for a storage node when slice migrates to new node
-func AddSlicesNewMerkleChallenge(ctx context.Context, challenger MerkleChallenger, copier MigrateCopier, file blockchain.File,
+func AddSlicesNewMerkleChallenge(challenger MerkleChallenger, copier MigrateCopier, file blockchain.File,
 	expandSlices []encryptor.EncryptedSlice, interval int64, logger *logrus.Entry) error {
 	var challengingMaterial []ctype.Material
 
@@ -233,7 +231,7 @@ func AddSlicesNewMerkleChallenge(ctx context.Context, challenger MerkleChallenge
 	if len(expandSlices) != len(challengingMaterial) {
 		return errorx.New(errorx.ErrCodeInternal, "failed to add new slice merkle challenge")
 	}
-	if err := SaveMerkleChallenger(ctx, challenger, challengingMaterial); err != nil {
+	if err := SaveMerkleChallenger(challenger, challengingMaterial); err != nil {
 		return errorx.Wrap(err, "save merkle challenge error")
 	}
 	logger.WithFields(logrus.Fields{

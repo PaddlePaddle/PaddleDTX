@@ -15,7 +15,6 @@ package engine
 
 import (
 	"bytes"
-	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -33,7 +32,7 @@ import (
 )
 
 // packChainFile rearranges the encrypted slices and calculates the digest that will be sent onto blockchain later
-func (e *Engine) packChainFile(fileID, challengAlgorithm string, opt types.WriteOptions, originalSlices slicer.SliceMetas,
+func (e *Engine) packChainFile(fileID, challengeAlgorithm string, opt types.WriteOptions, originalSlices slicer.SliceMetas,
 	originalLen int, encryptedSlices []encryptor.EncryptedSlice, pdp types.PDP) (blockchain.File, error) {
 
 	sliceIdxMap := make(map[string]int)
@@ -48,7 +47,7 @@ func (e *Engine) packChainFile(fileID, challengAlgorithm string, opt types.Write
 			NodeID:     s.NodeID,
 			CipherHash: s.CipherHash,
 		}
-		if challengAlgorithm == types.PDPChallengAlgorithm {
+		if challengeAlgorithm == types.PDPChallengeAlgorithm {
 			// denote slice index for each node (for pdp challenge)
 			nodeStr := base64.StdEncoding.EncodeToString(s.NodeID)
 			if _, ok := sliceIdxMap[nodeStr]; !ok {
@@ -88,7 +87,7 @@ func (e *Engine) packChainFile(fileID, challengAlgorithm string, opt types.Write
 		ExpireTime:  opt.ExpireTime,
 		Ext:         []byte(opt.Extra),
 	}
-	if challengAlgorithm == types.PDPChallengAlgorithm {
+	if challengeAlgorithm == types.PDPChallengeAlgorithm {
 		chainFile.PdpPubkey = pdp.PdpPubkey
 		chainFile.RandU = pdp.RandU
 		chainFile.RandV = pdp.RandV
@@ -111,7 +110,7 @@ func (e *Engine) packChainFileStructure(originalSlices slicer.SliceMetas) ([]byt
 		return nil, err
 	}
 	// encrypt structure
-	encStruct, err := e.encryptor.Encrypt(context.TODO(), bytes.NewReader(raw), &encryptor.EncryptOptions{})
+	encStruct, err := e.encryptor.Encrypt(bytes.NewReader(raw), &encryptor.EncryptOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +120,7 @@ func (e *Engine) packChainFileStructure(originalSlices slicer.SliceMetas) ([]byt
 // recoverChainFileStructure get file structure from blockchain and decrypt it
 func (e *Engine) recoverChainFileStructure(bs []byte) (blockchain.FileStructure, error) {
 	// decrypt structure
-	decStruct, err := e.encryptor.Recover(context.TODO(), bytes.NewReader(bs), &encryptor.RecoverOptions{})
+	decStruct, err := e.encryptor.Recover(bytes.NewReader(bs), &encryptor.RecoverOptions{})
 	if err != nil {
 		return nil, err
 	}

@@ -14,7 +14,6 @@
 package fabric
 
 import (
-	"context"
 	"encoding/json"
 	"strconv"
 	"time"
@@ -24,8 +23,7 @@ import (
 )
 
 // PublishFile publishes file onto fabric
-func (f *Fabric) PublishFile(ctx context.Context,
-	opt *blockchain.PublishFileOptions) error {
+func (f *Fabric) PublishFile(opt *blockchain.PublishFileOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -39,7 +37,7 @@ func (f *Fabric) PublishFile(ctx context.Context,
 }
 
 // GetFileByName gets file by name from fabric
-func (f *Fabric) GetFileByName(ctx context.Context, owner []byte, ns, name string) (blockchain.File, error) {
+func (f *Fabric) GetFileByName(owner []byte, ns, name string) (blockchain.File, error) {
 	var file blockchain.File
 
 	args := [][]byte{owner, []byte(ns), []byte(name), []byte(strconv.FormatInt(time.Now().UnixNano(), 10))}
@@ -55,7 +53,7 @@ func (f *Fabric) GetFileByName(ctx context.Context, owner []byte, ns, name strin
 }
 
 // GetFileByID gets file by id from fabric
-func (f *Fabric) GetFileByID(ctx context.Context, id string) (blockchain.File, error) {
+func (f *Fabric) GetFileByID(id string) (blockchain.File, error) {
 	var file blockchain.File
 	args := [][]byte{[]byte(id), []byte(strconv.FormatInt(time.Now().UnixNano(), 10))}
 	s, err := f.QueryContract(args, "GetFileByID")
@@ -71,7 +69,7 @@ func (f *Fabric) GetFileByID(ctx context.Context, id string) (blockchain.File, e
 }
 
 // UpdateFileExpireTime updates file expiration time
-func (f *Fabric) UpdateFileExpireTime(ctx context.Context, opt *blockchain.UpdatExptimeOptions) (blockchain.File, error) {
+func (f *Fabric) UpdateFileExpireTime(opt *blockchain.UpdateExptimeOptions) (blockchain.File, error) {
 	var file blockchain.File
 	s, err := json.Marshal(*opt)
 	if err != nil {
@@ -90,7 +88,7 @@ func (f *Fabric) UpdateFileExpireTime(ctx context.Context, opt *blockchain.Updat
 }
 
 // UpdateNsFilesCap updates namespace files struct size
-func (f *Fabric) UpdateNsFilesCap(ctx context.Context, opt *blockchain.UpdateNsFilesCapOptions) (ns blockchain.Namespace, err error) {
+func (f *Fabric) UpdateNsFilesCap(opt *blockchain.UpdateNsFilesCapOptions) (ns blockchain.Namespace, err error) {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return ns, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal UpdateNsFilesCapOptions")
@@ -106,7 +104,7 @@ func (f *Fabric) UpdateNsFilesCap(ctx context.Context, opt *blockchain.UpdateNsF
 }
 
 // AddFileNs adds file namespace
-func (f *Fabric) AddFileNs(ctx context.Context, opt *blockchain.AddNsOptions) error {
+func (f *Fabric) AddFileNs(opt *blockchain.AddNsOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -120,7 +118,7 @@ func (f *Fabric) AddFileNs(ctx context.Context, opt *blockchain.AddNsOptions) er
 }
 
 // UpdateNsReplica updates file namespace replica
-func (f *Fabric) UpdateNsReplica(ctx context.Context, opt *blockchain.UpdateNsReplicaOptions) error {
+func (f *Fabric) UpdateNsReplica(opt *blockchain.UpdateNsReplicaOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal UpdateNsReplicaOptions")
@@ -133,7 +131,7 @@ func (f *Fabric) UpdateNsReplica(ctx context.Context, opt *blockchain.UpdateNsRe
 }
 
 // UpdateFilePublicSliceMeta is used to update file public slice metas
-func (f *Fabric) UpdateFilePublicSliceMeta(ctx context.Context, opt *blockchain.UpdateFilePSMOptions) error {
+func (f *Fabric) UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -147,7 +145,7 @@ func (f *Fabric) UpdateFilePublicSliceMeta(ctx context.Context, opt *blockchain.
 }
 
 // SliceMigrateRecord is used by node to slice migration record
-func (f *Fabric) SliceMigrateRecord(ctx context.Context, id, sig []byte, fid, sid string, ctime int64) error {
+func (f *Fabric) SliceMigrateRecord(id, sig []byte, fid, sid string, ctime int64) error {
 	args := [][]byte{id, []byte(fid), []byte(sid), sig, []byte(strconv.FormatInt(ctime, 10))}
 	if _, err := f.InvokeContract(args, "SliceMigrateRecord"); err != nil {
 		return err
@@ -156,7 +154,7 @@ func (f *Fabric) SliceMigrateRecord(ctx context.Context, id, sig []byte, fid, si
 }
 
 // ListFileNs lists file namespaces by owner
-func (f *Fabric) ListFileNs(ctx context.Context, opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error) {
+func (f *Fabric) ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error) {
 	var ns []blockchain.Namespace
 	opts, err := json.Marshal(*opt)
 	if err != nil {
@@ -175,7 +173,7 @@ func (f *Fabric) ListFileNs(ctx context.Context, opt *blockchain.ListNsOptions) 
 }
 
 // GetNsByName gets namespace by nsName from fabric
-func (f *Fabric) GetNsByName(ctx context.Context, owner []byte, name string) (blockchain.Namespace, error) {
+func (f *Fabric) GetNsByName(owner []byte, name string) (blockchain.Namespace, error) {
 	var ns blockchain.Namespace
 	args := [][]byte{owner, []byte(name)}
 	s, err := f.QueryContract(args, "GetNsByName")
@@ -191,8 +189,7 @@ func (f *Fabric) GetNsByName(ctx context.Context, owner []byte, name string) (bl
 }
 
 // ListFiles lists files from fabric
-func (f *Fabric) ListFiles(ctx context.Context, opt *blockchain.ListFileOptions) (
-	[]blockchain.File, error) {
+func (f *Fabric) ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error) {
 	var fs []blockchain.File
 
 	opts, err := json.Marshal(*opt)
@@ -213,8 +210,7 @@ func (f *Fabric) ListFiles(ctx context.Context, opt *blockchain.ListFileOptions)
 }
 
 // ListExpiredFiles lists expired but valid files
-func (f *Fabric) ListExpiredFiles(ctx context.Context, opt *blockchain.ListFileOptions) (
-	[]blockchain.File, error) {
+func (f *Fabric) ListExpiredFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error) {
 	var fs []blockchain.File
 
 	opts, err := json.Marshal(*opt)

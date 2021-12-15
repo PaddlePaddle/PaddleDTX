@@ -14,7 +14,6 @@
 package xchain
 
 import (
-	"context"
 	"encoding/json"
 	"strconv"
 	"time"
@@ -24,8 +23,7 @@ import (
 )
 
 // PublishFile publishes file on xchain
-func (x *XChain) PublishFile(ctx context.Context,
-	opt *blockchain.PublishFileOptions) error {
+func (x *XChain) PublishFile(opt *blockchain.PublishFileOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -42,8 +40,7 @@ func (x *XChain) PublishFile(ctx context.Context,
 }
 
 // GetFileByName gets file by name from xchain
-func (x *XChain) GetFileByName(ctx context.Context,
-	owner []byte, ns, name string) (blockchain.File, error) {
+func (x *XChain) GetFileByName(owner []byte, ns, name string) (blockchain.File, error) {
 	var f blockchain.File
 	args := map[string]string{
 		"owner":       string(owner),
@@ -65,7 +62,7 @@ func (x *XChain) GetFileByName(ctx context.Context,
 }
 
 // GetFileByID gets file by id from xchain
-func (x *XChain) GetFileByID(ctx context.Context, id string) (blockchain.File, error) {
+func (x *XChain) GetFileByID(id string) (blockchain.File, error) {
 	var f blockchain.File
 	args := map[string]string{
 		"id":          id,
@@ -86,7 +83,7 @@ func (x *XChain) GetFileByID(ctx context.Context, id string) (blockchain.File, e
 }
 
 // UpdateFileExpireTime updates file expiration time
-func (x *XChain) UpdateFileExpireTime(ctx context.Context, opt *blockchain.UpdatExptimeOptions) (blockchain.File, error) {
+func (x *XChain) UpdateFileExpireTime(opt *blockchain.UpdateExptimeOptions) (blockchain.File, error) {
 	var file blockchain.File
 	s, err := json.Marshal(*opt)
 	if err != nil {
@@ -108,7 +105,7 @@ func (x *XChain) UpdateFileExpireTime(ctx context.Context, opt *blockchain.Updat
 }
 
 // UpdateNsFilesCap updates ns files struct size
-func (x *XChain) UpdateNsFilesCap(ctx context.Context, opt *blockchain.UpdateNsFilesCapOptions) (ns blockchain.Namespace, err error) {
+func (x *XChain) UpdateNsFilesCap(opt *blockchain.UpdateNsFilesCapOptions) (ns blockchain.Namespace, err error) {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return ns, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal UpdateNsFilesCapOptions")
@@ -128,7 +125,7 @@ func (x *XChain) UpdateNsFilesCap(ctx context.Context, opt *blockchain.UpdateNsF
 }
 
 // AddFileNs adds file namespace
-func (x *XChain) AddFileNs(ctx context.Context, opt *blockchain.AddNsOptions) error {
+func (x *XChain) AddFileNs(opt *blockchain.AddNsOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -145,7 +142,7 @@ func (x *XChain) AddFileNs(ctx context.Context, opt *blockchain.AddNsOptions) er
 }
 
 // UpdateNsReplica updates file namespace replica
-func (x *XChain) UpdateNsReplica(ctx context.Context, opt *blockchain.UpdateNsReplicaOptions) error {
+func (x *XChain) UpdateNsReplica(opt *blockchain.UpdateNsReplicaOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -162,7 +159,7 @@ func (x *XChain) UpdateNsReplica(ctx context.Context, opt *blockchain.UpdateNsRe
 }
 
 // UpdateFilePublicSliceMeta is used to update file public slice metas
-func (x *XChain) UpdateFilePublicSliceMeta(ctx context.Context, opt *blockchain.UpdateFilePSMOptions) error {
+func (x *XChain) UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -179,7 +176,7 @@ func (x *XChain) UpdateFilePublicSliceMeta(ctx context.Context, opt *blockchain.
 }
 
 // SliceMigrateRecord is used by node to slice migration record
-func (x *XChain) SliceMigrateRecord(ctx context.Context, id, sig []byte, fid, sid string, ctime int64) error {
+func (x *XChain) SliceMigrateRecord(id, sig []byte, fid, sid string, ctime int64) error {
 	args := map[string]string{
 		"nodeId":      string(id),
 		"fileId":      fid,
@@ -195,7 +192,7 @@ func (x *XChain) SliceMigrateRecord(ctx context.Context, id, sig []byte, fid, si
 }
 
 // ListFileNs lists file namespaces by owner
-func (x *XChain) ListFileNs(ctx context.Context, opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error) {
+func (x *XChain) ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error) {
 	var ns []blockchain.Namespace
 	opts, err := json.Marshal(*opt)
 	if err != nil {
@@ -218,7 +215,7 @@ func (x *XChain) ListFileNs(ctx context.Context, opt *blockchain.ListNsOptions) 
 }
 
 // GetNsByName gets namespace by nsName from xchain
-func (x *XChain) GetNsByName(ctx context.Context, owner []byte, name string) (blockchain.Namespace, error) {
+func (x *XChain) GetNsByName(owner []byte, name string) (blockchain.Namespace, error) {
 	var ns blockchain.Namespace
 	args := map[string]string{
 		"owner": string(owner),
@@ -238,8 +235,7 @@ func (x *XChain) GetNsByName(ctx context.Context, owner []byte, name string) (bl
 }
 
 // ListFiles lists files from xchain
-func (x *XChain) ListFiles(ctx context.Context, opt *blockchain.ListFileOptions) (
-	[]blockchain.File, error) {
+func (x *XChain) ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error) {
 	var fs []blockchain.File
 
 	opts, err := json.Marshal(*opt)
@@ -264,8 +260,7 @@ func (x *XChain) ListFiles(ctx context.Context, opt *blockchain.ListFileOptions)
 }
 
 // ListExpiredFiles lists expired but valid files
-func (x *XChain) ListExpiredFiles(ctx context.Context, opt *blockchain.ListFileOptions) (
-	[]blockchain.File, error) {
+func (x *XChain) ListExpiredFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error) {
 	var fs []blockchain.File
 
 	opts, err := json.Marshal(*opt)

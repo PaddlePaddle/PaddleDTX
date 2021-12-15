@@ -31,30 +31,30 @@ type Handler interface {
 	Write(context.Context, etype.WriteOptions, io.Reader) (etype.WriteResponse, error)
 	Read(context.Context, etype.ReadOptions) (io.ReadCloser, error)
 
-	ListFiles(context.Context, etype.ListFileOptions) ([]blockchain.File, error)
-	ListExpiredFiles(context.Context, etype.ListFileOptions) ([]blockchain.File, error)
+	ListFiles(etype.ListFileOptions) ([]blockchain.File, error)
+	ListExpiredFiles(etype.ListFileOptions) ([]blockchain.File, error)
 	GetFileByID(ctx context.Context, id string) (file blockchain.FileH, err error)
 	GetFileByName(ctx context.Context, owner []byte, ns, name string) (file blockchain.FileH, err error)
 	UpdateFileExpireTime(ctx context.Context, opt etype.UpdateFileEtimeOptions) error
-	AddFileNs(ctx context.Context, opt etype.AddNsOptions) error
+	AddFileNs(opt etype.AddNsOptions) error
 	UpdateNsReplica(ctx context.Context, opt etype.UpdateNsOptions) error
-	ListFileNs(ctx context.Context, opt etype.ListNsOptions) ([]blockchain.Namespace, error)
+	ListFileNs(opt etype.ListNsOptions) ([]blockchain.Namespace, error)
 	GetNsByName(ctx context.Context, owner []byte, name string) (blockchain.NamespaceH, error)
 	GetFileSysHealth(ctx context.Context, owner []byte) (blockchain.FileSysHealth, error)
-	GetChallengeById(ctx context.Context, id string) (blockchain.Challenge, error)
-	GetChallenges(ctx context.Context, opt blockchain.ListChallengeOptions) ([]blockchain.Challenge, error)
+	GetChallengeById(id string) (blockchain.Challenge, error)
+	GetChallenges(opt blockchain.ListChallengeOptions) ([]blockchain.Challenge, error)
 
-	Push(context.Context, etype.PushOptions, io.Reader) (etype.PushResponse, error)
-	Pull(context.Context, etype.PullOptions) (io.ReadCloser, error)
+	Push(etype.PushOptions, io.Reader) (etype.PushResponse, error)
+	Pull(etype.PullOptions) (io.ReadCloser, error)
 
-	AddNode(context.Context, etype.AddNodeOptions) error
-	ListNodes(context.Context) (blockchain.Nodes, error)
-	GetNode(context.Context, []byte) (blockchain.Node, error)
-	GetHeartbeatNum(context.Context, []byte, int64) (int, int, error)
-	GetNodeHealth(context.Context, []byte) (string, error)
-	NodeOffline(context.Context, etype.NodeOfflineOptions) error
-	NodeOnline(context.Context, etype.NodeOnlineOptions) error
-	GetSliceMigrateRecords(ctx context.Context, opt *blockchain.NodeSliceMigrateOptions) (string, error)
+	AddNode(etype.AddNodeOptions) error
+	ListNodes() (blockchain.Nodes, error)
+	GetNode([]byte) (blockchain.Node, error)
+	GetHeartbeatNum([]byte, int64) (int, int, error)
+	GetNodeHealth([]byte) (string, error)
+	NodeOffline(etype.NodeOfflineOptions) error
+	NodeOnline(etype.NodeOnlineOptions) error
+	GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error)
 }
 
 // Server http server
@@ -84,7 +84,7 @@ func (s *Server) setRoute(serverType string) (err error) {
 	v1 := s.app.Party("/v1")
 	nodeParty := v1.Party("/node")
 	switch serverType {
-	// storage
+	// storage node
 	case config.NodeTypeStorage:
 		sliceParty := v1.Party("/slice")
 		sliceParty.Post("/push", s.push)
@@ -98,7 +98,7 @@ func (s *Server) setRoute(serverType string) (err error) {
 		nodeParty.Post("/online", s.nodeOnline)
 		nodeParty.Get("/getmrecord", s.getMRecord)
 		nodeParty.Get("/gethbnum", s.getHeartbeatNum)
-	// dataOwner
+	// dataOwner node
 	case config.NodeTypeDataOwner:
 		fileParty := v1.Party("/file")
 		fileParty.Post("/write", s.write)

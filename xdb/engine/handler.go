@@ -14,7 +14,6 @@
 package engine
 
 import (
-	"context"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -29,7 +28,7 @@ import (
 
 // Push receive slices from others
 // rewriting a slice is not allowed
-func (e *Engine) Push(ctx context.Context, opt types.PushOptions, r io.Reader) (
+func (e *Engine) Push(opt types.PushOptions, r io.Reader) (
 	types.PushResponse, error) {
 
 	exist, err := e.storage.Exist(opt.SliceID)
@@ -55,13 +54,13 @@ func (e *Engine) Push(ctx context.Context, opt types.PushOptions, r io.Reader) (
 }
 
 // Pull serve local slices
-func (e *Engine) Pull(ctx context.Context, opt types.PullOptions) (io.ReadCloser, error) {
+func (e *Engine) Pull(opt types.PullOptions) (io.ReadCloser, error) {
 	//check timestamp
 	var requestExpiredTime time.Duration = 5 * time.Minute
 	if int64(opt.Timestamp) < (time.Now().UnixNano() - requestExpiredTime.Nanoseconds()) {
 		return nil, errorx.New(errorx.ErrCodeParam, "request has expired")
 	}
-	file, err := e.chain.GetFileByID(ctx, opt.FileID)
+	file, err := e.chain.GetFileByID(opt.FileID)
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"file_id": opt.FileID,

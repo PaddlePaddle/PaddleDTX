@@ -121,7 +121,7 @@ type Challenge struct {
 	Ranges      []Range
 	HashOfProof []byte
 
-	ChallengAlgorithm string // challenge algorithm
+	ChallengeAlgorithm string // challenge algorithm
 
 	Status        string // challenge status
 	ChallengeTime int64  // challenge publish time
@@ -165,7 +165,7 @@ type ChallengeRequestOptions struct {
 	SliceID string
 	Ranges  []Range
 
-	ChallengAlgorithm string
+	ChallengeAlgorithm string
 
 	HashOfProof []byte
 }
@@ -214,7 +214,7 @@ type NodeOperateOptions struct {
 	Nonce  int64
 }
 
-type UpdatExptimeOptions struct {
+type UpdateExptimeOptions struct {
 	FileId        string
 	NewExpireTime int64
 	CurrentTime   int64
@@ -252,14 +252,14 @@ type AddNsOptions struct {
 }
 
 type Namespace struct {
-	Name          string
-	Description   string
-	Owner         []byte
-	Replica       int
-	FilesStruSize int
-	FileTotalNum  int64
-	CreateTime    int64
-	UpdateTime    int64
+	Name            string
+	Description     string
+	Owner           []byte
+	Replica         int
+	FilesStructSize int
+	FileTotalNum    int64
+	CreateTime      int64
+	UpdateTime      int64
 }
 
 type NamespaceH struct {

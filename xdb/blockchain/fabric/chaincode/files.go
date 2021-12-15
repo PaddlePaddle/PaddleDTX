@@ -77,7 +77,7 @@ func (x *xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"failed to unmarshal namespace").Error())
 	}
-	if (ns.FilesStruSize + len(s)) >= blockchain.ContractMessageMaxSize {
+	if (ns.FilesStructSize + len(s)) >= blockchain.ContractMessageMaxSize {
 		return shim.Error(errorx.New(errorx.ErrCodeParam,
 			"files struct size of ns larger than max, please upload file using new ns").Error())
 	}
@@ -115,7 +115,7 @@ func (x *xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 	// update file num of fileNsIndex
 	ns.FileTotalNum += 1
 	ns.UpdateTime = f.PublishTime
-	ns.FilesStruSize += len(s)
+	ns.FilesStructSize += len(s)
 	nsf, err := json.Marshal(ns)
 	if err != nil {
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -163,7 +163,7 @@ func (x *xdata) AddFileNs(stub shim.ChaincodeStubInterface, args []string) pb.Re
 	ns := opt.Namespace
 	s, err := json.Marshal(ns)
 	if err != nil {
-		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal File").Error())
+		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal namespace").Error())
 	}
 	// verify sig
 	err = x.checkSign(opt.Signature, ns.Owner, s)
@@ -378,14 +378,14 @@ func (x *xdata) GetFileByID(stub shim.ChaincodeStubInterface, args []string) pb.
 // UpdateFileExpireTime updates file expiration time
 func (x *xdata) UpdateFileExpireTime(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 1 {
-		return shim.Error("invalid arguments. expecting UpdatExptimeOptions")
+		return shim.Error("invalid arguments. expecting UpdateExptimeOptions")
 	}
 
 	// unmarshal opt
-	var opt blockchain.UpdatExptimeOptions
+	var opt blockchain.UpdateExptimeOptions
 	if err := json.Unmarshal([]byte(args[0]), &opt); err != nil {
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
-			"failed to unmarshal UpdatExptimeOptions").Error())
+			"failed to unmarshal UpdateExptimeOptions").Error())
 	}
 	//get file from id
 	f, err := x.getFileById(stub, opt.FileId)
@@ -756,11 +756,11 @@ func (x *xdata) getNsNewStructSize(stub shim.ChaincodeStubInterface, nsr []byte,
 			nsFileStructSize += len(fs)
 		}
 	}
-	if bns.FilesStruSize == nsFileStructSize {
+	if bns.FilesStructSize == nsFileStructSize {
 		return nil, errorx.New(errorx.ErrCodeAlreadyUpdate,
 			"ns-struct-size is already updated, not need to modify again")
 	}
-	bns.FilesStruSize = nsFileStructSize
+	bns.FilesStructSize = nsFileStructSize
 	bns.UpdateTime = ctime
 
 	s, err = json.Marshal(bns)

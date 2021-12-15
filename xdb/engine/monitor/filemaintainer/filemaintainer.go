@@ -43,37 +43,35 @@ type Copier interface {
 	Push(ctx context.Context, id, sourceId string, r io.Reader, node *blockchain.Node) error
 	Pull(ctx context.Context, id, fileId string, node *blockchain.Node) (io.ReadCloser, error)
 	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc common.MigrateEncryptor,
-		challengAlgorithm, sourceId, fileId string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
+		challengeAlgorithm, sourceId, fileId string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
 }
 
 type Encryptor interface {
-	Encrypt(ctx context.Context, r io.Reader, opt *encryptor.EncryptOptions) (
-		encryptor.EncryptedSlice, error)
-	Recover(ctx context.Context, r io.Reader, opt *encryptor.RecoverOptions) (
-		[]byte, error)
+	Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (encryptor.EncryptedSlice, error)
+	Recover(r io.Reader, opt *encryptor.RecoverOptions) ([]byte, error)
 }
 
 type Blockchain interface {
-	PublishFile(ctx context.Context, file *blockchain.PublishFileOptions) error
-	ListFiles(ctx context.Context, opt *blockchain.ListFileOptions) ([]blockchain.File, error)
-	GetFileByID(ctx context.Context, id string) (blockchain.File, error)
-	UpdateNsFilesCap(ctx context.Context, opt *blockchain.UpdateNsFilesCapOptions) (blockchain.Namespace, error)
-	ListFileNs(ctx context.Context, opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
-	UpdateFilePublicSliceMeta(ctx context.Context, opt *blockchain.UpdateFilePSMOptions) error
-	SliceMigrateRecord(ctx context.Context, nodeID, sig []byte, fileID, sliceID string, ctime int64) error
+	PublishFile(file *blockchain.PublishFileOptions) error
+	ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)
+	GetFileByID(id string) (blockchain.File, error)
+	UpdateNsFilesCap(opt *blockchain.UpdateNsFilesCapOptions) (blockchain.Namespace, error)
+	ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
+	UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions) error
+	SliceMigrateRecord(nodeID, sig []byte, fileID, sliceID string, ctime int64) error
 
-	ListNodes(ctx context.Context) (blockchain.Nodes, error)
-	GetNode(ctx context.Context, id []byte) (blockchain.Node, error)
-	GetNodeHealth(ctx context.Context, id []byte) (string, error)
-	GetHeartbeatNum(ctx context.Context, id []byte, timestamp int64) (int, error)
+	ListNodes() (blockchain.Nodes, error)
+	GetNode(id []byte) (blockchain.Node, error)
+	GetNodeHealth(id []byte) (string, error)
+	GetHeartbeatNum(id []byte, timestamp int64) (int, error)
 }
 
 type Challenger interface {
 	// merkle Challenge
 	Setup(sliceData []byte, rangeAmount int) ([]ctype.RangeHash, error)
 	NewSetup(sliceData []byte, rangeAmount int, merkleMaterialQueue chan<- ctype.Material, cm ctype.Material) error
-	Save(ctx context.Context, cms []ctype.Material) error
-	Take(ctx context.Context, fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
+	Save(cms []ctype.Material) error
+	Take(fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
 
 	GetChallengeConf() (string, types.PDP)
 	Close()
