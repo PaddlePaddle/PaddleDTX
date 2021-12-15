@@ -14,7 +14,6 @@
 package xchain
 
 import (
-	"context"
 	"encoding/json"
 	"strconv"
 	"strings"
@@ -26,7 +25,7 @@ import (
 )
 
 // AddNode adds a node to xchain
-func (x *XChain) AddNode(ctx context.Context, opt *blockchain.AddNodeOptions) error {
+func (x *XChain) AddNode(opt *blockchain.AddNodeOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -43,7 +42,7 @@ func (x *XChain) AddNode(ctx context.Context, opt *blockchain.AddNodeOptions) er
 }
 
 // ListNodes gets all nodes from xchain
-func (x *XChain) ListNodes(ctx context.Context) (blockchain.Nodes, error) {
+func (x *XChain) ListNodes() (blockchain.Nodes, error) {
 	var nodes blockchain.Nodes
 	args := map[string]string{}
 	mName := "ListNodes"
@@ -59,7 +58,7 @@ func (x *XChain) ListNodes(ctx context.Context) (blockchain.Nodes, error) {
 }
 
 // GetNode gets node by id
-func (x *XChain) GetNode(ctx context.Context, id []byte) (node blockchain.Node, err error) {
+func (x *XChain) GetNode(id []byte) (node blockchain.Node, err error) {
 	args := map[string]string{
 		"id": string(id),
 	}
@@ -76,7 +75,7 @@ func (x *XChain) GetNode(ctx context.Context, id []byte) (node blockchain.Node, 
 }
 
 // setNodeOnlineStatus sets node status online/offline
-func (x *XChain) setNodeOnlineStatus(ctx context.Context, opt *blockchain.NodeOperateOptions, online bool) error {
+func (x *XChain) setNodeOnlineStatus(opt *blockchain.NodeOperateOptions, online bool) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal NodeOperateOptions")
@@ -97,17 +96,17 @@ func (x *XChain) setNodeOnlineStatus(ctx context.Context, opt *blockchain.NodeOp
 }
 
 // NodeOffline set node status on chain to offline
-func (x *XChain) NodeOffline(ctx context.Context, opt *blockchain.NodeOperateOptions) error {
-	return x.setNodeOnlineStatus(ctx, opt, false)
+func (x *XChain) NodeOffline(opt *blockchain.NodeOperateOptions) error {
+	return x.setNodeOnlineStatus(opt, false)
 }
 
 // NodeOnline set node status on chain to online
-func (x *XChain) NodeOnline(ctx context.Context, opt *blockchain.NodeOperateOptions) error {
-	return x.setNodeOnlineStatus(ctx, opt, true)
+func (x *XChain) NodeOnline(opt *blockchain.NodeOperateOptions) error {
+	return x.setNodeOnlineStatus(opt, true)
 }
 
 // Heartbeat updates heartbeat of node
-func (x *XChain) Heartbeat(ctx context.Context, id, sig []byte, timestamp int64) error {
+func (x *XChain) Heartbeat(id, sig []byte, timestamp int64) error {
 	args := map[string]string{
 		"id":            string(id),
 		"signature":     string(sig),
@@ -122,7 +121,7 @@ func (x *XChain) Heartbeat(ctx context.Context, id, sig []byte, timestamp int64)
 }
 
 // GetHeartbeatNum gets heartbeat number by time
-func (x *XChain) GetHeartbeatNum(ctx context.Context, id []byte, timestamp int64) (int, error) {
+func (x *XChain) GetHeartbeatNum(id []byte, timestamp int64) (int, error) {
 	args := map[string]string{
 		"id":          string(id),
 		"currentTime": strconv.FormatInt(common.TodayBeginning(timestamp), 10),
@@ -140,7 +139,7 @@ func (x *XChain) GetHeartbeatNum(ctx context.Context, id []byte, timestamp int64
 }
 
 // GetSliceMigrateRecords get node slice migration records
-func (x *XChain) GetSliceMigrateRecords(ctx context.Context, opt *blockchain.NodeSliceMigrateOptions) (string, error) {
+func (x *XChain) GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error) {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return "", errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -158,7 +157,7 @@ func (x *XChain) GetSliceMigrateRecords(ctx context.Context, opt *blockchain.Nod
 }
 
 // ListFiles lists expired slices from xchain
-func (x *XChain) ListNodesExpireSlice(ctx context.Context, opt *blockchain.ListNodeSliceOptions) ([]string, error) {
+func (x *XChain) ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error) {
 	var sliceL []string
 
 	opts, err := json.Marshal(*opt)
@@ -184,9 +183,9 @@ func (x *XChain) ListNodesExpireSlice(ctx context.Context, opt *blockchain.ListN
 }
 
 // GetNodeHealth gets node health status
-func (x *XChain) GetNodeHealth(ctx context.Context, id []byte) (string, error) {
+func (x *XChain) GetNodeHealth(id []byte) (string, error) {
 	now := time.Now().UnixNano()
-	node, err := x.GetNode(ctx, id)
+	node, err := x.GetNode(id)
 	if err != nil {
 		return "", err
 	}
@@ -199,14 +198,14 @@ func (x *XChain) GetNodeHealth(ctx context.Context, id []byte) (string, error) {
 		TimeStart:  start,
 		TimeEnd:    end,
 	}
-	all, err := x.GetChallengeNum(ctx, &numOpt)
+	all, err := x.GetChallengeNum(&numOpt)
 	if err != nil {
 		return "", err
 	}
 	provedRation := blockchain.DefaultChallProvedRate
 	if all != 0 {
 		numOpt.Status = blockchain.ChallengeProved
-		proved, err := x.GetChallengeNum(ctx, &numOpt)
+		proved, err := x.GetChallengeNum(&numOpt)
 		if err != nil {
 			return "", err
 		}
@@ -217,7 +216,7 @@ func (x *XChain) GetNodeHealth(ctx context.Context, id []byte) (string, error) {
 
 	heartBeatRate := blockchain.DefaultHearBeatRate
 	if heartBeaMax != 0 {
-		hearBeatTotal, err := common.GetHeartBeatTotalNumByTime(ctx, x, id, start, end)
+		hearBeatTotal, err := common.GetHeartBeatTotalNumByTime(x, id, start, end)
 		if err != nil {
 			return "", err
 		}

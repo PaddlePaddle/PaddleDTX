@@ -14,7 +14,6 @@
 package common
 
 import (
-	"context"
 	"sync"
 	"time"
 
@@ -47,7 +46,7 @@ func ToNodeHsMap(nodes blockchain.NodeHs) map[string]blockchain.Node {
 }
 
 // GetHeartbeatNum get heart beat number of a storage node from blockchain
-func GetHeartbeatNum(ctx context.Context, chain HealthChain, id []byte, ts []int64) (int, error) {
+func GetHeartbeatNum(chain HealthChain, id []byte, ts []int64) (int, error) {
 	hearBeatTotal := 0
 	wg := sync.WaitGroup{}
 	wg.Add(len(ts))
@@ -58,7 +57,7 @@ func GetHeartbeatNum(ctx context.Context, chain HealthChain, id []byte, ts []int
 		// concurrent to get heartbeat num
 		go func(t int64) {
 			defer wg.Done()
-			n, err := chain.GetHeartbeatNum(ctx, id, t)
+			n, err := chain.GetHeartbeatNum(id, t)
 			if err != nil && !errorx.Is(err, errorx.ErrCodeNotFound) {
 				hErr = err
 				return
@@ -98,7 +97,7 @@ func GetHeartBeatStats(now, regTime int64) (int64, int64) {
 }
 
 // GetHeartBeatTotalNumByTime get total heart beat number of a storage node during given time period
-func GetHeartBeatTotalNumByTime(ctx context.Context, chain HealthChain, id []byte, start, end int64) (int, error) {
+func GetHeartBeatTotalNumByTime(chain HealthChain, id []byte, start, end int64) (int, error) {
 	t := start
 
 	var ts []int64
@@ -107,7 +106,7 @@ func GetHeartBeatTotalNumByTime(ctx context.Context, chain HealthChain, id []byt
 		ts = append(ts, t)
 		t += int64(24 * time.Hour)
 	}
-	heartBeatTotal, err := GetHeartbeatNum(ctx, chain, id, ts)
+	heartBeatTotal, err := GetHeartbeatNum(chain, id, ts)
 	if err != nil && !errorx.Is(err, errorx.ErrCodeNotFound) {
 		return 0, err
 	}

@@ -14,7 +14,6 @@
 package pdp
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"math"
@@ -58,7 +57,7 @@ func New(conf *config.ChallengerPdpConf, privkey ecdsa.PrivateKey) (*RandChallen
 	rc := &RandChallenger{
 		privateKey:         privkey,
 		maxIndexNum:        maxIdx,
-		challengeAlgorithm: types.PDPChallengAlgorithm,
+		challengeAlgorithm: types.PDPChallengeAlgorithm,
 	}
 
 	pdpConfig := types.PDP{}
@@ -160,12 +159,12 @@ func (m *RandChallenger) Setup(sliceData []byte, rangeAmount int) (c []ctype.Ran
 }
 
 // Save not implemented for random challenge
-func (m *RandChallenger) Save(ctx context.Context, cms []ctype.Material) error {
+func (m *RandChallenger) Save(cms []ctype.Material) error {
 	return errorx.New(errorx.ErrCodeInternal, "pdp not implemented method Save")
 }
 
 // Take not implemented for random challenge
-func (m *RandChallenger) Take(ctx context.Context, fileID string, sliceID string, nodeID []byte) (c ctype.RangeHash, err error) {
+func (m *RandChallenger) Take(fileID string, sliceID string, nodeID []byte) (c ctype.RangeHash, err error) {
 	return c, errorx.New(errorx.ErrCodeInternal, "pdp not implemented method Take")
 }
 

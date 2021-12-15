@@ -35,7 +35,7 @@ import (
 
 // MigrateChain defines several contract/chaincode methods related to file migration
 type MigrateChain interface {
-	UpdateFilePublicSliceMeta(ctx context.Context, opt *blockchain.UpdateFilePSMOptions) error
+	UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions) error
 }
 
 // MigrateCopier defines slice copier when migrating a file
@@ -48,10 +48,8 @@ type MigrateCopier interface {
 
 // MigrateEncryptor defines encryptor for file encryption and decryption when migrating a file
 type MigrateEncryptor interface {
-	Encrypt(ctx context.Context, r io.Reader, opt *encryptor.EncryptOptions) (
-		encryptor.EncryptedSlice, error)
-	Recover(ctx context.Context, r io.Reader, opt *encryptor.RecoverOptions) (
-		[]byte, error)
+	Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (encryptor.EncryptedSlice, error)
+	Recover(r io.Reader, opt *encryptor.RecoverOptions) ([]byte, error)
 }
 
 // PullAndDec pull a slice from healthy node and decrypt
@@ -85,7 +83,7 @@ func PullAndDec(ctx context.Context, copier MigrateCopier, encrypt MigrateEncryp
 		SliceID: slice.ID,
 		NodeID:  node.ID,
 	}
-	return encrypt.Recover(ctx, bytes.NewReader(cipherText), &decOpt)
+	return encrypt.Recover(bytes.NewReader(cipherText), &decOpt)
 }
 
 // EncAndPush encrypt a slice and push to specified storage node
@@ -96,7 +94,7 @@ func EncAndPush(ctx context.Context, copier MigrateCopier, encrypt MigrateEncryp
 		SliceID: sliceID,
 		NodeID:  node.ID,
 	}
-	es, err := encrypt.Encrypt(ctx, bytes.NewReader(plaintext), &encOpt)
+	es, err := encrypt.Encrypt(bytes.NewReader(plaintext), &encOpt)
 	if err != nil {
 		return es, err
 	}
@@ -116,11 +114,11 @@ func GetSigmaISliceIdx(ciphertext []byte, sliceIdx int, pdp types.PDP) (sigmaI [
 
 // ExpandFileSlices expand each slice to specific replica
 func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp MigrateCopier, enc MigrateEncryptor, chain MigrateChain,
-	challegener MerkleChallenger, file blockchain.File, nodesMap map[string]blockchain.Node, replica int,
+	challenger MerkleChallenger, file blockchain.File, nodesMap map[string]blockchain.Node, replica int,
 	healthNodes blockchain.NodeHs, interval int64, l *logrus.Entry) error {
 
 	slices := file.Slices
-	ca, pdp := challegener.GetChallengeConf()
+	ca, pdp := challenger.GetChallengeConf()
 	oldSliceLen := len(slices)
 	slice := GetSliceNodes(slices, nodesMap)
 	var expandSlices []encryptor.EncryptedSlice
@@ -138,7 +136,7 @@ func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp MigrateC
 			PrivateKey:    privkey[:],
 			SliceMetas:    slices,
 		}
-		if ca == types.PDPChallengAlgorithm {
+		if ca == types.PDPChallengeAlgorithm {
 			opt.PDP = pdp
 		}
 		nss, ess, err := cp.ReplicaExpansion(ctx, opt, enc, ca, hex.EncodeToString(file.Owner), file.ID)
@@ -153,7 +151,7 @@ func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp MigrateC
 				continue
 			}
 		}
-		if ca == types.MerkleChallengAlgorithm {
+		if ca == types.MerkleChallengeAlgorithm {
 			expandSlices = append(expandSlices, ess...)
 		}
 		slices = append(slices, nss...)
@@ -177,8 +175,8 @@ func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp MigrateC
 		return errorx.Wrap(err, "failed to marshal slices")
 	}
 	// save merkle expand slice
-	if ca == types.MerkleChallengAlgorithm {
-		if err := AddSlicesNewMerkleChallenge(ctx, challegener, cp, file, expandSlices, interval, l); err != nil {
+	if ca == types.MerkleChallengeAlgorithm {
+		if err := AddSlicesNewMerkleChallenge(challenger, cp, file, expandSlices, interval, l); err != nil {
 			l.WithFields(logrus.Fields{
 				"file_id":       file.ID,
 				"new_replica":   replica,
@@ -193,7 +191,7 @@ func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp MigrateC
 		Slices:    slices,
 		Signature: sig[:],
 	}
-	err = chain.UpdateFilePublicSliceMeta(ctx, &opt)
+	err = chain.UpdateFilePublicSliceMeta(&opt)
 	if err != nil {
 		l.WithFields(logrus.Fields{
 			"file_id":     file.ID,

@@ -47,10 +47,8 @@ type Slicer interface {
 
 // Encryptor encrypts data and decrypts encoded data
 type Encryptor interface {
-	Encrypt(ctx context.Context, r io.Reader, opt *encryptor.EncryptOptions) (
-		encryptor.EncryptedSlice, error)
-	Recover(ctx context.Context, r io.Reader, opt *encryptor.RecoverOptions) (
-		[]byte, error)
+	Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (encryptor.EncryptedSlice, error)
+	Recover(r io.Reader, opt *encryptor.RecoverOptions) ([]byte, error)
 }
 
 // Challenger generates challenge requests as dataOwner-node for storage-nodes to answer
@@ -63,8 +61,8 @@ type Challenger interface {
 	// merkle Challenge
 	Setup(sliceData []byte, rangeAmount int) ([]ctype.RangeHash, error)
 	NewSetup(sliceData []byte, rangeAmount int, merkleMaterialQueue chan<- ctype.Material, cm ctype.Material) error
-	Save(ctx context.Context, cms []ctype.Material) error
-	Take(ctx context.Context, fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
+	Save(cms []ctype.Material) error
+	Take(fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
 
 	GetChallengeConf() (string, types.PDP)
 	Close()
@@ -80,43 +78,42 @@ type Copier interface {
 	Push(ctx context.Context, id, sourceId string, r io.Reader, node *blockchain.Node) error
 	Pull(ctx context.Context, id, fileId string, node *blockchain.Node) (io.ReadCloser, error)
 	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc common.MigrateEncryptor,
-		challengAlgorithm, sourceId, fileId string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
+		challengeAlgorithm, sourceId, fileId string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
 }
 
 // Blockchain defines some contract methods
 //  For xchain they are contract methods, and for fabric they are chaincode methods
 //  see more from blockchain.xchain and blockchain.fabric
 type Blockchain interface {
-	AddNode(ctx context.Context, opt *blockchain.AddNodeOptions) error
-	ListNodes(ctx context.Context) (blockchain.Nodes, error)
-	GetNode(ctx context.Context, id []byte) (blockchain.Node, error)
-	NodeOffline(ctx context.Context, opt *blockchain.NodeOperateOptions) error
-	NodeOnline(ctx context.Context, opt *blockchain.NodeOperateOptions) error
-	Heartbeat(ctx context.Context, id, sig []byte, timestamp int64) error
-	GetHeartbeatNum(ctx context.Context, id []byte, timestamp int64) (int, error)
-	GetNodeHealth(ctx context.Context, id []byte) (string, error)
-	ListNodesExpireSlice(ctx context.Context, opt *blockchain.ListNodeSliceOptions) ([]string, error)
-	GetSliceMigrateRecords(ctx context.Context, opt *blockchain.NodeSliceMigrateOptions) (string, error)
+	AddNode(opt *blockchain.AddNodeOptions) error
+	ListNodes() (blockchain.Nodes, error)
+	GetNode(id []byte) (blockchain.Node, error)
+	NodeOffline(opt *blockchain.NodeOperateOptions) error
+	NodeOnline(opt *blockchain.NodeOperateOptions) error
+	Heartbeat(id, sig []byte, timestamp int64) error
+	GetHeartbeatNum(id []byte, timestamp int64) (int, error)
+	GetNodeHealth(id []byte) (string, error)
+	ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error)
+	GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error)
 
-	PublishFile(ctx context.Context, file *blockchain.PublishFileOptions) error
-	GetFileByName(ctx context.Context, owner []byte, ns, name string) (blockchain.File, error)
-	GetFileByID(ctx context.Context, id string) (blockchain.File, error)
-	UpdateFileExpireTime(ctx context.Context, opt *blockchain.UpdatExptimeOptions) (blockchain.File, error)
-	AddFileNs(ctx context.Context, opt *blockchain.AddNsOptions) error
-	UpdateNsFilesCap(ctx context.Context, opt *blockchain.UpdateNsFilesCapOptions) (blockchain.Namespace, error)
-	UpdateNsReplica(ctx context.Context, opt *blockchain.UpdateNsReplicaOptions) error
-	UpdateFilePublicSliceMeta(ctx context.Context, opt *blockchain.UpdateFilePSMOptions) error
-	SliceMigrateRecord(ctx context.Context, id, sig []byte, fid, sid string, ctime int64) error
-	GetNsByName(ctx context.Context, owner []byte, name string) (blockchain.Namespace, error)
-	ListFileNs(ctx context.Context, opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
-	ListFiles(ctx context.Context, opt *blockchain.ListFileOptions) ([]blockchain.File, error)
-	ListExpiredFiles(ctx context.Context, opt *blockchain.ListFileOptions) ([]blockchain.File, error)
+	PublishFile(file *blockchain.PublishFileOptions) error
+	GetFileByName(owner []byte, ns, name string) (blockchain.File, error)
+	GetFileByID(id string) (blockchain.File, error)
+	UpdateFileExpireTime(opt *blockchain.UpdateExptimeOptions) (blockchain.File, error)
+	AddFileNs(opt *blockchain.AddNsOptions) error
+	UpdateNsFilesCap(opt *blockchain.UpdateNsFilesCapOptions) (blockchain.Namespace, error)
+	UpdateNsReplica(opt *blockchain.UpdateNsReplicaOptions) error
+	UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions) error
+	SliceMigrateRecord(id, sig []byte, fid, sid string, ctime int64) error
+	GetNsByName(owner []byte, name string) (blockchain.Namespace, error)
+	ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
+	ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)
+	ListExpiredFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)
 
-	ListChallengeRequests(ctx context.Context, opt *blockchain.ListChallengeOptions) (
-		[]blockchain.Challenge, error)
-	ChallengeRequest(ctx context.Context, opt *blockchain.ChallengeRequestOptions) error
-	ChallengeAnswer(ctx context.Context, opt *blockchain.ChallengeAnswerOptions) ([]byte, error)
-	GetChallengeById(ctx context.Context, id string) (blockchain.Challenge, error)
+	ListChallengeRequests(opt *blockchain.ListChallengeOptions) ([]blockchain.Challenge, error)
+	ChallengeRequest(opt *blockchain.ChallengeRequestOptions) error
+	ChallengeAnswer(opt *blockchain.ChallengeAnswerOptions) ([]byte, error)
+	GetChallengeById(id string) (blockchain.Challenge, error)
 }
 
 // Storage stores files locally

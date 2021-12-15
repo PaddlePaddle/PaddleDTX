@@ -15,7 +15,6 @@ package soft
 
 import (
 	"bytes"
-	"context"
 	"encoding/hex"
 	"testing"
 
@@ -40,7 +39,7 @@ func TestEncrypt(t *testing.T) {
 		SliceID: sliceID,
 		NodeID:  nodeID,
 	}
-	es, err := se.Encrypt(context.TODO(), bytes.NewReader(data), &eopt)
+	es, err := se.Encrypt(bytes.NewReader(data), &eopt)
 	require.NoError(t, err)
 
 	require.Equal(t, es.CipherHash, hash.HashUsingSha256(es.CipherText))
@@ -53,13 +52,13 @@ func TestEncrypt(t *testing.T) {
 		SliceID: sliceID,
 		NodeID:  nodeID,
 	}
-	recovered, err := se.Recover(context.TODO(), bytes.NewReader(es.CipherText), &ropt)
+	recovered, err := se.Recover(bytes.NewReader(es.CipherText), &ropt)
 	require.NoError(t, err)
 	require.Equal(t, data, recovered)
 
 	// decrypt using invalid param
 	ropt = encryptor.RecoverOptions{}
-	recovered, err = se.Recover(context.TODO(), bytes.NewReader(es.CipherText), &ropt)
+	recovered, err = se.Recover(bytes.NewReader(es.CipherText), &ropt)
 	require.Error(t, err)
 	require.NotEqual(t, data, recovered)
 }

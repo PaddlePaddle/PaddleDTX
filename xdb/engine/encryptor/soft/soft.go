@@ -14,7 +14,6 @@
 package soft
 
 import (
-	"context"
 	"io"
 	"io/ioutil"
 
@@ -45,7 +44,7 @@ func New(conf *config.SoftEncryptorConf) (*SoftEncryptor, error) {
 }
 
 // Encrypt derive key using nodeID and slice ID, then encrypt content using AES-GCM
-func (se *SoftEncryptor) Encrypt(ctx context.Context, r io.Reader, opt *encryptor.EncryptOptions) (
+func (se *SoftEncryptor) Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (
 	encryptor.EncryptedSlice, error) {
 
 	key := se.getKey(opt.SliceID, opt.NodeID)
@@ -84,7 +83,7 @@ func (se *SoftEncryptor) Encrypt(ctx context.Context, r io.Reader, opt *encrypto
 }
 
 // Encrypt derive key using nodeID and slice ID, then decrypt content using AES-GCM
-func (se *SoftEncryptor) Recover(ctx context.Context, r io.Reader, opt *encryptor.RecoverOptions) (
+func (se *SoftEncryptor) Recover(r io.Reader, opt *encryptor.RecoverOptions) (
 	[]byte, error) {
 
 	key := se.getKey(opt.SliceID, opt.NodeID)

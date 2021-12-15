@@ -27,13 +27,13 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
-// sliceclear cleans expired encrypted slices
-func (m *NodeMaintainer) sliceclear(ctx context.Context) {
+// sliceClear cleans expired encrypted slices
+func (m *NodeMaintainer) sliceClear(ctx context.Context) {
 	pubkey := ecdsa.PublicKeyFromPrivateKey(m.localNode.PrivateKey)
 	clearKey := m.getClearKey(pubkey)
 
 	l := logger.WithField("runner", "slice clear loop")
-	node, err := m.blockchain.GetNode(ctx, []byte(pubkey.String()))
+	node, err := m.blockchain.GetNode([]byte(pubkey.String()))
 	if err != nil {
 		l.WithError(err).Warn("failed to get node info")
 		return
@@ -58,7 +58,7 @@ func (m *NodeMaintainer) sliceclear(ctx context.Context) {
 			continue
 		}
 
-		startTime, endTime, err := m.getExpireRangeTime(ctx, pubkey.String(), clearKey, latestTime, node.RegTime)
+		startTime, endTime, err := m.getExpireRangeTime(clearKey, latestTime, node.RegTime)
 		if err != nil {
 			l.WithError(err).Warn("failed to get expire range time")
 			continue
@@ -74,7 +74,7 @@ func (m *NodeMaintainer) sliceclear(ctx context.Context) {
 			EndTime:   endTime,
 		}
 
-		sliceList, err := m.blockchain.ListNodesExpireSlice(ctx, opt)
+		sliceList, err := m.blockchain.ListNodesExpireSlice(opt)
 		if err != nil {
 			l.WithError(err).Warn("failed to get expire slice")
 			continue
@@ -83,7 +83,7 @@ func (m *NodeMaintainer) sliceclear(ctx context.Context) {
 		var delete bool
 		for _, slice := range sliceList {
 			exist, _ := m.sliceStorage.Exist(slice)
-			// 如果存在，删除切片
+			// if slice exists, remove it
 			if exist {
 				deleteSlice = append(deleteSlice, slice)
 				delete, err = m.sliceStorage.Delete(slice)
@@ -110,8 +110,7 @@ func (m *NodeMaintainer) sliceclear(ctx context.Context) {
 	}
 }
 
-func (m *NodeMaintainer) getExpireRangeTime(ctx context.Context, pubkey, clearKey string, latestTime,
-	regTime int64) (int64, int64, error) {
+func (m *NodeMaintainer) getExpireRangeTime(clearKey string, latestTime, regTime int64) (int64, int64, error) {
 	var startTime, endTime int64
 	exist, _ := m.sliceStorage.Exist(clearKey)
 	if !exist {

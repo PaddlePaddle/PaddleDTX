@@ -14,7 +14,6 @@
 package ldbstorage
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -53,7 +52,7 @@ func New(root string) (*LevelDBStorage, error) {
 }
 
 // Save save a challenge material to levelDB
-func (s *LevelDBStorage) Save(ctx context.Context, cms []types.Material) error {
+func (s *LevelDBStorage) Save(cms []types.Material) error {
 	batch := leveldb.Batch{}
 	ctime := time.Now().UnixNano()
 	for _, m := range cms {
@@ -72,7 +71,7 @@ func (s *LevelDBStorage) Save(ctx context.Context, cms []types.Material) error {
 }
 
 // Update update challenge material by key
-func (s *LevelDBStorage) Update(ctx context.Context, m types.Material, key []byte) error {
+func (s *LevelDBStorage) Update(m types.Material, key []byte) error {
 	batch := leveldb.Batch{}
 
 	value, err := json.Marshal(m.Ranges)
@@ -88,7 +87,7 @@ func (s *LevelDBStorage) Update(ctx context.Context, m types.Material, key []byt
 	return nil
 }
 
-func (s *LevelDBStorage) NewIterator(ctx context.Context, prefix []byte) ([][]byte, error) {
+func (s *LevelDBStorage) NewIterator(prefix []byte) ([][]byte, error) {
 	iter := s.db.NewIterator(util.BytesPrefix(prefix), nil)
 	var keyList [][]byte
 	for iter.Next() {
@@ -101,8 +100,7 @@ func (s *LevelDBStorage) NewIterator(ctx context.Context, prefix []byte) ([][]by
 }
 
 // Load get a challenge material from levelDB
-func (s *LevelDBStorage) Load(ctx context.Context, key []byte) (
-	types.Material, error) {
+func (s *LevelDBStorage) Load(key []byte) (types.Material, error) {
 	value, err := s.db.Get(key, nil)
 	if err != nil {
 		return types.Material{}, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to get")

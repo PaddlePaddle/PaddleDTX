@@ -14,11 +14,11 @@
 package types
 
 const (
-	MerkleChallengAlgorithm = "Merkle"
-	PDPChallengAlgorithm    = "PDP"
+	MerkleChallengeAlgorithm = "Merkle"
+	PDPChallengeAlgorithm    = "PDP"
 )
 
-// for pdp challenge
+// PDP for pairing-based challenge
 type PDP struct {
 	PdpPrivkey []byte
 	PdpPubkey  []byte

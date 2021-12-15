@@ -77,7 +77,7 @@ func TestSelection(t *testing.T) {
 	slice.ID = "hello"
 	slice.Data = []byte("0a0b")
 
-	// only one
+	// select only one good node
 	node1 := blockchain.NodeH{
 		Node: blockchain.Node{
 			ID: []byte{1},
@@ -91,12 +91,12 @@ func TestSelection(t *testing.T) {
 		Health: blockchain.NodeHealthBad,
 	}
 	nodes := blockchain.NodeHs{node1, node2}
-	ls, err := c.Select(slice, nodes, &copier.SelectOptions{})
+	ls, err := c.Select(slice, nodes, &copier.SelectOptions{Replica: 1})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ls.Nodes))
 	require.Equal(t, ls.Slice, slice)
 
-	// two
+	// select two good nodes
 	node3 := blockchain.NodeH{
 		Node: blockchain.Node{
 			ID: []byte{3},
@@ -104,21 +104,21 @@ func TestSelection(t *testing.T) {
 		Health: blockchain.NodeHealthGood,
 	}
 	nodes = blockchain.NodeHs{node1, node2, node3}
-	ls, err = c.Select(slice, nodes, &copier.SelectOptions{})
+	ls, err = c.Select(slice, nodes, &copier.SelectOptions{Replica: 2})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(ls.Nodes))
 
-	// three
+	// select three nodes, good and medium
 	node3.Node.Online = true
 	node4 := blockchain.NodeH{
 		Node: blockchain.Node{
 			ID:     []byte{4},
 			Online: true,
 		},
-		Health: blockchain.NodeHealthGood,
+		Health: blockchain.NodeHealthMedium,
 	}
 	nodes = blockchain.NodeHs{node1, node2, node3, node4}
-	ls, err = c.Select(slice, nodes, &copier.SelectOptions{})
+	ls, err = c.Select(slice, nodes, &copier.SelectOptions{Replica: 3})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(ls.Nodes))
 }

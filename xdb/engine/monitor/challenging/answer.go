@@ -49,7 +49,7 @@ func (c *ChallengingMonitor) loopAnswer(ctx context.Context) {
 			Nonce:  nonce,
 			Sig:    sig[:],
 		}
-		if err := c.blockchain.NodeOffline(ctx, nodeOpts); err != nil {
+		if err := c.blockchain.NodeOffline(nodeOpts); err != nil {
 			l.WithError(err).Error("failed to offline the node")
 		}
 		l.Info("node offline")
@@ -74,7 +74,7 @@ func (c *ChallengingMonitor) loopAnswer(ctx context.Context) {
 			Status:     blockchain.ChallengeToProve,
 			TimeEnd:    time.Now().UnixNano(),
 		}
-		requests, err := c.blockchain.ListChallengeRequests(ctx, &queryOpts)
+		requests, err := c.blockchain.ListChallengeRequests(&queryOpts)
 		if err != nil {
 			l.WithError(err).Warn("failed to list challenge requests from blockchain")
 			continue
@@ -84,10 +84,10 @@ func (c *ChallengingMonitor) loopAnswer(ctx context.Context) {
 			continue
 		}
 		for _, r := range requests {
-			if r.ChallengAlgorithm == types.PDPChallengAlgorithm {
-				c.doPDPChallengeAnswer(ctx, r, l)
-			} else if r.ChallengAlgorithm == types.MerkleChallengAlgorithm {
-				c.doMerkleChallengeAnswer(ctx, r, l)
+			if r.ChallengeAlgorithm == types.PDPChallengeAlgorithm {
+				c.doPDPChallengeAnswer(r, l)
+			} else if r.ChallengeAlgorithm == types.MerkleChallengeAlgorithm {
+				c.doMerkleChallengeAnswer(r, l)
 			} else {
 				l.WithField("challenge_id", r.ID).Debug("challenge answer failed, algorithm not support")
 			}
@@ -95,11 +95,11 @@ func (c *ChallengingMonitor) loopAnswer(ctx context.Context) {
 	}
 }
 
-func (c *ChallengingMonitor) doPDPChallengeAnswer(ctx context.Context, r blockchain.Challenge, l *logrus.Entry) error {
+func (c *ChallengingMonitor) doPDPChallengeAnswer(r blockchain.Challenge, l *logrus.Entry) error {
 	// answer for each request
 	// calculate proof
 	l.WithField("challenge_id", r.ID).Infof("indices: %v, slices: %v", r.Indices, r.SliceIDs)
-	proof, err := c.doPDPCalculateProof(ctx, l, c.PrivateKey, &r)
+	proof, err := c.doPDPCalculateProof(c.PrivateKey, &r)
 	if err != nil {
 		l.WithError(err).Warn("failed to calculate pdp proof")
 		return err
@@ -113,7 +113,7 @@ func (c *ChallengingMonitor) doPDPChallengeAnswer(ctx context.Context, r blockch
 		Sig:         proof.Signature,
 		AnswerTime:  time.Now().UnixNano(),
 	}
-	resp, err := c.blockchain.ChallengeAnswer(ctx, &answerOpt)
+	resp, err := c.blockchain.ChallengeAnswer(&answerOpt)
 	if err != nil {
 		l.WithError(err).Warn("failed to publish answer")
 		return err
@@ -125,10 +125,10 @@ func (c *ChallengingMonitor) doPDPChallengeAnswer(ctx context.Context, r blockch
 	return nil
 }
 
-func (c *ChallengingMonitor) doMerkleChallengeAnswer(ctx context.Context, r blockchain.Challenge, l *logrus.Entry) error {
+func (c *ChallengingMonitor) doMerkleChallengeAnswer(r blockchain.Challenge, l *logrus.Entry) error {
 	// answer for each request
 	// calculate
-	proof, err := c.doMerkleCalculation(ctx, l, c.PrivateKey, &r)
+	proof, err := c.doMerkleCalculation(c.PrivateKey, &r)
 	if err != nil {
 		l.WithError(err).Warn("failed to calculate merkle proof")
 		return err
@@ -141,7 +141,7 @@ func (c *ChallengingMonitor) doMerkleChallengeAnswer(ctx context.Context, r bloc
 		Sig:         proof.Signature,
 		AnswerTime:  time.Now().UnixNano(),
 	}
-	resp, err := c.blockchain.ChallengeAnswer(ctx, &answerOpt)
+	resp, err := c.blockchain.ChallengeAnswer(&answerOpt)
 	if err != nil {
 		l.WithError(err).Warn("failed to publish answer")
 		return err
@@ -155,8 +155,7 @@ func (c *ChallengingMonitor) doMerkleChallengeAnswer(ctx context.Context, r bloc
 }
 
 // doPDPCalculateProof calculate proof using stored files and random challenge
-func (c *ChallengingMonitor) doPDPCalculateProof(ctx context.Context, l *logrus.Entry,
-	privkey ecdsa.PrivateKey, req *blockchain.Challenge) (randomProof, error) {
+func (c *ChallengingMonitor) doPDPCalculateProof(privkey ecdsa.PrivateKey, req *blockchain.Challenge) (randomProof, error) {
 
 	var content [][]byte
 	for _, sliceID := range req.SliceIDs {
@@ -198,8 +197,7 @@ func (c *ChallengingMonitor) doPDPCalculateProof(ctx context.Context, l *logrus.
 	return rp, nil
 }
 
-func (c *ChallengingMonitor) doMerkleCalculation(ctx context.Context, l *logrus.Entry,
-	privkey ecdsa.PrivateKey, req *blockchain.Challenge) (rangeProof, error) {
+func (c *ChallengingMonitor) doMerkleCalculation(privkey ecdsa.PrivateKey, req *blockchain.Challenge) (rangeProof, error) {
 
 	dataReader, err := c.sliceStorage.Load(req.SliceID)
 	if err != nil {

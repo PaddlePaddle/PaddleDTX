@@ -35,9 +35,9 @@ import (
 
 var defaultConcurrency uint64 = 10
 
-func verifyReadToken(ctx context.Context, opt types.ReadOptions) error {
+func verifyReadToken(opt types.ReadOptions) error {
 	// check timestamp
-	var requestExpiredTime time.Duration = 5 * time.Minute
+	var requestExpiredTime = 5 * time.Minute
 	if int64(opt.Timestamp) < (time.Now().UnixNano() - requestExpiredTime.Nanoseconds()) {
 		return errorx.New(errorx.ErrCodeParam, "request has expired")
 	}
@@ -67,13 +67,13 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 		return nil, err
 	}
 	// verify token
-	if err := verifyReadToken(ctx, opt); err != nil {
+	if err := verifyReadToken(opt); err != nil {
 		cancel()
 		return nil, err
 	}
 
 	// prepare
-	allNodes, err := e.chain.ListNodes(ctx)
+	allNodes, err := e.chain.ListNodes()
 	if err != nil {
 		cancel()
 		return nil, errorx.Wrap(err, "failed to get nodes from blockchain")
@@ -92,7 +92,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 	nodesMap := common.ToNodesMap(nodes)
 
 	// find file from blockchain
-	f, err := getBlockchainFile4Read(ctx, e.chain, &opt)
+	f, err := getBlockchainFile4Read(e.chain, &opt)
 	if err != nil {
 		cancel()
 		return nil, err
@@ -175,7 +175,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 				SliceID: target.ID,
 				NodeID:  target.NodeID,
 			}
-			plainText, err := e.encryptor.Recover(ctx, bytes.NewReader(cipherText), &eOpt)
+			plainText, err := e.encryptor.Recover(bytes.NewReader(cipherText), &eOpt)
 			if err != nil {
 				logger.WithError(err).Error("failed to decrypt slice")
 				continue
@@ -225,22 +225,22 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 	}()
 
 	// decrypt recovered file
-	plain, err := e.encryptor.Recover(context.TODO(), reader, &encryptor.RecoverOptions{})
+	plain, err := e.encryptor.Recover(reader, &encryptor.RecoverOptions{})
 	if err != nil {
 		return nil, errorx.NewCode(err, errorx.ErrCodeCrypto, "file decryption failed")
 	}
 	return ioutil.NopCloser(bytes.NewReader(plain)), nil
 }
 
-func getBlockchainFile4Read(ctx context.Context, chain Blockchain, opt *types.ReadOptions) (
+func getBlockchainFile4Read(chain Blockchain, opt *types.ReadOptions) (
 	blockchain.File, error) {
 	var err error
 	var f blockchain.File
 	if len(opt.FileID) > 0 {
-		f, err = chain.GetFileByID(ctx, opt.FileID)
+		f, err = chain.GetFileByID(opt.FileID)
 	} else {
 		pubkey, _ := hex.DecodeString(opt.User)
-		f, err = chain.GetFileByName(ctx, pubkey, opt.Namespace, opt.FileName)
+		f, err = chain.GetFileByName(pubkey, opt.Namespace, opt.FileName)
 	}
 	if err != nil {
 		return f, errorx.Wrap(err, "failed to read file from blockchain")

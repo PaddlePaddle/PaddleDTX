@@ -118,16 +118,16 @@ func (x *xdata) ChallengeRequest(stub shim.ChaincodeStubInterface, args []string
 
 	// make challenge
 	c := blockchain.Challenge{
-		ID:                opt.ChallengeID,
-		FileOwner:         opt.FileOwner,
-		TargetNode:        opt.TargetNode,
-		FileID:            opt.FileID,
-		Status:            blockchain.ChallengeToProve,
-		ChallengeTime:     opt.ChallengeTime,
-		ChallengAlgorithm: opt.ChallengAlgorithm,
+		ID:                 opt.ChallengeID,
+		FileOwner:          opt.FileOwner,
+		TargetNode:         opt.TargetNode,
+		FileID:             opt.FileID,
+		Status:             blockchain.ChallengeToProve,
+		ChallengeTime:      opt.ChallengeTime,
+		ChallengeAlgorithm: opt.ChallengeAlgorithm,
 	}
 
-	if opt.ChallengAlgorithm == "PDP" {
+	if opt.ChallengeAlgorithm == "PDP" {
 		if err := x.pdpOptCheck(opt); err != nil {
 			return shim.Error(err.Error())
 		}
@@ -136,7 +136,7 @@ func (x *xdata) ChallengeRequest(stub shim.ChaincodeStubInterface, args []string
 		c.Sigmas = opt.Sigmas
 		c.Vs = opt.Vs
 
-	} else if opt.ChallengAlgorithm == "Merkle" {
+	} else if opt.ChallengeAlgorithm == "Merkle" {
 		if err := x.merkleOptCheck(opt); err != nil {
 			return shim.Error(err.Error())
 		}
@@ -220,7 +220,7 @@ func (x *xdata) ChallengeAnswer(stub shim.ChaincodeStubInterface, args []string)
 
 	// sig verification
 	var verifyErr error
-	if c.ChallengAlgorithm == "PDP" {
+	if c.ChallengeAlgorithm == "PDP" {
 		if err := x.pdpAnswerOptCheck(opt, c); err != nil {
 			return shim.Error(err.Error())
 		}
@@ -231,7 +231,7 @@ func (x *xdata) ChallengeAnswer(stub shim.ChaincodeStubInterface, args []string)
 			verifyErr = errorx.NewCode(e, errorx.ErrCodeCrypto, "verification failed")
 			c.Status = blockchain.ChallengeFailed
 		}
-	} else if c.ChallengAlgorithm == "Merkle" {
+	} else if c.ChallengeAlgorithm == "Merkle" {
 		if err := x.merkleAnswerOptCheck(opt, c); err != nil {
 			return shim.Error(err.Error())
 		}
@@ -347,16 +347,16 @@ func (x *xdata) GetChallengeNum(stub shim.ChaincodeStubInterface, args []string)
 func (x *xdata) pdpOptCheck(opt blockchain.ChallengeRequestOptions) error {
 	// sig verification
 	challengeOpt := blockchain.ChallengeRequestOptions{
-		ChallengeID:       opt.ChallengeID,
-		FileOwner:         opt.FileOwner,
-		TargetNode:        opt.TargetNode,
-		FileID:            opt.FileID,
-		SliceIDs:          opt.SliceIDs,
-		ChallengeTime:     opt.ChallengeTime,
-		Indices:           opt.Indices,
-		Vs:                opt.Vs,
-		Sigmas:            opt.Sigmas,
-		ChallengAlgorithm: opt.ChallengAlgorithm,
+		ChallengeID:        opt.ChallengeID,
+		FileOwner:          opt.FileOwner,
+		TargetNode:         opt.TargetNode,
+		FileID:             opt.FileID,
+		SliceIDs:           opt.SliceIDs,
+		ChallengeTime:      opt.ChallengeTime,
+		Indices:            opt.Indices,
+		Vs:                 opt.Vs,
+		Sigmas:             opt.Sigmas,
+		ChallengeAlgorithm: opt.ChallengeAlgorithm,
 	}
 	content, err := json.Marshal(challengeOpt)
 	if err != nil {
@@ -378,15 +378,15 @@ func (x *xdata) pdpOptCheck(opt blockchain.ChallengeRequestOptions) error {
 func (x *xdata) merkleOptCheck(opt blockchain.ChallengeRequestOptions) error {
 	// sig verification
 	challengeOpt := blockchain.ChallengeRequestOptions{
-		ChallengeID:       opt.ChallengeID,
-		FileOwner:         opt.FileOwner,
-		TargetNode:        opt.TargetNode,
-		FileID:            opt.FileID,
-		SliceID:           opt.SliceID,
-		Ranges:            opt.Ranges,
-		ChallengeTime:     opt.ChallengeTime,
-		HashOfProof:       opt.HashOfProof,
-		ChallengAlgorithm: opt.ChallengAlgorithm,
+		ChallengeID:        opt.ChallengeID,
+		FileOwner:          opt.FileOwner,
+		TargetNode:         opt.TargetNode,
+		FileID:             opt.FileID,
+		SliceID:            opt.SliceID,
+		Ranges:             opt.Ranges,
+		ChallengeTime:      opt.ChallengeTime,
+		HashOfProof:        opt.HashOfProof,
+		ChallengeAlgorithm: opt.ChallengeAlgorithm,
 	}
 
 	content, err := json.Marshal(challengeOpt)

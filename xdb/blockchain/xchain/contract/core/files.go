@@ -75,7 +75,7 @@ func (x *Xdata) PublishFile(ctx code.Context) code.Response {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"failed to unmarshal namespace"))
 	}
-	if (ns.FilesStruSize + len(s)) >= blockchain.ContractMessageMaxSize {
+	if (ns.FilesStructSize + len(s)) >= blockchain.ContractMessageMaxSize {
 		return code.Error(errorx.New(errorx.ErrCodeParam,
 			"files struct size of ns larger than max, please upload file using new ns"))
 	}
@@ -110,7 +110,7 @@ func (x *Xdata) PublishFile(ctx code.Context) code.Response {
 	// update file num of fileNsIndex
 	ns.FileTotalNum += 1
 	ns.UpdateTime = f.PublishTime
-	ns.FilesStruSize += len(s)
+	ns.FilesStructSize += len(s)
 	nsf, err := json.Marshal(ns)
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal File namespace"))
@@ -155,7 +155,7 @@ func (x *Xdata) AddFileNs(ctx code.Context) code.Response {
 	ns := opt.Namespace
 	s, err := json.Marshal(ns)
 	if err != nil {
-		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal File"))
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal namespace"))
 	}
 	// verify sig
 	err = x.checkSign(opt.Signature, ns.Owner, s)
@@ -361,16 +361,16 @@ func (x *Xdata) GetFileByID(ctx code.Context) code.Response {
 
 // UpdateFileExpireTime updates file expiration time
 func (x *Xdata) UpdateFileExpireTime(ctx code.Context) code.Response {
-	// get UpdatExptimeOptions
+	// get UpdateExptimeOptions
 	s, ok := ctx.Args()["opt"]
 	if !ok {
 		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:opt"))
 	}
 	// unmarshal opt
-	var opt blockchain.UpdatExptimeOptions
+	var opt blockchain.UpdateExptimeOptions
 	if err := json.Unmarshal(s, &opt); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
-			"failed to unmarshal UpdatExptimeOptions"))
+			"failed to unmarshal UpdateExptimeOptions"))
 	}
 	// get file from id
 	f, err := x.getFileById(ctx, []byte(opt.FileId))
@@ -722,11 +722,11 @@ func (x *Xdata) getNsNewStructSize(ctx code.Context, nsr []byte, ctime int64) (s
 			nsFileStructSize += len(fs)
 		}
 	}
-	if bns.FilesStruSize == nsFileStructSize {
+	if bns.FilesStructSize == nsFileStructSize {
 		return nil, errorx.New(errorx.ErrCodeAlreadyUpdate,
 			"ns-struct-size is already updated, not need to modify again")
 	}
-	bns.FilesStruSize = nsFileStructSize
+	bns.FilesStructSize = nsFileStructSize
 	bns.UpdateTime = ctime
 
 	s, err = json.Marshal(bns)

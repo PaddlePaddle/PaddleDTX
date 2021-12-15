@@ -14,7 +14,6 @@
 package fabric
 
 import (
-	"context"
 	"encoding/json"
 	"strconv"
 	"strings"
@@ -26,7 +25,7 @@ import (
 )
 
 // AddNode adds a node to fabric
-func (f *Fabric) AddNode(ctx context.Context, opt *blockchain.AddNodeOptions) error {
+func (f *Fabric) AddNode(opt *blockchain.AddNodeOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -40,7 +39,7 @@ func (f *Fabric) AddNode(ctx context.Context, opt *blockchain.AddNodeOptions) er
 }
 
 // ListNodes gets all nodes from fabric
-func (f *Fabric) ListNodes(ctx context.Context) (blockchain.Nodes, error) {
+func (f *Fabric) ListNodes() (blockchain.Nodes, error) {
 	var nodes blockchain.Nodes
 	s, err := f.QueryContract([][]byte{}, "ListNodes")
 	if err != nil {
@@ -54,7 +53,7 @@ func (f *Fabric) ListNodes(ctx context.Context) (blockchain.Nodes, error) {
 }
 
 // GetNode gets node by id
-func (f *Fabric) GetNode(ctx context.Context, id []byte) (node blockchain.Node, err error) {
+func (f *Fabric) GetNode(id []byte) (node blockchain.Node, err error) {
 	s, err := f.QueryContract([][]byte{id}, "GetNode")
 	if err != nil {
 		return node, err
@@ -67,7 +66,7 @@ func (f *Fabric) GetNode(ctx context.Context, id []byte) (node blockchain.Node, 
 }
 
 // setNodeOnlineStatus sets node status online/offline
-func (f *Fabric) setNodeOnlineStatus(ctx context.Context, opt *blockchain.NodeOperateOptions, online bool) error {
+func (f *Fabric) setNodeOnlineStatus(opt *blockchain.NodeOperateOptions, online bool) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal NodeOperateOptions")
@@ -85,17 +84,17 @@ func (f *Fabric) setNodeOnlineStatus(ctx context.Context, opt *blockchain.NodeOp
 }
 
 // NodeOffline set node status on chain to offline
-func (f *Fabric) NodeOffline(ctx context.Context, opt *blockchain.NodeOperateOptions) error {
-	return f.setNodeOnlineStatus(ctx, opt, false)
+func (f *Fabric) NodeOffline(opt *blockchain.NodeOperateOptions) error {
+	return f.setNodeOnlineStatus(opt, false)
 }
 
 // NodeOnline set node status on chain to online
-func (f *Fabric) NodeOnline(ctx context.Context, opt *blockchain.NodeOperateOptions) error {
-	return f.setNodeOnlineStatus(ctx, opt, true)
+func (f *Fabric) NodeOnline(opt *blockchain.NodeOperateOptions) error {
+	return f.setNodeOnlineStatus(opt, true)
 }
 
 // Heartbeat updates heartbeat of node
-func (f *Fabric) Heartbeat(ctx context.Context, id, sig []byte, timestamp int64) error {
+func (f *Fabric) Heartbeat(id, sig []byte, timestamp int64) error {
 	args := [][]byte{id, sig, []byte(strconv.FormatInt(timestamp, 10)), []byte(
 		strconv.FormatInt(common.TodayBeginning(timestamp), 10))}
 	if _, err := f.InvokeContract(args, "Heartbeat"); err != nil {
@@ -105,7 +104,7 @@ func (f *Fabric) Heartbeat(ctx context.Context, id, sig []byte, timestamp int64)
 }
 
 // GetHeartbeatNum gets heartbeat number by time
-func (f *Fabric) GetHeartbeatNum(ctx context.Context, id []byte, timestamp int64) (int, error) {
+func (f *Fabric) GetHeartbeatNum(id []byte, timestamp int64) (int, error) {
 	args := [][]byte{id, []byte(strconv.FormatInt(common.TodayBeginning(timestamp), 10))}
 	number, err := f.QueryContract(args, "GetHeartbeatNum")
 	if err != nil {
@@ -119,7 +118,7 @@ func (f *Fabric) GetHeartbeatNum(ctx context.Context, id []byte, timestamp int64
 }
 
 // GetSliceMigrateRecords get node slice migration records
-func (f *Fabric) GetSliceMigrateRecords(ctx context.Context, opt *blockchain.NodeSliceMigrateOptions) (string, error) {
+func (f *Fabric) GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error) {
 	s, err := json.Marshal(*opt)
 	if err != nil {
 		return "", errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -134,7 +133,7 @@ func (f *Fabric) GetSliceMigrateRecords(ctx context.Context, opt *blockchain.Nod
 }
 
 // ListFiles lists expired slices from fabric
-func (f *Fabric) ListNodesExpireSlice(ctx context.Context, opt *blockchain.ListNodeSliceOptions) ([]string, error) {
+func (f *Fabric) ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error) {
 	var sliceL []string
 
 	opts, err := json.Marshal(*opt)
@@ -157,9 +156,9 @@ func (f *Fabric) ListNodesExpireSlice(ctx context.Context, opt *blockchain.ListN
 }
 
 // GetNodeHealth gets node health status
-func (f *Fabric) GetNodeHealth(ctx context.Context, id []byte) (string, error) {
+func (f *Fabric) GetNodeHealth(id []byte) (string, error) {
 	now := time.Now().UnixNano()
-	node, err := f.GetNode(ctx, id)
+	node, err := f.GetNode(id)
 	if err != nil {
 		return "", err
 	}
@@ -172,14 +171,14 @@ func (f *Fabric) GetNodeHealth(ctx context.Context, id []byte) (string, error) {
 		TimeStart:  start,
 		TimeEnd:    end,
 	}
-	all, err := f.GetChallengeNum(ctx, &numOpt)
+	all, err := f.GetChallengeNum(&numOpt)
 	if err != nil {
 		return "", err
 	}
 	provedRation := blockchain.DefaultChallProvedRate
 	if all != 0 {
 		numOpt.Status = blockchain.ChallengeProved
-		proved, err := f.GetChallengeNum(ctx, &numOpt)
+		proved, err := f.GetChallengeNum(&numOpt)
 		if err != nil {
 			return "", err
 		}
@@ -191,7 +190,7 @@ func (f *Fabric) GetNodeHealth(ctx context.Context, id []byte) (string, error) {
 
 	heartBeatRate := blockchain.DefaultHearBeatRate
 	if heartBeatMax != 0 {
-		hearBeatTotal, err := common.GetHeartBeatTotalNumByTime(ctx, f, id, start, end)
+		hearBeatTotal, err := common.GetHeartBeatTotalNumByTime(f, id, start, end)
 		if err != nil {
 			return "", err
 		}

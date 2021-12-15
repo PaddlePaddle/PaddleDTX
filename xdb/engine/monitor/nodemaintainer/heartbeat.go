@@ -50,7 +50,7 @@ func (m *NodeMaintainer) heartbeat(ctx context.Context) {
 			l.WithError(err).Warn("failed to sign heartbeat")
 			continue
 		}
-		if err := m.blockchain.Heartbeat(ctx, []byte(pubkey.String()), sig[:], timestamp); err != nil {
+		if err := m.blockchain.Heartbeat([]byte(pubkey.String()), sig[:], timestamp); err != nil {
 			l.WithError(err).Warn("failed to update heartbeat")
 			continue
 		}

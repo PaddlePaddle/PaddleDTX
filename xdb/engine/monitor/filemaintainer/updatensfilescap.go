@@ -51,7 +51,7 @@ func (m *FileMaintainer) updateNsFilesCap(ctx context.Context) {
 			TimeEnd:     time.Now().UnixNano(),
 			CurrentTime: time.Now().UnixNano(),
 		}
-		nsList, err := m.blockchain.ListFileNs(ctx, &listNsOpt)
+		nsList, err := m.blockchain.ListFileNs(&listNsOpt)
 		if err != nil {
 			l.WithError(err).Error("failed to find ns list")
 			continue
@@ -74,7 +74,7 @@ func (m *FileMaintainer) updateNsFilesCap(ctx context.Context) {
 				CurrentTime: timestamp,
 				Signature:   sig[:],
 			}
-			newNs, err := m.blockchain.UpdateNsFilesCap(ctx, &updateNsCapOpt)
+			newNs, err := m.blockchain.UpdateNsFilesCap(&updateNsCapOpt)
 			if err != nil {
 				if errorx.Is(err, errorx.ErrCodeAlreadyUpdate) {
 					l.WithField("namespace", ns.Name).Info("ns-struct-size is already updated, not need to modify again")
@@ -86,8 +86,8 @@ func (m *FileMaintainer) updateNsFilesCap(ctx context.Context) {
 
 			l.WithFields(logrus.Fields{
 				"namespace":  ns.Name,
-				"ns_old_cap": ns.FilesStruSize,
-				"ns_new_cap": newNs.FilesStruSize,
+				"ns_old_cap": ns.FilesStructSize,
+				"ns_new_cap": newNs.FilesStructSize,
 			}).Info("success to update ns files struct size")
 		}
 	}

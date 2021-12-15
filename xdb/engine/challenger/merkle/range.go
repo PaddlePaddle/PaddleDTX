@@ -14,7 +14,6 @@
 package merkle
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"math/rand"
@@ -97,7 +96,7 @@ func New(conf *config.ChallengerMerkleConf, privkey ecdsa.PrivateKey) (*RandChal
 		segmentSize:        segmentSize,
 		privateKey:         privkey,
 		storage:            storage,
-		challengeAlgorithm: types.MerkleChallengAlgorithm,
+		challengeAlgorithm: types.MerkleChallengeAlgorithm,
 	}
 
 	return rc, nil
@@ -240,24 +239,24 @@ func (m *RandChallenger) generateMerkleRanges(sliceData []byte, rangeAmount, len
 }
 
 // Save save challenge material
-func (m *RandChallenger) Save(ctx context.Context, cms []ctype.Material) error {
-	if err := m.storage.Save(ctx, cms); err != nil {
+func (m *RandChallenger) Save(cms []ctype.Material) error {
+	if err := m.storage.Save(cms); err != nil {
 		return errorx.Wrap(err, "failed to save challenge materials")
 	}
 	return nil
 }
 
 // Take take a challenge material for publishing a challenge
-func (m *RandChallenger) Take(ctx context.Context, fileID string, sliceID string, nodeID []byte) (
+func (m *RandChallenger) Take(fileID string, sliceID string, nodeID []byte) (
 	ctype.RangeHash, error) {
 
-	keyList, err := m.storage.NewIterator(ctx, []byte(fmt.Sprintf("%s:%s:%x", fileID, sliceID, nodeID)))
+	keyList, err := m.storage.NewIterator([]byte(fmt.Sprintf("%s:%s:%x", fileID, sliceID, nodeID)))
 	if err != nil {
 		return ctype.RangeHash{}, errorx.Wrap(errorx.ErrNotFound, "no available keyList")
 	}
 
 	for _, key := range keyList {
-		cm, err := m.storage.Load(ctx, key)
+		cm, err := m.storage.Load(key)
 		if err != nil {
 			continue
 		}
@@ -275,7 +274,7 @@ func (m *RandChallenger) Take(ctx context.Context, fileID string, sliceID string
 			continue
 		}
 
-		if err := m.storage.Update(ctx, newCm, key); err != nil {
+		if err := m.storage.Update(newCm, key); err != nil {
 			continue
 		}
 		return *rh, nil

@@ -14,7 +14,6 @@
 package fabric
 
 import (
-	"context"
 	"encoding/json"
 	"strconv"
 
@@ -23,8 +22,7 @@ import (
 )
 
 // ListChallengeRequests lists all challenge requests on chain
-func (f *Fabric) ListChallengeRequests(ctx context.Context,
-	opt *blockchain.ListChallengeOptions) ([]blockchain.Challenge, error) {
+func (f *Fabric) ListChallengeRequests(opt *blockchain.ListChallengeOptions) ([]blockchain.Challenge, error) {
 
 	opts, err := json.Marshal(*opt)
 	if err != nil {
@@ -44,8 +42,7 @@ func (f *Fabric) ListChallengeRequests(ctx context.Context,
 }
 
 // ChallengeRequest sets a challenge request on chain
-func (f *Fabric) ChallengeRequest(ctx context.Context,
-	opt *blockchain.ChallengeRequestOptions) error {
+func (f *Fabric) ChallengeRequest(opt *blockchain.ChallengeRequestOptions) error {
 
 	opts, err := json.Marshal(*opt)
 	if err != nil {
@@ -59,7 +56,7 @@ func (f *Fabric) ChallengeRequest(ctx context.Context,
 }
 
 // ChallengeAnswer sets a challenge answer onto blockchain
-func (f *Fabric) ChallengeAnswer(ctx context.Context, opt *blockchain.ChallengeAnswerOptions) ([]byte, error) {
+func (f *Fabric) ChallengeAnswer(opt *blockchain.ChallengeAnswerOptions) ([]byte, error) {
 	opts, err := json.Marshal(*opt)
 	if err != nil {
 		return nil, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal ChallengeAnswerOptions")
@@ -73,7 +70,7 @@ func (f *Fabric) ChallengeAnswer(ctx context.Context, opt *blockchain.ChallengeA
 }
 
 // GetChallengeById gets a challenge by ID
-func (f *Fabric) GetChallengeById(ctx context.Context, id string) (blockchain.Challenge, error) {
+func (f *Fabric) GetChallengeById(id string) (blockchain.Challenge, error) {
 	var c blockchain.Challenge
 	s, err := f.QueryContract([][]byte{[]byte(id)}, "GetChallengeById")
 	if err != nil {
@@ -88,7 +85,7 @@ func (f *Fabric) GetChallengeById(ctx context.Context, id string) (blockchain.Ch
 }
 
 // GetChallengeNum gets challenge number with given filter
-func (f *Fabric) GetChallengeNum(ctx context.Context, opt *blockchain.GetChallengeNumOptions) (uint64, error) {
+func (f *Fabric) GetChallengeNum(opt *blockchain.GetChallengeNumOptions) (uint64, error) {
 
 	opts, err := json.Marshal(*opt)
 	if err != nil {

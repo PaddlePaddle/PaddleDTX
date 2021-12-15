@@ -14,7 +14,6 @@
 package engine
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -29,7 +28,7 @@ import (
 )
 
 // AddNode adds storage node into blockchain
-func (e *Engine) AddNode(ctx context.Context, opt types.AddNodeOptions) (err error) {
+func (e *Engine) AddNode(opt types.AddNodeOptions) (err error) {
 	if err := e.verifyUserID(opt.NodeID); err != nil {
 		return err
 	}
@@ -61,7 +60,7 @@ func (e *Engine) AddNode(ctx context.Context, opt types.AddNodeOptions) (err err
 		return errorx.Wrap(err, "failed to sign node")
 	}
 	addopt.Signature = sig[:]
-	if err := e.chain.AddNode(ctx, &addopt); err != nil {
+	if err := e.chain.AddNode(&addopt); err != nil {
 		if errorx.Is(err, errorx.ErrCodeAlreadyExists) {
 			return errorx.New(errorx.ErrCodeAlreadyExists, "duplicated node")
 		} else {
@@ -72,8 +71,8 @@ func (e *Engine) AddNode(ctx context.Context, opt types.AddNodeOptions) (err err
 }
 
 // ListNodes lists storage nodes from blockchain
-func (e *Engine) ListNodes(ctx context.Context) (blockchain.Nodes, error) {
-	nodes, err := e.chain.ListNodes(ctx)
+func (e *Engine) ListNodes() (blockchain.Nodes, error) {
+	nodes, err := e.chain.ListNodes()
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to read blockchain")
 	}
@@ -81,8 +80,8 @@ func (e *Engine) ListNodes(ctx context.Context) (blockchain.Nodes, error) {
 }
 
 // GetNode gets storage node by node id
-func (e *Engine) GetNode(ctx context.Context, id []byte) (blockchain.Node, error) {
-	node, err := e.chain.GetNode(ctx, id)
+func (e *Engine) GetNode(id []byte) (blockchain.Node, error) {
+	node, err := e.chain.GetNode(id)
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return node, errorx.New(errorx.ErrCodeNotFound, "node not found")
@@ -94,7 +93,7 @@ func (e *Engine) GetNode(ctx context.Context, id []byte) (blockchain.Node, error
 }
 
 // NodeOffline set storage node status to offline
-func (e *Engine) NodeOffline(ctx context.Context, opt types.NodeOfflineOptions) error {
+func (e *Engine) NodeOffline(opt types.NodeOfflineOptions) error {
 	if err := e.verifyUserID(opt.NodeID); err != nil {
 		return err
 	}
@@ -108,7 +107,7 @@ func (e *Engine) NodeOffline(ctx context.Context, opt types.NodeOfflineOptions) 
 		Nonce:  opt.Nonce,
 		Sig:    sig[:],
 	}
-	if err := e.chain.NodeOffline(ctx, nodeOpts); err != nil {
+	if err := e.chain.NodeOffline(nodeOpts); err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return errorx.New(errorx.ErrCodeNotFound, "node not found")
 		} else {
@@ -119,7 +118,7 @@ func (e *Engine) NodeOffline(ctx context.Context, opt types.NodeOfflineOptions) 
 }
 
 // NodeOnline set storage node status to online
-func (e *Engine) NodeOnline(ctx context.Context, opt types.NodeOnlineOptions) error {
+func (e *Engine) NodeOnline(opt types.NodeOnlineOptions) error {
 	if err := e.verifyUserID(opt.NodeID); err != nil {
 		return err
 	}
@@ -133,7 +132,7 @@ func (e *Engine) NodeOnline(ctx context.Context, opt types.NodeOnlineOptions) er
 		Nonce:  opt.Nonce,
 		Sig:    sig[:],
 	}
-	if err := e.chain.NodeOnline(ctx, nodeOpts); err != nil {
+	if err := e.chain.NodeOnline(nodeOpts); err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return errorx.New(errorx.ErrCodeNotFound, "node not found")
 		} else {
@@ -144,8 +143,8 @@ func (e *Engine) NodeOnline(ctx context.Context, opt types.NodeOnlineOptions) er
 }
 
 // GetNodeHealth gets storage node health status by node id
-func (e *Engine) GetNodeHealth(ctx context.Context, id []byte) (string, error) {
-	status, err := e.chain.GetNodeHealth(ctx, id)
+func (e *Engine) GetNodeHealth(id []byte) (string, error) {
+	status, err := e.chain.GetNodeHealth(id)
 	if err != nil {
 		return status, errorx.Wrap(err, "failed to get node health status")
 	}
@@ -153,15 +152,15 @@ func (e *Engine) GetNodeHealth(ctx context.Context, id []byte) (string, error) {
 }
 
 // GetSliceMigrateRecords gets storage node slice migration record
-func (e *Engine) GetSliceMigrateRecords(ctx context.Context, opt *blockchain.NodeSliceMigrateOptions) (string, error) {
-	if _, err := e.chain.GetNode(ctx, opt.Target); err != nil {
+func (e *Engine) GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error) {
+	if _, err := e.chain.GetNode(opt.Target); err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return "", errorx.New(errorx.ErrCodeNotFound, "node not found")
 		} else {
 			return "", errorx.Wrap(err, "failed to read blockchain")
 		}
 	}
-	result, err := e.chain.GetSliceMigrateRecords(ctx, opt)
+	result, err := e.chain.GetSliceMigrateRecords(opt)
 	if err != nil {
 		return result, errorx.Wrap(err, "failed to get node migrate records")
 	}
@@ -169,8 +168,8 @@ func (e *Engine) GetSliceMigrateRecords(ctx context.Context, opt *blockchain.Nod
 }
 
 // GetHeartbeatNum gets storage node heartbeats number of given time
-func (e *Engine) GetHeartbeatNum(ctx context.Context, id []byte, ctime int64) (int, int, error) {
-	node, err := e.chain.GetNode(ctx, id)
+func (e *Engine) GetHeartbeatNum(id []byte, ctime int64) (int, int, error) {
+	node, err := e.chain.GetNode(id)
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return 0, 0, errorx.New(errorx.ErrCodeNotFound, "node not found")
@@ -187,7 +186,7 @@ func (e *Engine) GetHeartbeatNum(ctx context.Context, id []byte, ctime int64) (i
 
 	// get heartbeat num of ctime
 	if ctime != 0 && ctime >= node.RegTime {
-		hearBeatDayNum, err := e.chain.GetHeartbeatNum(ctx, id, common.TodayBeginning(ctime))
+		hearBeatDayNum, err := e.chain.GetHeartbeatNum(id, common.TodayBeginning(ctime))
 		if err != nil && !errorx.Is(err, errorx.ErrCodeNotFound) {
 			return 0, 0, err
 		}
@@ -207,7 +206,7 @@ func (e *Engine) GetHeartbeatNum(ctx context.Context, id []byte, ctime int64) (i
 	// get a series day of heartbeat number total
 	heartBeatTotal := 0
 	if heartBeatMax != 0 {
-		heartBeatTotal, err = common.GetHeartBeatTotalNumByTime(ctx, e.chain, id, start, end)
+		heartBeatTotal, err = common.GetHeartBeatTotalNumByTime(e.chain, id, start, end)
 		if err != nil {
 			return 0, 0, err
 		}

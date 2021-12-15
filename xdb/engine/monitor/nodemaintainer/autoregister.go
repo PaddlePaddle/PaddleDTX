@@ -14,7 +14,6 @@
 package nodemaintainer
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -27,12 +26,12 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
-// autoregister storage-node automatically register in blockchain
-func (m *NodeMaintainer) autoregister(ctx context.Context) error {
-	logrus.WithField("module", "autoregister")
+// autoRegister storage-node automatically register in blockchain
+func (m *NodeMaintainer) autoRegister() error {
+	logrus.WithField("module", "autoRegister")
 
 	pubkey := ecdsa.PublicKeyFromPrivateKey(m.localNode.PrivateKey)
-	node, err := m.blockchain.GetNode(ctx, []byte(pubkey.String()))
+	node, err := m.blockchain.GetNode([]byte(pubkey.String()))
 	if err == nil && node.Online {
 		logrus.Info("node already registered on blockchain")
 		return nil
@@ -48,7 +47,7 @@ func (m *NodeMaintainer) autoregister(ctx context.Context) error {
 			Nonce:  nonce,
 			Sig:    sig[:],
 		}
-		err = m.blockchain.NodeOnline(ctx, nodeOpts)
+		err = m.blockchain.NodeOnline(nodeOpts)
 		if err != nil {
 			logrus.Error("node failed online on  blockchain")
 		}
@@ -76,7 +75,7 @@ func (m *NodeMaintainer) autoregister(ctx context.Context) error {
 			return errorx.Wrap(err, "failed to sign node")
 		}
 		opt.Signature = sig[:]
-		if err := m.blockchain.AddNode(ctx, &opt); err != nil {
+		if err := m.blockchain.AddNode(&opt); err != nil {
 			logrus.Error("failed to register node automatically")
 			return errorx.Wrap(err, "failed to register node automatically")
 		}

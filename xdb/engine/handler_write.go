@@ -71,12 +71,12 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 
 	// duplicate check
 	pubkey, _ := hex.DecodeString(opt.User)
-	if _, err := e.chain.GetFileByName(ctx, pubkey, opt.Namespace, opt.FileName); err == nil {
+	if _, err := e.chain.GetFileByName(pubkey, opt.Namespace, opt.FileName); err == nil {
 		return resp, errorx.New(errorx.ErrCodeAlreadyExists, "duplicated name")
 	} else if !errorx.Is(err, errorx.ErrCodeNotFound) {
 		return resp, errorx.Wrap(err, "failed to read blockchain")
 	}
-	ns, err := e.chain.GetNsByName(ctx, pubkey, opt.Namespace)
+	ns, err := e.chain.GetNsByName(pubkey, opt.Namespace)
 	if err != nil {
 		return resp, errorx.Wrap(err, "failed to get ns from blockchain")
 	}
@@ -84,7 +84,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	if err != nil {
 		return resp, errorx.Internal(err, "failed to get uuid")
 	}
-	nodes, err := common.GetHealthNodes(ctx, e.chain)
+	nodes, err := common.GetHealthNodes(e.chain)
 	if err != nil {
 		return resp, err
 	}
@@ -102,7 +102,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	}).Info("write file")
 
 	// encrypt file first
-	cipher, err := e.encryptor.Encrypt(context.TODO(), r, &encryptor.EncryptOptions{})
+	cipher, err := e.encryptor.Encrypt(r, &encryptor.EncryptOptions{})
 	if err != nil {
 		logger.WithError(err).Error("file encryption failed")
 		return resp, errorx.NewCode(err, errorx.ErrCodeCrypto, "file encryption failed")
@@ -112,10 +112,10 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 
 	slicesNum := math.Ceil(float64(len(cipher.CipherText)) / float64(e.slicer.GetBlockSize()))
 	fileStrucSize := calculateFileMaxStructSize(int(slicesNum), ns.Replica)
-	if (ns.FilesStruSize + fileStrucSize) >= blockchain.ContractMessageMaxSize {
+	if (ns.FilesStructSize + fileStrucSize) >= blockchain.ContractMessageMaxSize {
 		logger.WithFields(logrus.Fields{
 			"file_id":        fileID.String(),
-			"ns_files_size":  ns.FilesStruSize,
+			"ns_files_size":  ns.FilesStructSize,
 			"file_strc_size": fileStrucSize,
 		}).Warnf("files total struct size of ns more than maximum")
 		return resp, errorx.New(errorx.ErrCodeParam, "files total struct size of ns more than maximum")
@@ -195,7 +195,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 
 	// all pushed slice info
 	finishedEncSlices = append(finishedEncSlices, finishedQueue3...)
-	if ca == types.MerkleChallengAlgorithm {
+	if ca == types.MerkleChallengeAlgorithm {
 		if err := e.generateAndSaveMerkle(ctx, finishedEncSlices, fileID.String(), opt.ExpireTime); err != nil {
 			return resp, err
 		}
@@ -221,7 +221,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 		Signature: sig[:],
 	}
 
-	if err := e.chain.PublishFile(ctx, &publishFileOpt); err != nil {
+	if err := e.chain.PublishFile(&publishFileOpt); err != nil {
 		return resp, errorx.Wrap(err, "failed to write file to blockchain")
 	}
 
@@ -334,7 +334,7 @@ func (e *Engine) encryptRoutine(ctx context.Context, locatedQueue <-chan copier.
 					SliceID: lSlice.Slice.ID,
 					NodeID:  lSlice.Nodes.ID,
 				}
-				es, err := e.encryptor.Encrypt(ctx, bytes.NewReader(lSlice.Slice.Data), &eopt)
+				es, err := e.encryptor.Encrypt(bytes.NewReader(lSlice.Slice.Data), &eopt)
 				if err != nil {
 					onErr(errorx.Wrap(err, "failed to encrypt slice"))
 					return
@@ -476,7 +476,7 @@ func (e *Engine) pushToOtherNode(ctx context.Context, owner string, failedSlices
 				SliceID: slice.SliceID,
 				NodeID:  slice.NodeID,
 			}
-			plain, err := e.encryptor.Recover(ctx, bytes.NewReader(slice.CipherText), &ropt)
+			plain, err := e.encryptor.Recover(bytes.NewReader(slice.CipherText), &ropt)
 			if err != nil {
 				onErr(errorx.Wrap(err, "failed to decrypt slice"))
 				return nil
@@ -487,7 +487,7 @@ func (e *Engine) pushToOtherNode(ctx context.Context, owner string, failedSlices
 				SliceID: slice.SliceID,
 				NodeID:  node.ID,
 			}
-			es, err := e.encryptor.Encrypt(ctx, bytes.NewReader(plain), &eopt)
+			es, err := e.encryptor.Encrypt(bytes.NewReader(plain), &eopt)
 			if err != nil {
 				logger.WithFields(logrus.Fields{
 					"slice_id":    slice.SliceID,
@@ -565,7 +565,7 @@ func (e *Engine) generateAndSaveMerkle(ctx context.Context, finishedEncSlices []
 					return
 				}
 				csMaterial := []ctype.Material{sliceMaterial}
-				if err := common.SaveMerkleChallenger(ctx, e.challenger, csMaterial); err != nil {
+				if err := common.SaveMerkleChallenger(e.challenger, csMaterial); err != nil {
 					isSaveErr = errorx.Wrap(err, "failed save challenging merkle materials")
 				}
 			}

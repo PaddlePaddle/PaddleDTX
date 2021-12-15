@@ -133,16 +133,16 @@ func (m *Monitor) Start(ctx context.Context) error {
 		serType := ctx.Value("server-type").(string)
 		switch serType {
 		case config.NodeTypeDataOwner:
-			m.challengingMonitor.StartChallRequest(ctx)
+			m.challengingMonitor.StartChallengeRequest(ctx)
 			m.fileMaintainer.Migrate(ctx)
 			m.fileMaintainer.UpdateNsFilesCap(ctx)
 		case config.NodeTypeStorage:
-			if err := m.nodeMaintainer.NodeAutoRegister(ctx); err != nil {
+			if err := m.nodeMaintainer.NodeAutoRegister(); err != nil {
 				return err
 			}
 			m.nodeMaintainer.StartFileClear(ctx)
 			m.nodeMaintainer.HeartBeat(ctx)
-			m.challengingMonitor.StartChallAnswer(ctx)
+			m.challengingMonitor.StartChallengeAnswer(ctx)
 		}
 	}
 
@@ -153,8 +153,8 @@ func (m *Monitor) Start(ctx context.Context) error {
 //  could be called in main()
 func (m *Monitor) Close() {
 	if m.challengingMonitor != nil {
-		m.challengingMonitor.StopChallRequest()
-		m.challengingMonitor.StopChallAnswer()
+		m.challengingMonitor.StopChallengeRequest()
+		m.challengingMonitor.StopChallengeAnswer()
 	}
 
 	if m.fileMaintainer != nil {

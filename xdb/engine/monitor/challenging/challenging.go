@@ -41,8 +41,8 @@ type ChallengeDB interface {
 
 	// merkle Challenge
 	Setup(sliceData []byte, rangeAmount int) ([]ctype.RangeHash, error)
-	Save(ctx context.Context, cms []ctype.Material) error
-	Take(ctx context.Context, fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
+	Save(cms []ctype.Material) error
+	Take(fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
 
 	GetChallengeConf() (string, types.PDP)
 }
@@ -52,13 +52,12 @@ type SliceStorage interface {
 }
 
 type Blockchain interface {
-	ListFiles(ctx context.Context, opt *blockchain.ListFileOptions) ([]blockchain.File, error)
-	ListFileNs(ctx context.Context, opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
-	ListChallengeRequests(ctx context.Context, opt *blockchain.ListChallengeOptions) (
-		[]blockchain.Challenge, error)
-	ChallengeRequest(ctx context.Context, opt *blockchain.ChallengeRequestOptions) error
-	ChallengeAnswer(ctx context.Context, opt *blockchain.ChallengeAnswerOptions) ([]byte, error)
-	NodeOffline(ctx context.Context, opt *blockchain.NodeOperateOptions) error
+	ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)
+	ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
+	ListChallengeRequests(opt *blockchain.ListChallengeOptions) ([]blockchain.Challenge, error)
+	ChallengeRequest(opt *blockchain.ChallengeRequestOptions) error
+	ChallengeAnswer(opt *blockchain.ChallengeAnswerOptions) ([]byte, error)
+	NodeOffline(opt *blockchain.NodeOperateOptions) error
 }
 
 type NewChallengingMonitorOptions struct {
@@ -108,13 +107,13 @@ func New(conf *config.MonitorConf, opt *NewChallengingMonitorOptions) (*Challeng
 	return cm, nil
 }
 
-// StartChallRequest starts to publish challenge request
-func (c *ChallengingMonitor) StartChallRequest(ctx context.Context) {
+// StartChallengeRequest starts to publish challenge request
+func (c *ChallengingMonitor) StartChallengeRequest(ctx context.Context) {
 	go c.loopRequest(ctx)
 }
 
-// StopChallRequest breaks loop
-func (c *ChallengingMonitor) StopChallRequest() {
+// StopChallengeRequest breaks loop
+func (c *ChallengingMonitor) StopChallengeRequest() {
 	if c.doneLoopReqC == nil {
 		return
 	}
@@ -130,13 +129,13 @@ func (c *ChallengingMonitor) StopChallRequest() {
 	<-c.doneLoopReqC
 }
 
-// StartChallAnswer starts to answer request
-func (c *ChallengingMonitor) StartChallAnswer(ctx context.Context) {
+// StartChallengeAnswer starts to answer request
+func (c *ChallengingMonitor) StartChallengeAnswer(ctx context.Context) {
 	go c.loopAnswer(ctx)
 }
 
-// StopChallAnswer breaks loop
-func (c *ChallengingMonitor) StopChallAnswer() {
+// StopChallengeAnswer breaks loop
+func (c *ChallengingMonitor) StopChallengeAnswer() {
 	if c.doneLoopAnsC == nil {
 		return
 	}

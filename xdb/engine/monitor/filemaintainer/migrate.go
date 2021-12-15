@@ -61,7 +61,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 			Owner:   pubkey[:],
 			TimeEnd: time.Now().UnixNano(),
 		}
-		nsList, err := m.blockchain.ListFileNs(ctx, &listNsOpt)
+		nsList, err := m.blockchain.ListFileNs(&listNsOpt)
 		if err != nil {
 			l.WithError(err).Error("failed to find ns list")
 			continue
@@ -72,7 +72,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 		}
 
 		// 2. find all healthy nodes
-		healthNodes, err := common.GetHealthNodes(ctx, m.blockchain)
+		healthNodes, err := common.GetHealthNodes(m.blockchain)
 		if err != nil {
 			l.WithError(err).Error("failed to find healthy nodes")
 			continue
@@ -103,7 +103,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 					TimeEnd:     time.Now().UnixNano(),
 					CurrentTime: time.Now().UnixNano(),
 				}
-				files, err := m.blockchain.ListFiles(ctx, &listFileOpt)
+				files, err := m.blockchain.ListFiles(&listFileOpt)
 				if err != nil {
 					l.WithError(err).Error("failed to find file list")
 					return
@@ -145,7 +145,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 								l.WithField("file_id", file.ID).WithError(err).Error("failed to migrate file")
 							} else {
 								l.WithField("file_id", file.ID).Info("file migrated success expand")
-								ef, err := m.blockchain.GetFileByID(ctx, file.ID)
+								ef, err := m.blockchain.GetFileByID(file.ID)
 								if err != nil {
 									l.WithField("file_id", file.ID).Info("file expand failed get file id")
 								} else {
@@ -162,7 +162,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 						fileUpdated := false
 						orderedSlices := file.Slices
 						// decrease the number of slice pull
-						if chanllengeAlgorithm == types.PDPChallengAlgorithm {
+						if chanllengeAlgorithm == types.PDPChallengeAlgorithm {
 							orderedSlices = orderSlicesByIdx(file.Slices)
 						}
 						newSlices := orderedSlices
@@ -171,7 +171,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 						var mSlice encryptor.EncryptedSlice
 						for _, slice := range orderedSlices {
 							nodeSliceMap := nodeSliceMap(newSlices, slice.ID)
-							nh, err := m.blockchain.GetNodeHealth(ctx, slice.NodeID)
+							nh, err := m.blockchain.GetNodeHealth(slice.NodeID)
 							if err != nil {
 								l.WithField("slice_id", slice.ID).WithError(err).Error("failed to get slice node health")
 								continue
@@ -218,8 +218,8 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 
 						if fileUpdated {
 							// add new challenge
-							if chanllengeAlgorithm == types.MerkleChallengAlgorithm {
-								if err := common.AddSlicesNewMerkleChallenge(ctx, m.challenger, m.copier,
+							if chanllengeAlgorithm == types.MerkleChallengeAlgorithm {
+								if err := common.AddSlicesNewMerkleChallenge(m.challenger, m.copier,
 									file, migrateEnSlices, interval, l); err != nil {
 									l.WithFields(logrus.Fields{
 										"file_id": file.ID,
@@ -229,7 +229,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 								l.WithField("file_id", file.ID).Info("file migrate merkle challenege add success")
 							}
 							// update file slices
-							if err := m.updateFileSlicesOnChain(ctx, file.ID, file.Owner, newSlices); err == nil {
+							if err := m.updateFileSlicesOnChain(file.ID, file.Owner, newSlices); err == nil {
 								l.WithField("file_id", file.ID).Info("file migrate finished")
 							} else {
 								l.WithField("file_id", file.ID).WithError(err).Error("updateFileSlicesOnChain failed")
@@ -315,8 +315,8 @@ func (m FileMaintainer) migrateNode(ctx context.Context, slice blockchain.Public
 			selectedNodes[slice.ID] = append(selectedNodes[slice.ID], string(node.ID))
 
 			// put migrate record on blockchain
-			m.migrateRecordOnChain(ctx, string(slice.NodeID), fileID, slice.ID)
-			if chanllengeAlgorithm == types.PDPChallengAlgorithm {
+			m.migrateRecordOnChain(string(slice.NodeID), fileID, slice.ID)
+			if chanllengeAlgorithm == types.PDPChallengeAlgorithm {
 				// rearrange file slices
 				slices, err = m.rearrangeSlices(ctx, slices, slice.ID, string(slice.NodeID), string(es.NodeID), sourceId,
 					es.CipherText, healthNodesMap, selectedNodes, pdp)
@@ -419,7 +419,7 @@ func (m FileMaintainer) rearrangeSlices(ctx context.Context, oldSlices []blockch
 				SliceID: slice.ID,
 				NodeID:  slice.NodeID,
 			}
-			es, err := m.encryptor.Encrypt(ctx, bytes.NewReader(plaintext), &encOpt)
+			es, err := m.encryptor.Encrypt(bytes.NewReader(plaintext), &encOpt)
 			if err != nil {
 				return nil, err
 			}
@@ -460,7 +460,7 @@ func (m FileMaintainer) rearrangeSlices(ctx context.Context, oldSlices []blockch
 }
 
 // migrateRecordOnChain put migrate record on blockchain
-func (m FileMaintainer) migrateRecordOnChain(ctx context.Context, nodeID, fileID, sliceID string) {
+func (m FileMaintainer) migrateRecordOnChain(nodeID, fileID, sliceID string) {
 	now := time.Now().UnixNano()
 	msg := fileID + sliceID + nodeID + fmt.Sprintf("%d", now)
 	sign, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(msg)))
@@ -472,7 +472,7 @@ func (m FileMaintainer) migrateRecordOnChain(ctx context.Context, nodeID, fileID
 		}).WithError(err).Error("failed to sign migrate message")
 		return
 	}
-	if err := m.blockchain.SliceMigrateRecord(ctx, []byte(nodeID), sign[:], fileID, sliceID, now); err != nil {
+	if err := m.blockchain.SliceMigrateRecord([]byte(nodeID), sign[:], fileID, sliceID, now); err != nil {
 		l.WithFields(logrus.Fields{
 			"file_id":     fileID,
 			"slice_id":    sliceID,
@@ -482,7 +482,7 @@ func (m FileMaintainer) migrateRecordOnChain(ctx context.Context, nodeID, fileID
 }
 
 // updateFileSlicesOnChain update file slices structure on blockchain
-func (m FileMaintainer) updateFileSlicesOnChain(ctx context.Context, fileID string, owner []byte, slices []blockchain.PublicSliceMeta) error {
+func (m FileMaintainer) updateFileSlicesOnChain(fileID string, owner []byte, slices []blockchain.PublicSliceMeta) error {
 	msg, err := json.Marshal(slices)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal slices")
@@ -498,7 +498,7 @@ func (m FileMaintainer) updateFileSlicesOnChain(ctx context.Context, fileID stri
 		Slices:    slices,
 		Signature: sign[:],
 	}
-	return m.blockchain.UpdateFilePublicSliceMeta(ctx, &opt)
+	return m.blockchain.UpdateFilePublicSliceMeta(&opt)
 }
 
 // orderSlicesByIdx put slice with larger idx in front of others
