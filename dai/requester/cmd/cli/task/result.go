@@ -14,7 +14,6 @@
 package task
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -37,7 +36,7 @@ var getPredictResCmd = &cobra.Command{
 			return
 		}
 
-		if err := client.GetPredictResult(context.Background(), privateKey, id, output); err != nil {
+		if err := client.GetPredictResult(privateKey, id, output); err != nil {
 			fmt.Printf("GetPredictResult failed：%v\n", err)
 			return
 		}

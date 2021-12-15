@@ -39,7 +39,7 @@ type Server struct {
 	Server     *grpc.Server
 }
 
-// NewServer creates a gRPC server which has no service registered and has not
+// New creates a gRPC server which has no service registered and has not
 // started to accept requests yet.
 func New(conf *config.ExecutorConf) (*Server, error) {
 	ser := grpc.NewServer(grpc.MaxRecvMsgSize(MaxRecvMsgSize),

@@ -14,7 +14,6 @@
 package task
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -33,7 +32,7 @@ var startTaskByIDCmd = &cobra.Command{
 			return
 		}
 
-		if err := client.StartTask(context.Background(), privateKey, id); err != nil {
+		if err := client.StartTask(privateKey, id); err != nil {
 			fmt.Printf("StartTask failed：%v\n", err)
 			return
 		}

@@ -51,7 +51,7 @@ func (t *TaskMonitor) loopRequest(ctx context.Context) {
 
 		//checks blockchain every some seconds to find tasks ready to execute,
 		//then starts Multi-Party Computation for each task.
-		if err := t.getToProcessTaskAndStart(ctx); err != nil {
+		if err := t.getToProcessTaskAndStart(); err != nil {
 			logger.WithError(err).Error("failed to find taskToProcess task list")
 		}
 
@@ -61,12 +61,12 @@ func (t *TaskMonitor) loopRequest(ctx context.Context) {
 	}
 }
 
-// getToToProcessTaskAndStart process tasks in Processing status when restarting server
+// getToProcessTaskAndStart process tasks in Processing status when restarting server
 //  this step is necessary because when participants abnormally exit computation process
 //  the task may be in Processing stage forever
-func (t *TaskMonitor) getToProcessTaskAndStart(ctx context.Context) error {
+func (t *TaskMonitor) getToProcessTaskAndStart() error {
 	// 1. find all ready tasks from chain
-	taskList, err := t.Blockchain.ListTask(ctx, &blockchain.ListFLTaskOptions{
+	taskList, err := t.Blockchain.ListTask(&blockchain.ListFLTaskOptions{
 		PubKey:    t.PublicKey[:],
 		Status:    blockchain.TaskToProcess,
 		TimeStart: 0,
@@ -130,7 +130,7 @@ func (t *TaskMonitor) RetryProcessingTask(ctx context.Context) {
 	defer logger.Info("processing tasks retry end")
 
 	// 1. find all processing task
-	taskList, err := t.Blockchain.ListTask(ctx, &blockchain.ListFLTaskOptions{
+	taskList, err := t.Blockchain.ListTask(&blockchain.ListFLTaskOptions{
 		PubKey:    t.PublicKey[:],
 		Status:    blockchain.TaskProcessing,
 		TimeStart: 0,
@@ -189,7 +189,7 @@ func (t *TaskMonitor) updateTaskExecStatus(taskId string) error {
 	}
 	execTaskOptions.Signature = sig[:]
 
-	if err := t.Blockchain.ExecuteTask(context.TODO(), execTaskOptions); err != nil {
+	if err := t.Blockchain.ExecuteTask(execTaskOptions); err != nil {
 		logger.WithError(err).Errorf("failed to execute task, taskID: %s", taskId)
 		return err
 	}

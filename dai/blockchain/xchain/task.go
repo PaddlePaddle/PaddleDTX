@@ -14,7 +14,6 @@
 package xchain
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
@@ -23,8 +22,7 @@ import (
 )
 
 // PublishTask publishes task on xchain
-func (x *XChain) PublishTask(ctx context.Context,
-	opt *blockchain.PublishFLTaskOptions) error {
+func (x *XChain) PublishTask(opt *blockchain.PublishFLTaskOptions) error {
 	opts, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -41,8 +39,7 @@ func (x *XChain) PublishTask(ctx context.Context,
 }
 
 // ListTask lists tasks from xchain
-func (x *XChain) ListTask(ctx context.Context, opt *blockchain.ListFLTaskOptions) (
-	blockchain.FLTasks, error) {
+func (x *XChain) ListTask(opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error) {
 	var ts blockchain.FLTasks
 
 	opts, err := json.Marshal(*opt)
@@ -66,7 +63,7 @@ func (x *XChain) ListTask(ctx context.Context, opt *blockchain.ListFLTaskOptions
 }
 
 // GetTaskById gets task by id
-func (x *XChain) GetTaskById(ctx context.Context, id string) (blockchain.FLTask, error) {
+func (x *XChain) GetTaskById(id string) (blockchain.FLTask, error) {
 	var t blockchain.FLTask
 	args := map[string]string{
 		"id": id,
@@ -85,16 +82,16 @@ func (x *XChain) GetTaskById(ctx context.Context, id string) (blockchain.FLTask,
 }
 
 // ConfirmTask is called when Executor confirms task
-func (x *XChain) ConfirmTask(ctx context.Context, opt *blockchain.FLTaskConfirmOptions) error {
-	return x.setTaskConfirmStatus(ctx, opt, true)
+func (x *XChain) ConfirmTask(opt *blockchain.FLTaskConfirmOptions) error {
+	return x.setTaskConfirmStatus(opt, true)
 }
 
 // RejectTask is called when Executor rejects task
-func (x *XChain) RejectTask(ctx context.Context, opt *blockchain.FLTaskConfirmOptions) error {
-	return x.setTaskConfirmStatus(ctx, opt, false)
+func (x *XChain) RejectTask(opt *blockchain.FLTaskConfirmOptions) error {
+	return x.setTaskConfirmStatus(opt, false)
 }
 
-func (x *XChain) setTaskConfirmStatus(ctx context.Context, opt *blockchain.FLTaskConfirmOptions, isConfirm bool) error {
+func (x *XChain) setTaskConfirmStatus(opt *blockchain.FLTaskConfirmOptions, isConfirm bool) error {
 	opts, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -114,9 +111,9 @@ func (x *XChain) setTaskConfirmStatus(ctx context.Context, opt *blockchain.FLTas
 }
 
 // StartTask is called when Requester starts task after all Executors confirmed
-func (x *XChain) StartTask(ctx context.Context, id string, sig []byte) error {
+func (x *XChain) StartTask(id string, sig []byte) error {
 	args := map[string]string{
-		"taskId":    string(id),
+		"taskId":    id,
 		"signature": string(sig),
 	}
 	mName := "StartTask"
@@ -127,16 +124,16 @@ func (x *XChain) StartTask(ctx context.Context, id string, sig []byte) error {
 }
 
 // ExecuteTask is called when Executor run task
-func (x *XChain) ExecuteTask(ctx context.Context, opt *blockchain.FLTaskExeStatusOptions) error {
-	return x.setTaskExecuteStatus(ctx, opt, false)
+func (x *XChain) ExecuteTask(opt *blockchain.FLTaskExeStatusOptions) error {
+	return x.setTaskExecuteStatus(opt, false)
 }
 
 // FinishTask is called when task execution finished
-func (x *XChain) FinishTask(ctx context.Context, opt *blockchain.FLTaskExeStatusOptions) error {
-	return x.setTaskExecuteStatus(ctx, opt, true)
+func (x *XChain) FinishTask(opt *blockchain.FLTaskExeStatusOptions) error {
+	return x.setTaskExecuteStatus(opt, true)
 }
 
-func (x *XChain) setTaskExecuteStatus(ctx context.Context, opt *blockchain.FLTaskExeStatusOptions, isFinish bool) error {
+func (x *XChain) setTaskExecuteStatus(opt *blockchain.FLTaskExeStatusOptions, isFinish bool) error {
 	opts, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,

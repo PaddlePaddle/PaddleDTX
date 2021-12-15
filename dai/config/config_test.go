@@ -23,8 +23,9 @@ func TestInitCliConfig(t *testing.T) {
 
 	for _, value := range paths {
 		t.Run("testInitConfig: "+value, func(t *testing.T) {
-			err := InitCliConfig(value)
-			t.Error(err)
+			if err := InitCliConfig(value); err != nil {
+				t.Error(err)
+			}
 			t.Logf("Log: %+v", GetLogConf())
 			cliConf, _ := json.MarshalIndent(GetCliConf(), "", "    ")
 			t.Logf("cliConf: %+v", string(cliConf))

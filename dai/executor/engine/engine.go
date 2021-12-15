@@ -60,7 +60,7 @@ func NewEngine(conf *config.ExecutorConf) (e *Engine, err error) {
 // Start registers local node to blockchain and starts Monitor
 func (e *Engine) Start(ctx context.Context) error {
 	// register node
-	if err := e.node.Register(ctx, e.chain); err != nil {
+	if err := e.node.Register(e.chain); err != nil {
 		return err
 	}
 	// re-execute tasks in Processing status
@@ -95,7 +95,7 @@ func (e *Engine) ConfirmTask(ctx context.Context, in *pbTask.ConfirmTaskRequest)
 	}
 
 	// invoke contract to confirm task
-	err := e.chain.ConfirmTask(ctx, confirmOptions)
+	err := e.chain.ConfirmTask(confirmOptions)
 	if err != nil {
 		return &pbTask.TaskResponse{}, errorx.Wrap(err, "failed confirm task")
 	}
@@ -114,7 +114,7 @@ func (e *Engine) ListTask(ctx context.Context, in *pbTask.ListTaskRequest) (*pbT
 		Limit:     in.Limit,
 	}
 	// invoke contract to list tasks
-	fts, err := e.chain.ListTask(ctx, listOptions)
+	fts, err := e.chain.ListTask(listOptions)
 	if err != nil {
 		return &pbTask.FLTasks{}, errorx.Wrap(err, "failed list task")
 	}
@@ -129,7 +129,7 @@ func (e *Engine) ListTask(ctx context.Context, in *pbTask.ListTaskRequest) (*pbT
 // GetTaskById queries task details by taskID
 func (e *Engine) GetTaskById(ctx context.Context, in *pbTask.GetTaskRequest) (*pbTask.FLTask, error) {
 	// get task detail
-	task, err := e.chain.GetTaskById(ctx, in.TaskID)
+	task, err := e.chain.GetTaskById(in.TaskID)
 	if err != nil {
 		return &pbTask.FLTask{}, errorx.Wrap(err, "failed get task by id")
 	}
@@ -140,7 +140,7 @@ func (e *Engine) GetTaskById(ctx context.Context, in *pbTask.GetTaskRequest) (*p
 //  in.Owner must matches task.Requester
 func (e *Engine) GetPredictResult(ctx context.Context, in *pbTask.TaskRequest) (*pbTask.PredictResponse, error) {
 	// get task detail
-	task, err := e.chain.GetTaskById(ctx, in.TaskID)
+	task, err := e.chain.GetTaskById(in.TaskID)
 	if err != nil {
 		return &pbTask.PredictResponse{}, errorx.Wrap(err, "failed get predict result")
 	}
@@ -157,8 +157,8 @@ func (e *Engine) GetPredictResult(ctx context.Context, in *pbTask.TaskRequest) (
 		return &pbTask.PredictResponse{}, errorx.Wrap(err, "get predict result failed")
 	}
 
-	// get prediction result from Xuperdb
-	r, err := e.xuperDB.Read(ctx, task.Result)
+	// get prediction result from XuperDB
+	r, err := e.xuperDB.Read(task.Result)
 	if err != nil {
 		return &pbTask.PredictResponse{}, errorx.Wrap(err, "failed to get reader from xuperdb")
 	}
@@ -188,7 +188,7 @@ func (e *Engine) GetPredictResult(ctx context.Context, in *pbTask.TaskRequest) (
 func (e *Engine) StartTask(ctx context.Context, in *pbTask.TaskRequest) (*pbTask.TaskResponse, error) {
 	logger.Debugf("got StartTaskRequest: %v", in)
 	// get task detail
-	task, err := e.chain.GetTaskById(ctx, in.TaskID)
+	task, err := e.chain.GetTaskById(in.TaskID)
 	if err != nil {
 		return &pbTask.TaskResponse{}, errorx.Wrap(err, "get task from chain error")
 	}

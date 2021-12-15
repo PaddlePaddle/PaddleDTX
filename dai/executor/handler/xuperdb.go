@@ -16,7 +16,7 @@ type XuperDB struct {
 }
 
 // Write stores samples in xuperDB
-func (f *XuperDB) Write(ctx context.Context, r io.Reader, name string) (string, error) {
+func (f *XuperDB) Write(r io.Reader, name string) (string, error) {
 	client, err := httpclient.New(f.Address)
 	if err != nil {
 		return "", err
@@ -38,7 +38,7 @@ func (f *XuperDB) Write(ctx context.Context, r io.Reader, name string) (string, 
 }
 
 // Read gets samples from xuperDB
-func (f *XuperDB) Read(ctx context.Context, fileID string) (io.ReadCloser, error) {
+func (f *XuperDB) Read(fileID string) (io.ReadCloser, error) {
 	client, err := httpclient.New(f.Address)
 	if err != nil {
 		return nil, err

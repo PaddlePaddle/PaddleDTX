@@ -14,7 +14,6 @@
 package task
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -101,7 +100,7 @@ var publishCmd = &cobra.Command{
 			},
 		}
 
-		taskID, err := client.Publish(context.Background(), requestClient.PublishOptions{
+		taskID, err := client.Publish(requestClient.PublishOptions{
 			PrivateKey:  privateKey,
 			Files:       files,
 			TaskName:    taskName,

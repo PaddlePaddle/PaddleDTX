@@ -43,7 +43,7 @@ type Client struct {
 	XchainClient *xchainblockchain.XChain
 }
 
-// GetRequestClient returns client for Requester by xchain configuration
+// GetRequestClient returns client for Requester by blockchain configuration
 func GetRequestClient(configPath string) (*Client, error) {
 	// check blockchain config yaml
 	err := checkConfig(configPath)
@@ -81,7 +81,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 		if opt.AlgoParam.ModelTaskID == "" {
 			return nil, errorx.New(errorx.ErrCodeParam, "taskID can not empty for predict task")
 		}
-		task, err := c.GetTaskById(context.TODO(), opt.AlgoParam.ModelTaskID)
+		task, err := c.GetTaskById(opt.AlgoParam.ModelTaskID)
 		if err != nil || task.Status != blockchain.TaskFinished {
 			return nil, errorx.New(errorx.ErrCodeParam, "failed to get task or task status is not finished")
 		}
@@ -116,7 +116,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 	var fileOwners []string
 	isLabelExist := 0
 	for index, fileID := range fileIDs {
-		file, err := c.XchainClient.GetFileByID(context.TODO(), fileID)
+		file, err := c.XchainClient.GetFileByID(fileID)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +147,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 		}
 		// get dataID address
 		fileOwners = append(fileOwners, fmt.Sprintf("%x", file.Owner))
-		dataNode, err := c.XchainClient.GetDataNodeByID(context.TODO(), file.Owner)
+		dataNode, err := c.XchainClient.GetDataNodeByID(file.Owner)
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +165,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 }
 
 // Publish publishes a task
-func (c *Client) Publish(ctx context.Context, opt PublishOptions) (taskId string, err error) {
+func (c *Client) Publish(opt PublishOptions) (taskId string, err error) {
 	pubkey, privkey, err := checkUserPrivateKey(opt.PrivateKey)
 	if err != nil {
 		return taskId, err
@@ -205,15 +205,15 @@ func (c *Client) Publish(ctx context.Context, opt PublishOptions) (taskId string
 		Signature: sig[:],
 	}
 
-	if err := c.XchainClient.PublishTask(ctx, pubOpt); err != nil {
+	if err := c.XchainClient.PublishTask(pubOpt); err != nil {
 		return taskId, err
 	}
 	return task.ID, nil
 }
 
 // GetTaskById gets task by taskID
-func (c *Client) GetTaskById(ctx context.Context, id string) (t blockchain.FLTask, err error) {
-	t, err = c.XchainClient.GetTaskById(ctx, id)
+func (c *Client) GetTaskById(id string) (t blockchain.FLTask, err error) {
+	t, err = c.XchainClient.GetTaskById(id)
 	if err != nil {
 		return t, err
 	}
@@ -225,14 +225,14 @@ func (c *Client) GetTaskById(ctx context.Context, id string) (t blockchain.FLTas
 // status is task status to search
 // only task published after "start" before "end" will be listed
 // limit is the maximum number of tasks to response
-func (c *Client) ListTask(ctx context.Context, pubkeyStr, status string, start, end,
+func (c *Client) ListTask(pubkeyStr, status string, start, end,
 	limit int64) (tasks blockchain.FLTasks, err error) {
 	pubkey, err := hex.DecodeString(pubkeyStr)
 	if err != nil {
 		return tasks, errorx.Wrap(err, "failed to decode public key")
 	}
 
-	tasks, err = c.XchainClient.ListTask(ctx, &blockchain.ListFLTaskOptions{
+	tasks, err = c.XchainClient.ListTask(&blockchain.ListFLTaskOptions{
 		PubKey:    pubkey[:],
 		TimeStart: start,
 		TimeEnd:   end,
@@ -243,7 +243,7 @@ func (c *Client) ListTask(ctx context.Context, pubkeyStr, status string, start, 
 }
 
 // StartTask starts task by taskID
-func (c *Client) StartTask(ctx context.Context, privateKey, id string) (err error) {
+func (c *Client) StartTask(privateKey, id string) (err error) {
 	pubkey, privkey, err := checkUserPrivateKey(privateKey)
 	if err != nil {
 		return err
@@ -254,20 +254,20 @@ func (c *Client) StartTask(ctx context.Context, privateKey, id string) (err erro
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign fl task")
 	}
-	err = c.XchainClient.StartTask(ctx, id, sig[:])
+	err = c.XchainClient.StartTask(id, sig[:])
 	return err
 }
 
 // GetPredictResult gets predict result by taskID
 // output is the path to save predict result
-func (c *Client) GetPredictResult(ctx context.Context, privateKey, taskID, output string) (err error) {
+func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error) {
 	pubkey, privkey, err := checkUserPrivateKey(privateKey)
 	if err != nil {
 		return err
 	}
 
 	// get task
-	task, err := c.XchainClient.GetTaskById(ctx, taskID)
+	task, err := c.XchainClient.GetTaskById(taskID)
 	if err != nil {
 		return err
 	}
@@ -277,7 +277,7 @@ func (c *Client) GetPredictResult(ctx context.Context, privateKey, taskID, outpu
 	}
 
 	// get result file and owner's host
-	resultFile, err := c.XchainClient.GetFileByID(ctx, task.Result)
+	resultFile, err := c.XchainClient.GetFileByID(task.Result)
 	if err != nil {
 		return errorx.Wrap(err, "failed to get predict fileId")
 	}
