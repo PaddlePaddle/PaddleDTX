@@ -38,8 +38,8 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	├── conf
 	│   ├── config-dataowner.toml
 	│   └── config-storage.toml
-	├── xdata                   //数据存储服务启动二进制,根据配置文件的不同有数据持有节点或存储节点两种类型
-	└── xdata-cli               //数据存储服务操作客户端
+	├── xdb                   //数据存储服务启动二进制,根据配置文件的不同有数据持有节点或存储节点两种类型
+	└── xdb-cli               //数据存储服务操作客户端
 	```
 3. 编译Distributed AI
 	```
@@ -57,7 +57,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	```
 4. 编译区块链合约
 	```
-	$ go build -o paddlempc blockchain/xchain/contract/main.go
+	$ go build -o paddlempc ./blockchain/xchain/contract
 	```
 	编译产出为 paddlempc 合约文件，为安装在xchain 区块链上的合约文件。
 
@@ -98,7 +98,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	
 	每一个 XuperDB 的节点都有一对公私钥，用来标识节点的账户，公私钥可以通过如下XuperDB的客户端命令进行获取：
 	```
-	$ ./xdata-cli nodes genkey
+	$ ./xdb-cli nodes genkey
 	```
 	请妥善保存您创建的公私钥对，在后续的配置及命令行使用时您将会频繁的用到它；如果您是第一次搭建网络的话，建议使用默认配置文件中的私钥。
 	<br><br>
@@ -119,17 +119,21 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 
 		[storage.blockchain]
 		    [storage.blockchain.xchain]
+		        # 助记词为用户安装合约过程中创建的区块链账户，取值./ukeys/mnemonic
 		        mnemonic = "充 雄 孔 坝 低 狠 争 短 摸 拜 晨 造"
 		        contractName = "paddlempc"
 		        contractAccount = "XC1234567890123456@xuper"
 		        chainAddress = "127.0.0.1:37101"
 		        chainName = "xuper"
+		[storage.mode]
+			[storage.mode.local]
+				rootPath = "./slices"
 		```
 		其中，listenAddress和publicAddress 指定服务监听的地址及对外暴露的地址，blockchain配置中使用区块链网络部署时创建的账户助记词、合约账户及合约名。
 
 		启动服务：
 		```
-		$ nohup ./xdata -c conf/config-storage.toml > storage.log &
+		$ nohup ./xdb -c conf/config-storage.toml > storage.log &
 		```
 
 	2. 启动数据持有节点
@@ -144,31 +148,29 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		# genkey创建的私钥, 对账户使用不熟悉的话建议使用默认账户
 		privateKey = "5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79"
 
-		[storage.blockchain]
-		    [storage.blockchain.xchain]
+		[dataOwner.blockchain]
+		    [dataOwner.blockchain.xchain]
+		        # 助记词为用户安装合约过程中创建的区块链账户，取值./ukeys/mnemonic
 		        mnemonic = "充 雄 孔 坝 低 狠 争 短 摸 拜 晨 造"
 		        contractName = "paddlempc"
 		        contractAccount = "XC1234567890123456@xuper"
 		        chainAddress = "127.0.0.1:37101"
 		        chainName = "xuper"
-		[storage.mode]
-			[storage.mode.local]
-				rootPath = "./data/slices"
 		```
 		其中，listenAddress和publicAddress 指定服务监听的地址及对外暴露的地址，blockchain配置中使用区块链网络部署时创建的账户助记词、合约账户及合约名，rootPath指定文件存储的本地路径。
 
 		启动服务：
 		```
-		$ nohup ./xdata -c conf/config-dataowner.toml > dataowner.log &
+		$ nohup ./xdb -c conf/config-dataowner.toml > dataowner.log &
 		```
 
 		*注意：一般构建 PaddleDTX 网络至少需要两方参与，即两个数据持有节点，对应了两个计算任务执行节点，这里为了说明方便启动一个数据持有节点，您也可以根据实际需求自行启动多个数据存储节点和数据持有节点；配置中的privateKey参数为节点的身份，不同privateKey即对应了不同的身份。*
 
 	3. 查看服务状态
 
-		使用 xdata-cli 客户端执行如下命令，请求数据持有节点查看存储节点的在线状态：
+		使用 xdb-cli 客户端执行如下命令，请求数据持有节点查看存储节点的在线状态：
 		```
-		$ ./xdata-cli nodes list --host http://127.0.0.1:8123
+		$ ./xdb-cli nodes list --host http://127.0.0.1:8123
 		```
 3. 部署Distributed AI
 
@@ -357,7 +359,7 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 
 	查看存储节点列表：
 	```
-	$ docker exec -it dataowner1.node.com sh -c "./xdata-cli nodes list --host http://dataowner1.node.com:80"
+	$ docker exec -it dataowner1.node.com sh -c "./xdb-cli nodes list --host http://dataowner1.node.com:80"
 	```
 
 3. 部署 Distributed AI
