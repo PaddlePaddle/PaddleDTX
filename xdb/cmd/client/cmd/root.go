@@ -25,7 +25,7 @@ import (
 
 // rootCmd represents the base command that is called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "xdata",
+	Use:   "xdb-cli",
 	Short: "for file and node operation",
 }
 

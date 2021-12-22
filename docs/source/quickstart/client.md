@@ -15,7 +15,7 @@ PaddleDTX各方使用的客户端工具详细使用说明如下：
 使用 XuperDB 的第一步是在每一个数据持有节点创建文件存储的命名空间，使用如下命令：
 
 ```
-$ ./xdata-cli files addns  --host http://127.0.0.1:8122 -k 14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21 -n paddlempc  -r 2
+$ ./xdb-cli files addns  --host http://127.0.0.1:8122 -k 14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21 -n paddlempc  -r 2
 ```
 
 可以通过替换 host 来实现请求不同的数据持有节点；-k 参数为对应数据持有节点的私钥，不同的数据持有节点有不同私钥，可以通过对应的配置 config.toml 来获取；-n 参数为命名空间的名称，这里命名空间会被配置到任务执行节点中，所以需要创建任务执行节点中使用的命名空间；-r 参数为副本数，一般取大于 1 的数。
@@ -23,13 +23,13 @@ $ ./xdata-cli files addns  --host http://127.0.0.1:8122 -k 14a54c188d0071bc1b161
 如果您使用 docker-compose 来部署网络，需要进入 docker 后执行命令，也可以使用docker exec命令，例如
 
 ```
-$ docker exec -it dataowner1.node.com sh -c "./xdata-cli files addns  --host http://dataowner1.node.com:80 -k 14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21 -n paddlempc  -r 1"
+$ docker exec -it dataowner1.node.com sh -c "./xdb-cli files addns  --host http://dataowner1.node.com:80 -k 14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21 -n paddlempc  -r 1"
 ```
 
 使用 listns 命令可以查看已有的命名空间：
 
 ```
-$ ./xdata-cli files listns  --host http://127.0.0.1:8122 -o 4637ef79f14b036ced59b76408b0d88453ac9e5baa523a86890aa547eac3e3a0f4a3c005178f021c1b060d916f42082c18e1d57505cdaaeef106729e6442f4e5
+$ ./xdb-cli files listns  --host http://127.0.0.1:8122 -o 4637ef79f14b036ced59b76408b0d88453ac9e5baa523a86890aa547eac3e3a0f4a3c005178f021c1b060d916f42082c18e1d57505cdaaeef106729e6442f4e5
 ```
 
 -o 参数为数据持有节点的公钥
@@ -41,7 +41,7 @@ $ ./xdata-cli files listns  --host http://127.0.0.1:8122 -o 4637ef79f14b036ced59
 对应我们部署的环境，需要上传两方的样本文件和一方的预测文件。
 
 ```
-$ ./xdata-cli --host http://127.0.0.1:8122 files upload -k 14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21 -n paddlempc -m train_dataA4.csv -i ./train_dataA.csv --ext '{"FileType":"csv","Features":"id,CRIM,ZN,INDUS,CHAS,NOX,RM", "TotalRows":457}'  -e '2021-12-10 12:00:00' -d 'train_dataA4'
+$ ./xdb-cli --host http://127.0.0.1:8122 files upload -k 14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21 -n paddlempc -m train_dataA4.csv -i ./train_dataA.csv --ext '{"FileType":"csv","Features":"id,CRIM,ZN,INDUS,CHAS,NOX,RM", "TotalRows":457}'  -e '2021-12-10 12:00:00' -d 'train_dataA4'
 # 命令返回
 FileID: 01edba10-ef04-4096-a984-c81191262d03
 ```
@@ -51,7 +51,7 @@ FileID: 01edba10-ef04-4096-a984-c81191262d03
 上传文件后，可以使用getbyid命令进行文件的查询：
 
 ```
-$ ./xdata-cli files getbyid  -i 01edba10-ef04-4096-a984-c81191262d03 --host http://127.0.0.1:8122
+$ ./xdb-cli files getbyid  -i 01edba10-ef04-4096-a984-c81191262d03 --host http://127.0.0.1:8122
 ```
 
 相同的，如果使用 docker 的话，需要进入 docker 后执行命令，也可以使用docker exec命令。
@@ -144,7 +144,7 @@ $ ./requester-cli task start --id a7dfac43-fa51-423e-bd05-8e0965c708a8 -k 14a54c
 预测任务执行成功后，计算需求方可以获取到预测的结果。
 
 ```
-$ requester-cli task result --id a7dfac43-fa51-423e-bd05-8e0965c708a8 -k 14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21 --conf ./testdata/executor/node1/conf/config.toml  -o ./output.csv
+$ ./requester-cli task result --id a7dfac43-fa51-423e-bd05-8e0965c708a8 -k 14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21 --conf ./testdata/executor/node1/conf/config.toml  -o ./output.csv
 ```
 
 各参数说明如下：

@@ -1,6 +1,6 @@
-# Command-line Tool: xdata-cli 
-The `xdata-cli` is a command-line tool to use the decentralized storage network by a DataOwner node.
-There are three major subcommands of `xdata-cli` as follows.
+# Command-line Tool: xdb-cli 
+The `xdb-cli` is a command-line tool to use the decentralized storage network by a DataOwner node.
+There are three major subcommands of `xdb-cli` as follows.
 
 | command    |        explanation      | 
 | :----------: |   :-----------:   | 
@@ -9,7 +9,7 @@ There are three major subcommands of `xdata-cli` as follows.
 | challenge    | challenge operations used to check file integrity in the storage node |  
 
 
-## Command Parsing: `xdata-cli nodes`
+## Command Parsing: `xdb-cli nodes`
 
 | command    |        explanation      |
 | ---------- |   -----------   |
@@ -39,21 +39,21 @@ There are three major subcommands of `xdata-cli` as follows.
 
 ```
 DEMO:
-$ ./xdata-cli nodes add -a http://127.0.0.2:8123 -n storage1 -k 0e632dfe60f6a70ae5230e963780c581499beccf6d04133c2dd1e59e27cb6404 -d 'a storage node'  --host http://localhost:8122
+$ ./xdb-cli nodes add -a http://127.0.0.2:8123 -n storage1 -k 0e632dfe60f6a70ae5230e963780c581499beccf6d04133c2dd1e59e27cb6404 -d 'a storage node'  --host http://localhost:8122
 ```
 
 ### genkey
 
 ```
 DEMO:
-$ ./xdata-cli nodes genkey
+$ ./xdb-cli nodes genkey
 ```
 
 ### genpdpkeys
 
 ```
 DEMO:
-$ ./xdata-cli nodes genpdpkeys
+$ ./xdb-cli nodes genpdpkeys
 ```
 
 ### get
@@ -64,7 +64,7 @@ $ ./xdata-cli nodes genpdpkeys
 
 ```
 DEMO:
-$ ./xdata-cli nodes get --host http://localhost:8122 -i 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+$ ./xdb-cli nodes get --host http://localhost:8122 -i 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
 ```
 
 ### health
@@ -75,14 +75,14 @@ $ ./xdata-cli nodes get --host http://localhost:8122 -i 363c4c996a0a6d83f3d8b318
 
 ```
 DEMO:
-$ ./xdata-cli nodes health --host http://localhost:8122 -i 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+$ ./xdb-cli nodes health --host http://localhost:8122 -i 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
 ```
 
 ### list
 
 ```
 DEMO:
-$ ./xdata-cli nodes list --host http://localhost:8122
+$ ./xdb-cli nodes list --host http://localhost:8122
 ```
 
 ### mrecords
@@ -96,7 +96,7 @@ $ ./xdata-cli nodes list --host http://localhost:8122
 
 ```
 DEMO:
-$ ./xdata-cli nodes mrecords --host http://localhost:8122 --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+$ ./xdb-cli nodes mrecords --host http://localhost:8122 --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
 ```
 
 ### heartbeat
@@ -109,7 +109,7 @@ $ ./xdata-cli nodes mrecords --host http://localhost:8122 --id 363c4c996a0a6d83f
 
 ```
 DEMO:
-$ ./xdata-cli nodes heartbeat --host http://localhost:8122 --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -c "2021-08-04 17:29:00"
+$ ./xdb-cli nodes heartbeat --host http://localhost:8122 --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -c "2021-08-04 17:29:00"
 ```
 
 ### offline
@@ -120,7 +120,7 @@ $ ./xdata-cli nodes heartbeat --host http://localhost:8122 --id 363c4c996a0a6d83
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 nodes offline -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+$ ./xdb-cli --host http://localhost:8122 nodes offline -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
 ```
 
 ### online
@@ -131,10 +131,10 @@ $ ./xdata-cli --host http://localhost:8122 nodes offline -k 5572e2fa0c259fe798e5
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 nodes online -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+$ ./xdb-cli --host http://localhost:8122 nodes online -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
 ```
 
-## Command Parsing: `xdata-cli files`
+## Command Parsing: `xdb-cli files`
 
 | command    |        explanation      |
 | ---------- |   -----------   |
@@ -167,7 +167,7 @@ $ ./xdata-cli --host http://localhost:8122 nodes online -k 5572e2fa0c259fe798e55
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files addns -n testns  -r 1 -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 
+$ ./xdb-cli --host http://localhost:8122 files addns -n testns  -r 1 -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 
 ```
 
 ### download
@@ -182,7 +182,7 @@ $ ./xdata-cli --host http://localhost:8122 files addns -n testns  -r 1 -k 5572e2
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files download -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 -n test -m bigfile -o ./testdata/bigfile 
+$ ./xdb-cli --host http://localhost:8122 files download -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 -n test -m bigfile -o ./testdata/bigfile 
 ```
 
 ### getbyid
@@ -193,7 +193,7 @@ $ ./xdata-cli --host http://localhost:8122 files download -k 5572e2fa0c259fe798e
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files getbyid  --id d86737bf-97ac-427f-a835-871d307c3589
+$ ./xdb-cli --host http://localhost:8122 files getbyid  --id d86737bf-97ac-427f-a835-871d307c3589
 ```
 
 ### getbyname
@@ -201,11 +201,11 @@ $ ./xdata-cli --host http://localhost:8122 files getbyid  --id d86737bf-97ac-427
 | :------: | :----------: | :------------: | :---------: |
 |   --filename  |      -m    |  file's name |    yes    |
 |   --namespace  |      -n    |   namespace |    yes    |
-|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --owner  |      -o    |  DataOwner's public key |    yes    |
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files getbyname  -n testns -m bigfile -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+$ ./xdb-cli --host http://localhost:8122 files getbyname  -n testns -m bigfile -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
 ```
 
 ### getns
@@ -213,18 +213,18 @@ $ ./xdata-cli --host http://localhost:8122 files getbyname  -n testns -m bigfile
 |  flag  | short flag | explanation | necessary |
 | :------: | :----------: | :------------: | :---------: |
 |   --namespace  |      -n    |   namespace |    yes    |
-|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --owner  |      -o    |  DataOwner's public key |    yes    |
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files getns -n testns  -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 
+$ ./xdb-cli --host http://localhost:8122 files getns -n testns  -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 
 ```
 
 ### list
 
 |  flag  | short flag | explanation | necessary |
 | :------: | :----------: | :------------: | :---------: |
-|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --owner  |      -o    |  DataOwner's public key |    yes    |
 |   --namespace  |      -n    |   namespace |    yes    |
 |   --limit  |  -l   |   limit for list, 0 for unlimited|    no    |
 |   --start  |      -s   |   start time of the slice migrate' query |    no    |
@@ -232,7 +232,7 @@ $ ./xdata-cli --host http://localhost:8122 files getns -n testns  -o 363c4c996a0
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files list -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n test -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00" --ext "{'FileType':'csv','Features':'room,price', 'TotalRows':400}"
+$ ./xdb-cli --host http://localhost:8122 files list -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n test -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00" --ext "{'FileType':'csv','Features':'room,price', 'TotalRows':400}"
 ```
 
 
@@ -240,7 +240,7 @@ $ ./xdata-cli --host http://localhost:8122 files list -o 363c4c996a0a6d83f3d8b31
 
 |  flag  | short flag | explanation | necessary |
 | :------: | :----------: | :------------: | :---------: |
-|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --owner  |      -o    |  DataOwner's public key |    yes    |
 |   --namespace  |      -n    |   namespace |    yes    |
 |   --limit  |  -l   |   limit for list, 0 for unlimited|    no    |
 |   --start  |      -s   |   start time of the slice migrate' query |    no    |
@@ -249,32 +249,32 @@ $ ./xdata-cli --host http://localhost:8122 files list -o 363c4c996a0a6d83f3d8b31
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files listexp -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n test -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
+$ ./xdb-cli --host http://localhost:8122 files listexp -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n test -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```
 
 ### listns
 
 |  flag  | short flag | explanation | necessary |
 | :------: | :----------: | :------------: | :---------: |
-|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --owner  |      -o    |  DataOwner's public key |    yes    |
 |   --limit  |  -l   |   limit for list, 0 for unlimited|    no    |
 |   --start  |      -s   |   start time of the slice migrate' query |    no    |
 |   --end  |      -e   |   end time of the slice migrate' query |    no    |
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files listns -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 
+$ ./xdb-cli --host http://localhost:8122 files listns -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 
 ```
 
 ### syshealth
 
 |  flag  | short flag | explanation | necessary |
 | :------: | :----------: | :------------: | :---------: |
-|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --owner  |      -o    |  DataOwner's public key |    yes    |
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files syshealth -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+$ ./xdb-cli --host http://localhost:8122 files syshealth -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
 ```
 ### upload
 
@@ -290,7 +290,7 @@ $ ./xdata-cli --host http://localhost:8122 files syshealth -o 363c4c996a0a6d83f3
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files upload -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 -n test -m bigfile -i ./bin/client -e "2021-06-30 15:00:00" -d "this is a test file"
+$ ./xdb-cli --host http://localhost:8122 files upload -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 -n test -m bigfile -i ./bin/client -e "2021-06-30 15:00:00" -d "this is a test file"
 ```
 
 ### ureplica
@@ -304,7 +304,7 @@ $ ./xdata-cli --host http://localhost:8122 files upload -k 5572e2fa0c259fe798e55
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files ureplica -n py  -r 3 -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+$ ./xdb-cli --host http://localhost:8122 files ureplica -n py  -r 3 -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
 ```
 
 ### utime
@@ -317,10 +317,10 @@ $ ./xdata-cli --host http://localhost:8122 files ureplica -n py  -r 3 -k 5572e2f
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 files utime -e '2021-08-08 15:15:04' -i b87b588f-2e46-4ee5-8128-888592ada4fd -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+$ ./xdb-cli --host http://localhost:8122 files utime -e '2021-08-08 15:15:04' -i b87b588f-2e46-4ee5-8128-888592ada4fd -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
 ```
 
-## Command Parsing: `xdata-cli challenge`
+## Command Parsing: `xdb-cli challenge`
 
 | command    |        explanation      |
 | ---------- |   -----------   |
@@ -336,7 +336,7 @@ $ ./xdata-cli --host http://localhost:8122 files utime -e '2021-08-08 15:15:04' 
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 challenge get --id ff334622-1442-425c-8d57-3f1b915b84e8 
+$ ./xdb-cli --host http://localhost:8122 challenge get --id ff334622-1442-425c-8d57-3f1b915b84e8 
 ```
 
 ### proved
@@ -347,14 +347,14 @@ $ ./xdata-cli --host http://localhost:8122 challenge get --id ff334622-1442-425c
 |   --limit  |  -l   |   limit for list num|    no    |
 |   --list  |   |  whether or not show challenges list, 0:not show |  default 1  |
 |   --node  |  -n  |  storage node's id |    yes    |
-|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --owner  |      -o    |  DataOwner's public key |    yes    |
 |   --start  |      -s   |   start time of the query |    no    |
 |   --end  |      -e   |   end time of the query |    no    |
 
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 challenge proved -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
+$ ./xdb-cli --host http://localhost:8122 challenge proved -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```
 
 ### failed
@@ -365,14 +365,14 @@ $ ./xdata-cli --host http://localhost:8122 challenge proved -o 363c4c996a0a6d83f
 |   --limit  |  -l   |   limit for list num|    no    |
 |   --list  |   |  whether or not show challenges list, 0:not show |  default 1  |
 |   --node  |  -n  |  storage node's id |    yes    |
-|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --owner  |      -o    |  DataOwner's public key |    yes    |
 |   --start  |      -s   |   start time of the query |    no    |
 |   --end  |      -e   |   end time of the query |    no    |
 
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:8122 challenge failed -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
+$ ./xdb-cli --host http://localhost:8122 challenge failed -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```
 
 ### toprove
@@ -383,12 +383,12 @@ $ ./xdata-cli --host http://localhost:8122 challenge failed -o 363c4c996a0a6d83f
 |   --limit  |  -l   |   limit for list num|    no    |
 |   --list  |   |  whether or not show challenges list, 0:not show |  default 1  |
 |   --node  |  -n  |  storage node's id |    yes    |
-|   --owner  |      -o    |  DataOwner's private key |    yes    |
+|   --owner  |      -o    |  DataOwner's public key |    yes    |
 |   --start  |      -s   |   start time of the query |    no    |
 |   --end  |      -e   |   end time of the query |    no    |
 
 
 ```
 DEMO:
-$ ./xdata-cli --host http://localhost:81221 challenge toprove -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00" --list 0
+$ ./xdb-cli --host http://localhost:81221 challenge toprove -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00" --list 0
 ```
