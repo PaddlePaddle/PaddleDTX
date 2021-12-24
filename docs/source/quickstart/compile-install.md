@@ -110,7 +110,11 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		修改配置文件，修改内容如下：
 		```
 		# vim conf/config-storage.toml
-		# 
+		#
+		type = "storage"
+		[storage]
+		name = "storageNode1"
+		# 修改服务监听端口及对外服务地址
 		listenAddress = ":8122"
 		publicAddress = "127.0.0.1:8122"
 
@@ -118,6 +122,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		privateKey = "5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79"
 
 		[storage.blockchain]
+		    type = "xchain"
 		    [storage.blockchain.xchain]
 		        # 助记词为用户安装合约过程中创建的区块链账户，取值./ukeys/mnemonic
 		        mnemonic = "充 雄 孔 坝 低 狠 争 短 摸 拜 晨 造"
@@ -125,11 +130,29 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		        contractAccount = "XC1234567890123456@xuper"
 		        chainAddress = "127.0.0.1:37101"
 		        chainName = "xuper"
+
+		    [storage.blockchain.fabric]
+		        configFile = "./config/fabric/config.yaml"
+		        channelId = "mychannel"
+		        chaincode = "mycc"
+		        userName = "Admin"
+		        orgName = "org1"
+
 		[storage.mode]
-			[storage.mode.local]
-				rootPath = "./slices"
+		    type = "local"
+		    [storage.mode.local]
+		        rootPath = "./slices"
+
+		[storage.monitor]
+		    challengingSwitch = "on"
+		    nodemaintainerSwitch = "on"
+		    fileclearInterval = 24
+
+		[log]
+		level = "debug"
+		path = "./logs"
 		```
-		其中，listenAddress和publicAddress 指定服务监听的地址及对外暴露的地址，blockchain配置中使用区块链网络部署时创建的账户助记词、合约账户及合约名。
+		其中，listenAddress和publicAddress 指定服务监听的地址及对外暴露的地址，blockchain配置中使用区块链网络部署时创建的账户助记词、合约账户及合约名，rootPath指定文件存储的本地路径。
 
 		启动服务：
 		```
@@ -141,14 +164,44 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		修改配置文件，修改内容如下：
 		```
 		# vim conf/config-dataowner.toml
-		# 
+		#
+		type = "dataOwner"
+		[dataOwner]
+		name = "dataOwnerNode1"
+		# 修改服务监听端口及对外服务地址
 		listenAddress = ":8123"
 		publicAddress = "127.0.0.1:8123"
 
 		# genkey创建的私钥, 对账户使用不熟悉的话建议使用默认账户
 		privateKey = "5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79"
 
+		[dataOwner.slicer]
+		    type = "simpleSlicer"
+		    [dataOwner.slicer.simpleSlicer]
+		        blockSize = 4194304
+		        queueSize = 4
+
+		[dataOwner.encryptor]
+		    type = "softEncryptor"
+		    [dataOwner.encryptor.softEncryptor]
+		        password = "abcdefg"
+
+		[dataOwner.challenger]
+		    type = "pdp"
+		    [dataOwner.challenger.pdp]
+		        maxIndexNum = 5
+		        sk = "W4HyiC7kx+bafMftHrD7Mz4ff2/0Bb103fUIrbRVkFk="
+		        pk = "AVcT6JO4Ddcq+JjC2Vw/kGZSrCjEeCu1Lu1EFya9C96Nb/HtJkaHEJ4Ni89leAAaCbKu/oEFrfEpb3oAaEd2JqNuyBlWZ0MZk7PmFkaUlYaTVvQRUWRRSmiIZa+iNtJEIYC/AC5C88k1vRoXq3m7VonvJUFP95oLX3CSMMfSiUln"
+		        randu = "AfM3n7CzmkbVEBRPOYV8gH1qpyaQdTNA1MZ7PHYfmWs="
+		        randv = "TKOt9kE7m5O7fCztoyy1J+WpNugLxKPS3hweeUK+09Y="
+
+		    [leasee.challenger.merkle]
+		        leveldbRoot = "./challenger"
+		        shrinkSize = 500
+		        segmentSize = 5
+
 		[dataOwner.blockchain]
+		    type = "xchain"
 		    [dataOwner.blockchain.xchain]
 		        # 助记词为用户安装合约过程中创建的区块链账户，取值./ukeys/mnemonic
 		        mnemonic = "充 雄 孔 坝 低 狠 争 短 摸 拜 晨 造"
@@ -156,8 +209,27 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		        contractAccount = "XC1234567890123456@xuper"
 		        chainAddress = "127.0.0.1:37101"
 		        chainName = "xuper"
+
+		    [dataOwner.blockchain.fabric]
+		        configFile = "./config/fabric/config.yaml"
+		        channelId = "mychannel"
+		        chaincode = "mycc"
+		        userName = "Admin"
+		        orgName = "org1"
+
+		[dataOwner.copier]
+		    type = "random-copier"
+
+		[dataOwner.monitor]
+		    challengingSwitch = "on"
+		    filemaintainerSwitch = "on"
+		    filemigrateInterval = 6
+
+		[log]
+		level = "debug"
+		path = "./logs"
 		```
-		其中，listenAddress和publicAddress 指定服务监听的地址及对外暴露的地址，blockchain配置中使用区块链网络部署时创建的账户助记词、合约账户及合约名，rootPath指定文件存储的本地路径。
+		其中，listenAddress和publicAddress 指定服务监听的地址及对外暴露的地址，blockchain配置中使用区块链网络部署时创建的账户助记词、合约账户及合约名。
 
 		启动服务：
 		```
@@ -386,4 +458,5 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 	$ cd PaddleDTX/testdata/xdb
 	$ docker-compose -f docker-compose.yml up -d
 	```
+
 
