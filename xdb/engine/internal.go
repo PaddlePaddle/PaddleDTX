@@ -32,6 +32,10 @@ import (
 )
 
 // packChainFile rearranges the encrypted slices and calculates the digest that will be sent onto blockchain later
+// the digest of file contains:
+// merkle tree root, used to ensure the file is not tampered
+// slices meta, used to pull slices from storage nodes
+// slices structure, ensure the file can be recovered in a correct slice order
 func (e *Engine) packChainFile(fileID, challengeAlgorithm string, opt types.WriteOptions, originalSlices slicer.SliceMetas,
 	originalLen int, encryptedSlices []encryptor.EncryptedSlice, pdp types.PDP) (blockchain.File, error) {
 

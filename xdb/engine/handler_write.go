@@ -40,18 +40,31 @@ import (
 )
 
 const (
-	defaultLocatorAmount     = 4
-	defaultEncryptorAmount   = 4
+	defaultLocatorAmount = 4
+	// The number of goroutines for file slices encrypt concurrently
+	defaultEncryptorAmount = 4
+	// The number of goroutines for file slices push concurrently
 	defaultDistributorAmount = 4
 
+	// The number of retries when slices push failed,
+	// it is retried once per second and retried 5 times
 	defaultRetryTime = 5 // seconds
 )
 
+// finishWritenSlice encrypted slice info
+// contains slice digest and encrypted ciphertext
 type finishWritenSlice struct {
 	eSlice encryptor.EncryptedSlice
 }
 
 // Write upload a file and push file slices to storage nodes
+// The detailed steps are as follows:
+// 1. parameters check, the file is not allowed upload repeatedly
+// 2. first file encryption
+// 3. divide the file into multiple slices by a fixed size and generate copies
+// 4. second encryption of ciphertext slices
+// 5. push slices into storage nodes, retry five times if push failed
+// 6. store file's digest info into blockchain
 func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	r io.Reader) (resp types.WriteResponse, err error) {
 	ctx, cancel := context.WithCancel(ctx)

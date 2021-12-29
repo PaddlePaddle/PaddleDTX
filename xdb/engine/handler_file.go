@@ -395,6 +395,10 @@ func (e *Engine) GetChallenges(opt blockchain.ListChallengeOptions) (challenges 
 	return challenges, nil
 }
 
+// nsReplicaExpansion expand file replicas under the namespace
+// After each slice under the file is restored,
+// the replica is copied and pushed to the new storage node
+// If the challenge algorithm is Merkel, challenges will be generated for new storage node's slices
 func (e *Engine) nsReplicaExpansion(ctx context.Context, files []blockchain.File, healthNodes blockchain.NodeHs,
 	replica int, pri ecdsa.PrivateKey) error {
 

@@ -63,6 +63,10 @@ func newMonitor(conf *config.MonitorConf, opt *NewEngineOption) (*Monitor, error
 }
 
 // newChallengingMonitor initiates ChallengingMonitor
+// It's used for file's replicas retaining proof, nodes can start this through the switch
+// the replicas retaining proof supports two algorithms, Merkle tree and bilinear pairing
+// for dataOwner node, generate challenges request regularly
+// for storage node, answer dataOwner's challenges request
 func newChallengingMonitor(conf *config.MonitorConf, opt *NewEngineOption) (
 	*challenging.ChallengingMonitor, error) {
 
@@ -86,6 +90,8 @@ func newChallengingMonitor(conf *config.MonitorConf, opt *NewEngineOption) (
 }
 
 // newNodeMaintainer initiates NodeMaintainer
+// for storage node, nodeMaintainer can register node's address into blockchain,
+// clean expired file's slices and heartbeat
 func newNodeMaintainer(conf *config.MonitorConf, opt *NewEngineOption) (*nodemaintainer.NodeMaintainer, error) {
 	nodemaintainerSwitch := conf.NodemaintainerSwitch
 	if nodemaintainerSwitch != "on" {
@@ -106,6 +112,7 @@ func newNodeMaintainer(conf *config.MonitorConf, opt *NewEngineOption) (*nodemai
 }
 
 // newFileMaintainer initiates FileMaintainer
+// for dataOwner node, fileMaintainer used to check file's health and migrate unhealthy slices
 func newFileMaintainer(conf *config.MonitorConf, opt *NewEngineOption, interval int64) (*filemaintainer.FileMaintainer, error) {
 	filemaintainerSwitch := conf.FilemaintainerSwitch
 	if filemaintainerSwitch != "on" {

@@ -58,6 +58,13 @@ func verifyReadToken(opt types.ReadOptions) error {
 }
 
 // Read download file by pulling slices from storage nodes
+// The detailed steps are as follows:
+// 1. parameters check
+// 2. read file info from the blockchain
+// 3. decrypt the file's struct to get slice's order
+// 4. download slices from the storage node, if request fails, pull slices from other storage nodes
+// 5. slices decryption and combination
+// 6. decrypt the combined slices to get the original file
 func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser, error) {
 	ctx, cancel := context.WithCancel(ctx)
 
