@@ -85,6 +85,8 @@ type Copier interface {
 //  For xchain they are contract methods, and for fabric they are chaincode methods
 //  see more from blockchain.xchain and blockchain.fabric
 type Blockchain interface {
+	// The following contract methods is used by storage node,
+	// for distributed governance and healthy check of nodes
 	AddNode(opt *blockchain.AddNodeOptions) error
 	ListNodes() (blockchain.Nodes, error)
 	GetNode(id []byte) (blockchain.Node, error)
@@ -96,6 +98,7 @@ type Blockchain interface {
 	ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error)
 	GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error)
 
+	// The following contract methods is used by dataOwner node
 	PublishFile(file *blockchain.PublishFileOptions) error
 	GetFileByName(owner []byte, ns, name string) (blockchain.File, error)
 	GetFileByID(id string) (blockchain.File, error)
@@ -137,7 +140,7 @@ type Engine struct {
 	monitor *Monitor
 }
 
-// NewEngineOption contains parameters for initiating Engine
+// NewEngineOption initiates Engine by the node's configuration file
 type NewEngineOption struct {
 	LocalNode peer.Local
 

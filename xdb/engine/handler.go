@@ -26,7 +26,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
-// Push receive slices from others
+// Push receive slices from dataOwner nodes
 // rewriting a slice is not allowed
 func (e *Engine) Push(opt types.PushOptions, r io.Reader) (
 	types.PushResponse, error) {
@@ -53,7 +53,9 @@ func (e *Engine) Push(opt types.PushOptions, r io.Reader) (
 	return types.PushResponse{}, nil
 }
 
-// Pull serve local slices
+// Pull load ciphertext slices locally and return them to the dataOwner node
+// To prevent the request is intercepted and the slice is downloaded maliciously,
+// the request's validity is five minutes
 func (e *Engine) Pull(opt types.PullOptions) (io.ReadCloser, error) {
 	//check timestamp
 	var requestExpiredTime time.Duration = 5 * time.Minute

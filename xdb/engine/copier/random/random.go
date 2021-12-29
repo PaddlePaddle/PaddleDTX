@@ -124,7 +124,7 @@ func (m *RandomCopier) Push(ctx context.Context, id, sourceId string, r io.Reade
 }
 
 func (m *RandomCopier) Pull(ctx context.Context, id, fileId string, node *blockchain.Node) (io.ReadCloser, error) {
-	// 新增签名
+	// Add signature when pulling slices from storage nodes
 	timestamp := time.Now().UnixNano()
 	msg := fmt.Sprintf("%s,%s,%d", id, fileId, timestamp)
 	sig, err := ecdsa.Sign(m.privateKey, hash.HashUsingSha256([]byte(msg)))

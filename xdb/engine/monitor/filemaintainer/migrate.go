@@ -35,7 +35,10 @@ import (
 
 var l = logger.WithField("runner", "file migrate loop")
 
-// migrate checks storage-nodes health conditions and migrate slices from bad nodes to healthy nodes.
+// migrate checks storage-nodes health conditions and migrate slices from bad nodes to healthy nodes
+// The health of slices is determined by the number of slices's replicas and
+// the health of storage nodes where slices stored,
+// if the number of replicas is not enough, expand the slice replicas firstly during slice migration
 func (m *FileMaintainer) migrate(ctx context.Context) {
 	pubkey := ecdsa.PublicKeyFromPrivateKey(m.localNode.PrivateKey)
 
@@ -251,6 +254,10 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 }
 
 // migrateNode find available healthy node and migrate a slice from bad node to it
+// The detailed steps are as follows:
+// 1. pull slice from healthy node and decrypt it
+// 2. encrypt slice and push into the new storage node
+// 3. record slice migrated info and update it to the blockchain
 func (m FileMaintainer) migrateNode(ctx context.Context, slice blockchain.PublicSliceMeta,
 	nodeSliceMap map[string]blockchain.PublicSliceMeta, healthNodes blockchain.NodeHs,
 	healthNodesMap map[string]blockchain.NodeH, selectedNodes map[string][]string, fileID string,

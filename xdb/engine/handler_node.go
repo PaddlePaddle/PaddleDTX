@@ -168,6 +168,9 @@ func (e *Engine) GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions)
 }
 
 // GetHeartbeatNum gets storage node heartbeats number of given time
+// The total number of heartbeats is obtained from the blockchain and
+// the maximum number of heartbeats is estimated by given time,
+// node's heartbeat healthy rate is calculated from the total number and maximum number
 func (e *Engine) GetHeartbeatNum(id []byte, ctime int64) (int, int, error) {
 	node, err := e.chain.GetNode(id)
 	if err != nil {
