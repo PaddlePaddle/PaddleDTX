@@ -21,7 +21,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cloudflare/bn256"
+	bls12_381_ecc "github.com/consensys/gnark-crypto/ecc/bls12-381"
 )
 
 var fileNames = []string{"./testdata0", "./testdata1", "./testdata2"}
@@ -50,7 +50,7 @@ func TestPDP(t *testing.T) {
 	}
 
 	// 3. calculate sigmas
-	sigmas := []*bn256.G1{}
+	sigmas := []*bls12_381_ecc.G1Affine{}
 	for idx, fileName := range fileNames {
 		index := new(big.Int).SetInt64(int64(idx))
 		content, err := ioutil.ReadFile(fileName)

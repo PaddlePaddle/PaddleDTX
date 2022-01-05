@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/cloudflare/bn256"
+	bls12_381_ecc "github.com/consensys/gnark-crypto/ecc/bls12-381"
 )
 
 // GenerateChallenge generate a random challenge using index numbers
@@ -40,33 +40,34 @@ func GenerateChallenge(indexList []int) ([]*big.Int, []*big.Int, error) {
 // sigma = v1*sigma1 + ... + vc*sigmac
 // mu = (v1*m1 + ... + vc*mc) * g1
 // proof = {sigma, mu}
-func Prove(param ProofParams) (*bn256.G1, *bn256.G1, error) {
+func Prove(param ProofParams) (*bls12_381_ecc.G1Affine, *bls12_381_ecc.G1Affine, error) {
 	if len(param.Indices) != len(param.RandomVs) || len(param.Content) != len(param.Indices) || len(param.Indices) == 0 {
 		return nil, nil, fmt.Errorf("invalid challenge: %v", param)
 	}
 
-	sigma := new(bn256.G1)
+	sigma := new(bls12_381_ecc.G1Affine)
 	vm := new(big.Int)
 	for i := 0; i < len(param.Indices); i++ {
 		// 1. vi*sigma_i
-		vs := new(bn256.G1).ScalarMult(param.Sigmas[i], param.RandomVs[i])
+		vs := new(bls12_381_ecc.G1Affine).ScalarMultiplication(param.Sigmas[i], param.RandomVs[i])
 		if i == 0 {
 			sigma = vs
 		} else {
-			sigma = new(bn256.G1).Add(sigma, vs)
+			sigma = new(bls12_381_ecc.G1Affine).Add(sigma, vs)
 		}
 
 		// convert file content to int
 		miInt := new(big.Int).SetBytes(param.Content[i])
-		miInt = new(big.Int).Mod(miInt, bn256.Order)
+		miInt = new(big.Int).Mod(miInt, order)
 
 		// 2. vi*mi
 		vmi := new(big.Int).Mul(param.RandomVs[i], miInt)
-		vmi = new(big.Int).Mod(vmi, bn256.Order)
+		vmi = new(big.Int).Mod(vmi, order)
 		vm = new(big.Int).Add(vm, vmi)
-		vm = new(big.Int).Mod(vm, bn256.Order)
+		vm = new(big.Int).Mod(vm, order)
 	}
 
-	mu := new(bn256.G1).ScalarBaseMult(vm)
+	mu := new(bls12_381_ecc.G1Affine).ScalarMultiplication(&g1Gen, vm)
+
 	return sigma, mu, nil
 }

@@ -16,35 +16,40 @@ package pdp
 import (
 	"fmt"
 	"math/big"
-	"reflect"
 
-	"github.com/cloudflare/bn256"
+	bls12_381_ecc "github.com/consensys/gnark-crypto/ecc/bls12-381"
 )
 
 // Verify verify the proof
 // e(sigma, g2) = e( (v1*H(v||index_1) + ... + vc*H(v||index_c)) + u*mu, pk)
 func Verify(param VerifyParams) (bool, error) {
-	g2 := new(bn256.G2).ScalarBaseMult(new(big.Int).SetInt64(1))
-	left := bn256.Pair(param.Sigma, g2)
+	left, err := bls12_381_ecc.Pair([]bls12_381_ecc.G1Affine{*param.Sigma}, []bls12_381_ecc.G2Affine{g2Gen})
+	if err != nil {
+		return false, err
+	}
 
-	vh := new(bn256.G1)
+	vh := new(bls12_381_ecc.G1Affine)
 	for i := 0; i < len(param.Indices); i++ {
-		vi, err := concatBigInt([]*big.Int{param.RandomV, param.Indices[i]}, bn256.Order)
+		vi, err := concatBigInt([]*big.Int{param.RandomV, param.Indices[i]}, order)
 		if err != nil {
 			return false, fmt.Errorf("failed to concat %v and %v, err: %v", param.RandomV, param.Indices[i], err)
 		}
 
 		hi := hashToG1(vi)
-		vhi := new(bn256.G1).ScalarMult(hi, param.RandomVs[i])
+		vhi := new(bls12_381_ecc.G1Affine).ScalarMultiplication(hi, param.RandomVs[i])
 		if i == 0 {
 			vh = vhi
 		} else {
-			vh = new(bn256.G1).Add(vh, vhi)
+			vh = new(bls12_381_ecc.G1Affine).Add(vh, vhi)
 		}
 	}
-	umu := new(bn256.G1).ScalarMult(param.Mu, param.RandomU)
-	add := new(bn256.G1).Add(vh, umu)
-	right := bn256.Pair(add, param.Pubkey.P)
+	umu := new(bls12_381_ecc.G1Affine).ScalarMultiplication(param.Mu, param.RandomU)
+	add := new(bls12_381_ecc.G1Affine).Add(vh, umu)
 
-	return reflect.DeepEqual(left.Marshal(), right.Marshal()), nil
+	right, err := bls12_381_ecc.Pair([]bls12_381_ecc.G1Affine{*add}, []bls12_381_ecc.G2Affine{*param.Pubkey.P})
+	if err != nil {
+		return false, err
+	}
+
+	return left.Equal(&right), nil
 }
