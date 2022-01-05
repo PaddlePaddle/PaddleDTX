@@ -16,7 +16,13 @@ package pdp
 import (
 	"math/big"
 
-	"github.com/cloudflare/bn256"
+	bls12_381_ecc "github.com/consensys/gnark-crypto/ecc/bls12-381"
+)
+
+var (
+	g1Gen bls12_381_ecc.G1Affine
+	g2Gen bls12_381_ecc.G2Affine
+	order *big.Int
 )
 
 // PrivateKey PDP private key
@@ -26,7 +32,7 @@ type PrivateKey struct {
 
 // PublicKey PDP public key
 type PublicKey struct {
-	P *bn256.G2
+	P *bls12_381_ecc.G2Affine
 }
 
 // CalculateSigmaIParams parameters required to calculate sigma_i for each segment
@@ -40,21 +46,21 @@ type CalculateSigmaIParams struct {
 
 // ProofParams parameters required to generate proof
 type ProofParams struct {
-	Content  [][]byte    // file contents
-	Indices  []*big.Int  // {i} index list
-	RandomVs []*big.Int  // {v_i} random challenge number list
-	Sigmas   []*bn256.G1 // {sigma_i} list in storage
+	Content  [][]byte                  // file contents
+	Indices  []*big.Int                // {i} index list
+	RandomVs []*big.Int                // {v_i} random challenge number list
+	Sigmas   []*bls12_381_ecc.G1Affine // {sigma_i} list in storage
 }
 
 // VerifyParams parameters required to verify a proof
 type VerifyParams struct {
-	Sigma    *bn256.G1  // sigma in proof
-	Mu       *bn256.G1  // mu in proof
-	RandomV  *big.Int   // a random V
-	RandomU  *big.Int   // a random U
-	Indices  []*big.Int // {i} index list
-	RandomVs []*big.Int // {v_i} random challenge number list
-	Pubkey   *PublicKey // client public key
+	Sigma    *bls12_381_ecc.G1Affine // sigma in proof
+	Mu       *bls12_381_ecc.G1Affine // mu in proof
+	RandomV  *big.Int                // a random V
+	RandomU  *big.Int                // a random U
+	Indices  []*big.Int              // {i} index list
+	RandomVs []*big.Int              // {v_i} random challenge number list
+	Pubkey   *PublicKey              // client public key
 }
 
 // PrivateKeyToByte convert PDP private key to byes
@@ -77,8 +83,8 @@ func PublicKeyToByte(pubkey *PublicKey) []byte {
 
 // PublicKeyFromByte retrieve PDP public key from byes
 func PublicKeyFromByte(pubkey []byte) (*PublicKey, error) {
-	pub := new(bn256.G2)
-	if _, err := pub.Unmarshal(pubkey); err != nil {
+	pub := new(bls12_381_ecc.G2Affine)
+	if err := pub.Unmarshal(pubkey); err != nil {
 		return nil, err
 	}
 	return &PublicKey{
@@ -98,25 +104,25 @@ func CalculateSigmaIParamsFromBytes(content, index, randomV, randomU, privkey []
 }
 
 // G1ToByte convert G1 point to byes
-func G1ToByte(sigma *bn256.G1) []byte {
+func G1ToByte(sigma *bls12_381_ecc.G1Affine) []byte {
 	return sigma.Marshal()
 }
 
 // G1FromByte retrieve G1 point from bytes
-func G1FromByte(sigma []byte) (*bn256.G1, error) {
-	s := new(bn256.G1)
-	if _, err := s.Unmarshal(sigma); err != nil {
+func G1FromByte(sigma []byte) (*bls12_381_ecc.G1Affine, error) {
+	s := new(bls12_381_ecc.G1Affine)
+	if err := s.Unmarshal(sigma); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
 
 // G1sFromBytes retrieve G1 point list from bytes
-func G1sFromBytes(gs [][]byte) ([]*bn256.G1, error) {
-	var ret []*bn256.G1
+func G1sFromBytes(gs [][]byte) ([]*bls12_381_ecc.G1Affine, error) {
+	var ret []*bls12_381_ecc.G1Affine
 	for _, g := range gs {
-		g1 := new(bn256.G1)
-		if _, err := g1.Unmarshal(g); err != nil {
+		g1 := new(bls12_381_ecc.G1Affine)
+		if err := g1.Unmarshal(g); err != nil {
 			return nil, err
 		}
 		ret = append(ret, g1)
