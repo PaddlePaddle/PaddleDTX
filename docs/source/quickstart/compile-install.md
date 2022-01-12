@@ -195,7 +195,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		        randu = "AfM3n7CzmkbVEBRPOYV8gH1qpyaQdTNA1MZ7PHYfmWs="
 		        randv = "TKOt9kE7m5O7fCztoyy1J+WpNugLxKPS3hweeUK+09Y="
 
-		    [leasee.challenger.merkle]
+		    [dataOwner.challenger.merkle]
 		        leveldbRoot = "./challenger"
 		        shrinkSize = 500
 		        segmentSize = 5

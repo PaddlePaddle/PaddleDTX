@@ -45,7 +45,7 @@ publicAddress = "10.144.94.17:8122"
         randv = "TV0J8YFWEsybwFdwm3DJvUHXx88YXkzK97Zpvj/tyGc="
 
     # Merkle Proof.
-    [leasee.challenger.merkle]
+    [dataOwner.challenger.merkle]
         leveldbRoot = "/home/data/challenger"
         shrinkSize = 500
         segmentSize = 5

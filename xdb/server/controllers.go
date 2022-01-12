@@ -29,17 +29,12 @@ import (
 
 // write upload a local file
 func (s *Server) write(ictx iris.Context) {
-	expireTime, err := ictx.URLParamInt64("expireTime")
-	if err != nil {
-		responseError(ictx, errorx.Wrap(err, "invalid param expireTime"))
-		return
-	}
 	req := etype.WriteOptions{
 		User:        ictx.URLParam("user"),
 		Token:       ictx.URLParam("token"),
 		Namespace:   ictx.URLParam("ns"),
 		FileName:    ictx.URLParam("name"),
-		ExpireTime:  expireTime,
+		ExpireTime:  ictx.URLParamInt64Default("expireTime", 0),
 		Description: ictx.URLParam("desc"),
 		Extra:       ictx.URLParam("ext"),
 	}
