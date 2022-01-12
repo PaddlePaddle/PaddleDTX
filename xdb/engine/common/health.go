@@ -181,7 +181,7 @@ func GetFileHealth(ctx context.Context, chain HealthChain, file blockchain.File,
 	for _, nodes := range sliceList {
 		select {
 		case <-ctx.Done():
-			return
+			return health, errorx.New(errorx.ErrCodeInternal, "context is canceled")
 		default:
 		}
 		// concurrent to get slice health
@@ -264,7 +264,7 @@ func GetFileSysHealth(ctx context.Context, nss []blockchain.Namespace, nodes blo
 	for _, ns := range nss {
 		select {
 		case <-ctx.Done():
-			return
+			return fh, errorx.New(errorx.ErrCodeInternal, "context is canceled")
 		default:
 		}
 		go func(ns blockchain.Namespace) {
@@ -282,7 +282,7 @@ func GetFileSysHealth(ctx context.Context, nss []blockchain.Namespace, nodes blo
 	for _, n := range nodes {
 		select {
 		case <-ctx.Done():
-			return
+			return fh, errorx.New(errorx.ErrCodeInternal, "context is canceled")
 		default:
 		}
 		go func(n blockchain.Node) {

@@ -325,7 +325,7 @@ func (m FileMaintainer) migrateNode(ctx context.Context, slice blockchain.Public
 			m.migrateRecordOnChain(string(slice.NodeID), fileID, slice.ID)
 			if chanllengeAlgorithm == types.PDPChallengeAlgorithm {
 				// rearrange file slices
-				slices, err = m.rearrangeSlices(ctx, slices, slice.ID, string(slice.NodeID), string(es.NodeID), sourceId,
+				slices, err = m.rearrangeSlices(ctx, slices, slice.ID, string(slice.NodeID), string(es.NodeID), fileID,
 					es.CipherText, healthNodesMap, selectedNodes, pdp)
 				if err != nil {
 					l.WithFields(logrus.Fields{
