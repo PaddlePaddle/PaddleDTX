@@ -14,6 +14,7 @@
 package engine
 
 import (
+	"strings"
 	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
@@ -24,14 +25,14 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/dai/config"
 	"github.com/PaddlePaddle/PaddleDTX/dai/executor/handler"
 	"github.com/PaddlePaddle/PaddleDTX/dai/executor/monitor"
-	"github.com/PaddlePaddle/PaddleDTX/dai/executor/storage"
+	"github.com/PaddlePaddle/PaddleDTX/dai/executor/storage/local"
+	"github.com/PaddlePaddle/PaddleDTX/dai/executor/storage/xuperdb"
 	"github.com/PaddlePaddle/PaddleDTX/dai/mpc"
 	"github.com/PaddlePaddle/PaddleDTX/dai/p2p"
+	"github.com/PaddlePaddle/PaddleDTX/dai/util/file"
 )
 
 const (
-	// Maximum default time for saving predict file results
-	DefaultFileRetentionTime = time.Hour * 72
 	// The number of executing task concurrently
 	DefaultTrainTaskLimit   = 100
 	DefaultPredictTaskLimit = 100
@@ -55,18 +56,13 @@ func initEngine(conf *config.ExecutorConf) (e *Engine, err error) {
 	if err != nil {
 		return e, err
 	}
-	// get storage instance to save model
-	localStorage, err := newStorage(conf.Storage)
-	if err != nil {
-		return e, err
-	}
-	// get XuperDB instance to upload and download files
-	xuperDB, err := newXuperDB(conf.Storage.XuperDB, node.PrivateKey)
+	// get storage instance to save model or prediction result
+	storage, err := newStorage(conf.Storage, node.PrivateKey)
 	if err != nil {
 		return e, err
 	}
 	// get MPC instance to handle tasks
-	mpcHandler, err := newMpc(conf.Mpc, node, localStorage, xuperDB, chain)
+	mpcHandler, err := newMpc(conf.Mpc, node, storage, chain)
 	if err != nil {
 		return e, err
 	}
@@ -80,8 +76,7 @@ func initEngine(conf *config.ExecutorConf) (e *Engine, err error) {
 	return &Engine{
 		node:       node,
 		chain:      chain,
-		storage:    localStorage,
-		xuperDB:    xuperDB,
+		storage:    storage,
 		mpcHandler: mpcHandler,
 		monitor:    taskMonitor,
 	}, nil
@@ -118,33 +113,59 @@ func newNode(conf *config.ExecutorConf) (node handler.Node, err error) {
 	return local, nil
 }
 
-// newStorage initiates local storage
-func newStorage(conf *config.ExecutorStorageConf) (t *storage.Storage, err error) {
-	t, err = storage.New(conf.LocalStoragePath)
+// newStorage initiates local storage, contains train-model and prediction-result storage
+func newStorage(conf *config.ExecutorStorageConf, privateKey ecdsa.PrivateKey) (fileStroage handler.FileStorage, err error) {
+	// train-model storage only supports local path mode
+	mStorage, err := local.New(conf.LocalModelStoragePath)
 	if err != nil {
-		return t, errorx.New(errorx.ErrCodeConfig, "invalid train model-path：%s", err)
+		return fileStroage, errorx.New(errorx.ErrCodeConfig, "invalid train model-path：%s", err)
 	}
-	return t, nil
+	// prediction-result storage supports local path and xuperdb mode
+	pStroage, err := newPredictStorage(conf)
+	if err != nil {
+		return fileStroage, err
+	}
+	fileStroage = handler.FileStorage{
+		PrivateKey:     privateKey,
+		ModelStorage:   mStorage,
+		PredictStorage: pStroage,
+	}
+	return fileStroage, nil
 }
 
-// newXuperDB initiates xuperDB client used to fetch samples
-func newXuperDB(conf *config.XuperDBConf, privateKey ecdsa.PrivateKey) (d handler.XuperDB, err error) {
-	expiretime := time.Duration(conf.ExpireTime) * time.Hour
-	if expiretime == 0 {
-		expiretime = DefaultFileRetentionTime
+// newPredictStorage initiates prediction result store client
+func newPredictStorage(conf *config.ExecutorStorageConf) (s handler.Storage, err error) {
+	switch conf.Type {
+	case "Local":
+		s, err = local.New(conf.Local.LocalPredictStoragePath)
+		if err != nil {
+			return s, errorx.New(errorx.ErrCodeConfig, "invalid prediction result-path：%s", err)
+		}
+	case "XuperDB":
+		// if conf.XuperDB.PrivateKey is empty, get the dataOwner client privateKey from conf.XuperDB.KeyPath
+		if conf.XuperDB.PrivateKey == "" {
+			privateKeyBytes, err := file.ReadFile(conf.XuperDB.KeyPath, file.PrivateKeyFileName)
+			if err == nil && len(privateKeyBytes) != 0 {
+				conf.XuperDB.PrivateKey = strings.TrimSpace(string(privateKeyBytes))
+			} else {
+				return s, errorx.New(errorx.ErrCodeConfig, "invalid xuperdb privateKey-path：%s", err)
+			}
+		}
+		privateKey, err := ecdsa.DecodePrivateKeyFromString(conf.XuperDB.PrivateKey)
+		if err != nil {
+			return s, errorx.Wrap(err, "failed to decode xuperdb private key")
+		}
+		// get XuperDB instance to upload and download files
+		s = xuperdb.New(conf.XuperDB.ExpireTime, conf.XuperDB.NameSpace, conf.XuperDB.Host, privateKey)
+	default:
+		return s, errorx.New(errorx.ErrCodeConfig, "invalid predict stroage type: %s", conf.Type)
 	}
-	d = handler.XuperDB{
-		PrivateKey: privateKey,
-		Address:    conf.Host,
-		Ns:         conf.NameSpace,
-		ExpireTime: time.Now().UnixNano() + expiretime.Nanoseconds(),
-	}
-	return d, nil
+	return s, nil
 }
 
 // newMpc starts MPC handler to do MPC-Training and MPC-Prediction tasks
-func newMpc(conf *config.ExecutorMpcConf, node handler.Node, estorage *storage.Storage,
-	xuperDB handler.XuperDB, chain handler.Blockchain) (handler.MpcHandler, error) {
+func newMpc(conf *config.ExecutorMpcConf, node handler.Node, fstorage handler.FileStorage,
+	chain handler.Blockchain) (handler.MpcHandler, error) {
 
 	rpcTimeout := time.Duration(conf.RpcTimeout)
 	if rpcTimeout == 0 {
@@ -161,8 +182,7 @@ func newMpc(conf *config.ExecutorMpcConf, node handler.Node, estorage *storage.S
 			PredictTaskLimit: conf.PredictTaskLimit,
 			RpcTimeout:       rpcTimeout,
 		},
-		Storage:            *estorage,
-		XuperDB:            xuperDB,
+		Storage:            fstorage,
 		Node:               node,
 		Chain:              chain,
 		MpcTaskMaxExecTime: taskLimitTime,

@@ -58,8 +58,8 @@ var getByIDCmd = &cobra.Command{
 			if data.RejectedAt > 0 {
 				rt = time.Unix(0, data.RejectedAt).Format(timeTemplate)
 			}
-			fmt.Printf("DataID: %s\nOwner: %x\nAddress: %s\nPSILabel: %s\nConfirmedAt: %s\nRejectedAt: %s\n",
-				data.DataID, data.Owner, data.Address, data.PSILabel, ct, rt)
+			fmt.Printf("DataID: %s\nOwner: %x\nExecutor: %x\nAddress: %s\nPSILabel: %s\nConfirmedAt: %s\nRejectedAt: %s\n\n",
+				data.DataID, data.Owner, data.Executor, data.Address, data.PSILabel, ct, rt)
 		}
 
 		var startTime, endTime string
@@ -69,9 +69,9 @@ var getByIDCmd = &cobra.Command{
 		if task.EndTime != 0 {
 			endTime = time.Unix(0, task.EndTime).Format(timeTemplate)
 		}
-		fmt.Printf("\nStartTime: %s\nEndTime: %s\n\n", startTime, endTime)
+		fmt.Printf("StartTime: %s\nEndTime: %s\n", startTime, endTime)
 
-		fmt.Printf("\nErrMessage: %s\nResult: %s\n\n", task.ErrMessage, task.Result)
+		fmt.Printf("ErrMessage: %s\nResult: %s\n\n", task.ErrMessage, task.Result)
 	},
 }
 

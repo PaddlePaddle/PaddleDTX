@@ -22,6 +22,7 @@ const timeTemplate = "2006-01-02 15:04:05"
 var (
 	configPath string
 	privateKey string
+	keyPath    string
 	id         string
 )
 

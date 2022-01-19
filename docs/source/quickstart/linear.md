@@ -91,7 +91,7 @@ Vertical logistic prediction sample files: 96140537-8c7a-46cb-b2d3-0540e8cadc0e,
 
 * Vertical linear train sample files值为数据持有方A上传train_dataA.csv和数据持有方B上传train_dataB.csv后所得的波士顿房价训练样本文件ID
 * Vertical linear prediction sample files值为数据持有方A上传predict_dataA.csv和数据持有方B上传predict_dataB.csv所得的波士顿房价预测样本文件ID
-
+* upload_files.csv 存储了波士顿房价训练和预测所需的样本文件ID
 
 查看 XuperDB 中的样本文件：
 

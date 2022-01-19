@@ -22,6 +22,7 @@ const timeTemplate = "2006-01-02 15:04:05"
 var (
 	host       string
 	privateKey string
+	keyPath    string
 	start      string
 	end        string
 	limit      int64
@@ -39,7 +40,7 @@ func RootCmd() *cobra.Command {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&host, "host", "", "local server address")
+	rootCmd.PersistentFlags().StringVar(&host, "host", "", "server address of the executorc node, example '127.0.0.1:8184'")
 
 	rootCmd.MarkPersistentFlagRequired("host")
 }

@@ -7,8 +7,6 @@ option go_package = "github.com/PaddlePaddle/PaddleDTX/dai/protos/task";
 
 // Cluster defines communication communication between client and server, and communication between cluster members.
 service Task {
-    // ConfirmTask is provided by Executor server for Executor client to confirm a task published by Requester. 
-    rpc ConfirmTask(ConfirmTaskRequest) returns (TaskResponse);
     // ListTask is provided by Executor server for Executor client to list tasks with filters.
     rpc ListTask(ListTaskRequest)  returns (FLTasks);
     // GetTaskById is provided by Executor server for Executor client to query a task.
@@ -18,22 +16,13 @@ service Task {
     // StartTask is for Executors to request remote ones to start a task.
     rpc StartTask(TaskRequest) returns (TaskResponse);
 }
- 
-// ConfirmTaskRequest is message sent to Executor server to confirm a task published by Requester.
-message ConfirmTaskRequest {
-    bytes owner = 1;
-    string taskID = 2;
-    int64 timestamp = 3;
-    bytes signature = 4;
-}
 
 // TaskRequest is message sent between Executors to request to start a task. 
 message TaskRequest {
-    bytes owner = 1;
+    bytes pubKey = 1;
     string taskID = 2;
     bytes signature = 4;
 }
-
 
 // TaskResponse is a message received from Executor.
 message TaskResponse {
@@ -51,12 +40,14 @@ message ListTaskRequest {
 
 // DataForTask is a message received from Executor
 message DataForTask {
-    bytes  owner = 1;  // samples'owner, also Executor who confirm and process task
-	string dataID = 2; // file id of samples
-	string pSILabel = 3 ; // psi lable for vertical learning
-	int64  confirmedAt = 4; // task confirm time
-	int64  rejectedAt = 5; // task reject time
-    string address = 6; // host of Executor   
+    bytes  owner = 1;  // samples'owner, also dataOwner who confirms executor's authorization application for the use of samples
+	bytes  executor = 2; // executor who process tasks
+	string dataID = 3; // file id of samples
+	string PSILabel = 4 ; // psi lable for vertical learning
+	int64  confirmedAt = 5; // task confirm time
+	int64  rejectedAt = 6; // task reject time
+    string address = 7; // host of Executor 
+    bool isTagPart = 8;   
 }
 
 // FLTask is a message received from Executor and defines Federated Learning Task based on MPC

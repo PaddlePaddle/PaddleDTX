@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
@@ -32,7 +31,6 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/dai/errcodes"
 	"github.com/PaddlePaddle/PaddleDTX/dai/executor/handler"
 	"github.com/PaddlePaddle/PaddleDTX/dai/executor/monitor"
-	"github.com/PaddlePaddle/PaddleDTX/dai/executor/storage"
 	"github.com/PaddlePaddle/PaddleDTX/dai/mpc/cluster"
 	pbCom "github.com/PaddlePaddle/PaddleDTX/dai/protos/common"
 	pbTask "github.com/PaddlePaddle/PaddleDTX/dai/protos/task"
@@ -46,8 +44,7 @@ var (
 type Engine struct {
 	chain      handler.Blockchain
 	node       handler.Node
-	storage    *storage.Storage
-	xuperDB    handler.XuperDB
+	storage    handler.FileStorage
 	mpcHandler handler.MpcHandler
 	monitor    *monitor.TaskMonitor
 }
@@ -76,32 +73,6 @@ func (e *Engine) Start(ctx context.Context) error {
 // GetMpcService returns mpc service to be registered to grpcServer
 func (e *Engine) GetMpcService() *cluster.Service {
 	return e.mpcHandler.GetMpcClusterService()
-}
-
-// ConfirmTask confirms task published by requester
-func (e *Engine) ConfirmTask(ctx context.Context, in *pbTask.ConfirmTaskRequest) (*pbTask.TaskResponse, error) {
-	if err := verifyUserID(in.Owner, e.node.PrivateKey); err != nil {
-		return &pbTask.TaskResponse{}, err
-	}
-	// check request time
-	if in.Timestamp+5*time.Second.Nanoseconds() < time.Now().UnixNano() {
-		return &pbTask.TaskResponse{}, errorx.New(errorx.ErrCodeExpired, "request expired")
-	}
-	confirmOptions := &blockchain.FLTaskConfirmOptions{
-		Owner:       in.Owner,
-		TaskID:      in.TaskID,
-		CurrentTime: in.Timestamp,
-		Signature:   in.Signature,
-	}
-
-	// invoke contract to confirm task
-	err := e.chain.ConfirmTask(confirmOptions)
-	if err != nil {
-		return &pbTask.TaskResponse{}, errorx.Wrap(err, "failed confirm task")
-	}
-	return &pbTask.TaskResponse{
-		TaskID: in.TaskID,
-	}, nil
 }
 
 // ListTask lists tasks from blockchain by requester or executor's Public Key
@@ -137,7 +108,7 @@ func (e *Engine) GetTaskById(ctx context.Context, in *pbTask.GetTaskRequest) (*p
 }
 
 // GetPredictResult checks task's initiator and gets prediction result from Xuper db.
-//  in.Owner must matches task.Requester
+//  in.PubKey must matches task.Requester, only task.Requester can get prediction result.
 func (e *Engine) GetPredictResult(ctx context.Context, in *pbTask.TaskRequest) (*pbTask.PredictResponse, error) {
 	// get task detail
 	task, err := e.chain.GetTaskById(in.TaskID)
@@ -148,17 +119,22 @@ func (e *Engine) GetPredictResult(ctx context.Context, in *pbTask.TaskRequest) (
 	if task.AlgoParam.TaskType != pbCom.TaskType_PREDICT {
 		return &pbTask.PredictResponse{}, errorx.New(errorx.ErrCodeParam, "illegal taskId, not a predict task")
 	}
-	if !bytes.Equal(task.Requester, in.Owner) {
-		return &pbTask.PredictResponse{}, errorx.New(errorx.ErrCodeParam, "owner is invalid")
+	if !bytes.Equal(task.Requester, in.PubKey) {
+		return &pbTask.PredictResponse{}, errorx.New(errorx.ErrCodeParam, "public key is invalid")
 	}
 	// check signature
-	m := fmt.Sprintf("%x,%s", in.Owner, in.TaskID)
-	if err := e.checkSign(in.Signature, in.Owner, []byte(m)); err != nil {
+	m := fmt.Sprintf("%x,%s", in.PubKey, in.TaskID)
+	if err := e.checkSign(in.Signature, in.PubKey, []byte(m)); err != nil {
 		return &pbTask.PredictResponse{}, errorx.Wrap(err, "get predict result failed")
 	}
 
-	// get prediction result from XuperDB
-	r, err := e.xuperDB.Read(task.Result)
+	// get prediction result from XuperDB or LocalPath, if the prediction result is stored
+	// on XuperDB, task.Result is fileId, else get the file from LocalPath by prediction task's ID.
+	predictFileName := task.Result
+	if predictFileName == "" {
+		predictFileName = in.TaskID
+	}
+	r, err := e.storage.PredictStorage.Read(predictFileName)
 	if err != nil {
 		return &pbTask.PredictResponse{}, errorx.Wrap(err, "failed to get reader from xuperdb")
 	}
@@ -198,20 +174,20 @@ func (e *Engine) StartTask(ctx context.Context, in *pbTask.TaskRequest) (*pbTask
 	}
 
 	// check sign
-	m := fmt.Sprintf("%x,%s", in.Owner, in.TaskID)
-	if err := e.checkSign(in.Signature, in.Owner, []byte(m)); err != nil {
+	m := fmt.Sprintf("%x,%s", in.PubKey, in.TaskID)
+	if err := e.checkSign(in.Signature, in.PubKey, []byte(m)); err != nil {
 		return &pbTask.TaskResponse{}, errorx.Wrap(err, "start task failed, signature error")
 	}
 	// make sure the request must come from executor who confirmed the task
-	isDataNodeExist := false
+	isExecutorNodeExist := false
 	for _, ds := range task.DataSets {
-		if bytes.Equal(ds.Owner, in.Owner) {
-			isDataNodeExist = true
+		if bytes.Equal(ds.Executor, in.PubKey) {
+			isExecutorNodeExist = true
 			break
 		}
 	}
-	if !isDataNodeExist {
-		return &pbTask.TaskResponse{}, errorx.New(errcodes.ErrCodeParam, "wrong request source[%s]", string(in.Owner))
+	if !isExecutorNodeExist {
+		return &pbTask.TaskResponse{}, errorx.New(errcodes.ErrCodeParam, "wrong request source[%x]", in.PubKey)
 	}
 
 	// prepare resources before start mpc

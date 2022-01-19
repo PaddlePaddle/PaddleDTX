@@ -10,6 +10,9 @@ services:
         - 38101:80
     volumes:
         - ./data1/conf:/home/conf
+        - ./data1/keys:/home/keys
+        - ./data1/ukeys:/home/ukeys
+        - ./data1/authkeys:/home/authkeys
         - ./data1/logs:/home/logs
         - ../../dai/mpc/testdata/vl:/home/mpc-data
 
@@ -22,6 +25,9 @@ services:
       - 38102:80
     volumes:
       - ./data2/conf:/home/conf
+      - ./data2/keys:/home/keys
+      - ./data2/ukeys:/home/ukeys
+      - ./data2/authkeys:/home/authkeys
       - ./data2/logs:/home/logs
       - ../../dai/mpc/testdata/vl:/home/mpc-data
 
@@ -34,6 +40,7 @@ services:
         - 38103:80
     volumes:
         - ./storage1/conf:/home/conf
+        - ./storage1/keys:/home/keys
         - ./storage1/logs:/home/logs
 
   storage2:
@@ -47,6 +54,7 @@ services:
         - 38104:80
     volumes:
         - ./storage2/conf:/home/conf
+        - ./storage2/keys:/home/keys
         - ./storage2/logs:/home/logs
 
   storage3:
@@ -60,6 +68,7 @@ services:
         - 38105:80
     volumes:
         - ./storage3/conf:/home/conf
+        - ./storage3/keys:/home/keys
         - ./storage3/logs:/home/logs
 networks:
   blockchain_xchain_network:

@@ -18,6 +18,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/PaddlePaddle/PaddleDTX/dai/executor/cmd/cli/key"
 	"github.com/PaddlePaddle/PaddleDTX/dai/executor/cmd/cli/task"
 )
 
@@ -36,4 +37,5 @@ func Execute() {
 }
 func init() {
 	rootCmd.AddCommand(task.RootCmd())
+	rootCmd.AddCommand(key.RootCmd())
 }

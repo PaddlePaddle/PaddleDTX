@@ -59,8 +59,8 @@ var getByIDCmd = &cobra.Command{
 			if d.RejectedAt > 0 {
 				rt = time.Unix(0, d.RejectedAt).Format(timeTemplate)
 			}
-			fmt.Printf("DataID: %s\nOwner: %x\nAddress: %s\nPSILabel: %s\nConfirmedAt: %s\nRejectedAt: %s\n",
-				d.DataID, d.Owner, d.Address, d.PSILabel, ct, rt)
+			fmt.Printf("DataID: %s\nOwner: %x\nExecutor: %x\nAddress: %s\nPSILabel: %s\nConfirmedAt: %s\nRejectedAt: %s\n\n",
+				d.DataID, d.Owner, d.Executor, d.Address, d.PSILabel, ct, rt)
 		}
 
 		startTime := time.Unix(0, t.StartTime).Format(timeTemplate)

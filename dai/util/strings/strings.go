@@ -22,3 +22,15 @@ func IsContain(items []string, item string) bool {
 	}
 	return false
 }
+
+// IsContainDuplicateItems checks if duplicate items exist in a list
+func IsContainDuplicateItems(items []string) bool {
+	temp := map[string]struct{}{}
+	for _, item := range items {
+		if _, ok := temp[item]; ok {
+			return true
+		}
+		temp[item] = struct{}{}
+	}
+	return false
+}

@@ -15,10 +15,12 @@ package task
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	requestClient "github.com/PaddlePaddle/PaddleDTX/dai/requester/client"
+	"github.com/PaddlePaddle/PaddleDTX/dai/util/file"
 )
 
 // startTaskByIDCmd starts a confirmed task
@@ -31,12 +33,20 @@ var startTaskByIDCmd = &cobra.Command{
 			fmt.Printf("GetRequestClient failed: %v\n", err)
 			return
 		}
+		if privateKey == "" {
+			privateKeyBytes, err := file.ReadFile(keyPath, file.PrivateKeyFileName)
+			if err != nil {
+				fmt.Printf("Read privateKey failed, err: %v\n", err)
+				return
+			}
+			privateKey = strings.TrimSpace(string(privateKeyBytes))
+		}
 
 		if err := client.StartTask(privateKey, id); err != nil {
 			fmt.Printf("StartTask failed：%v\n", err)
 			return
 		}
-		fmt.Println("ok")
+		fmt.Println("OK")
 	},
 }
 
@@ -44,8 +54,8 @@ func init() {
 	rootCmd.AddCommand(startTaskByIDCmd)
 
 	startTaskByIDCmd.Flags().StringVarP(&privateKey, "privkey", "k", "", "requester private key hex string")
+	startTaskByIDCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./keys", "key path")
 	startTaskByIDCmd.Flags().StringVarP(&id, "id", "i", "", "id of task to start, but only Ready and Failed tasks can be started")
 
-	startTaskByIDCmd.MarkFlagRequired("privkey")
 	startTaskByIDCmd.MarkFlagRequired("id")
 }

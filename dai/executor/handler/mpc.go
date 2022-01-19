@@ -32,7 +32,6 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
 	reModel "github.com/PaddlePaddle/PaddleDTX/dai/crypto/vl/common"
 	"github.com/PaddlePaddle/PaddleDTX/dai/errcodes"
-	"github.com/PaddlePaddle/PaddleDTX/dai/executor/storage"
 	"github.com/PaddlePaddle/PaddleDTX/dai/mpc"
 	"github.com/PaddlePaddle/PaddleDTX/dai/mpc/cluster"
 	"github.com/PaddlePaddle/PaddleDTX/dai/p2p"
@@ -89,8 +88,7 @@ type FlTask struct {
 type MpcModelHandler struct {
 	Config             mpc.Config
 	Node               Node
-	Storage            storage.Storage
-	XuperDB            XuperDB
+	Storage            FileStorage
 	Chain              Blockchain
 	MpcTaskMaxExecTime time.Duration
 	Mpc                mpc.Mpc
@@ -266,7 +264,7 @@ func (m *MpcModelHandler) sendTaskStartRequest(executorHost, taskID string) (err
 		return errorx.Wrap(err, "failed to sign fl start task")
 	}
 	in := &pbTask.TaskRequest{
-		Owner:     pubkey[:],
+		PubKey:    pubkey[:],
 		TaskID:    taskID,
 		Signature: sig[:],
 	}
@@ -350,7 +348,7 @@ func (m *MpcModelHandler) SaveModel(result *pbCom.TrainTaskResult) error {
 		return nil
 	}
 	r := bytes.NewReader(result.Model)
-	if err := m.Storage.Save(result.TaskID, r); err != nil {
+	if _, err := m.Storage.ModelStorage.Write(r, result.TaskID); err != nil {
 		err := errorx.New(errorx.ErrCodeInternal, "failed to locally save task model")
 		m.updateTaskStatusAndStopLocalMpc(result.TaskID, err.Error(), "")
 		return err
@@ -384,16 +382,17 @@ func (m *MpcModelHandler) SavePredictOut(result *pbCom.PredictTaskResult) error 
 		return nil
 	}
 
-	// save prediction result by xuper db
+	// save prediction result
 	r := bytes.NewReader(result.Outcomes)
-	fileId, err := m.XuperDB.Write(r, result.TaskID+".csv")
+	// if the storage type of the prediction result is xuperdb, sResult is fileID, otherwise sResult is empty
+	psResult, err := m.Storage.PredictStorage.Write(r, result.TaskID)
 	if err != nil {
-		err := errorx.Wrap(err, "failed to save task predict result into xuper db, taskId: %s", result.TaskID)
+		err := errorx.Wrap(err, "failed to save task predict result, taskId: %s", result.TaskID)
 		m.updateTaskStatusAndStopLocalMpc(result.TaskID, err.Error(), "")
 		return err
 	}
-	logger.Debugf("success save predict out, taskId: %s", result.TaskID)
-	m.updateTaskStatusAndStopLocalMpc(result.TaskID, "", fileId)
+	logger.Debugf("success save predict out, taskId: %s, psResult: %s", result.TaskID, psResult)
+	m.updateTaskStatusAndStopLocalMpc(result.TaskID, "", psResult)
 	return nil
 }
 
@@ -446,13 +445,14 @@ func (m *MpcModelHandler) getTaskParticipantParam(task blockchain.FLTask) (partP
 
 	for _, dataset := range task.DataSets {
 		//  download sample file
-		if bytes.Equal(dataset.Owner, pubkey[:]) {
+		if bytes.Equal(dataset.Executor, pubkey[:]) {
 			isTagPart, err := m.getTargetPart(dataset.DataID, task.AlgoParam.TrainParams.Label)
 			if err != nil {
 				return partParam, err
 			}
-			reader, err := m.XuperDB.Read(dataset.DataID)
+			reader, err := m.Storage.GetSampleFile(dataset.DataID, m.Chain)
 			if err != nil {
+				logger.Debugf("get sample file error, taskId: %s, err: %v", task.ID, err)
 				return partParam, err
 			}
 			fileText, err := m.getTextByReader(reader)
@@ -495,14 +495,14 @@ func (m *MpcModelHandler) getTargetPart(fileID, labelName string) (bool, error) 
 func (m *MpcModelHandler) getTextByReader(reader io.ReadCloser) ([]byte, error) {
 	text, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, errorx.New(errorx.ErrCodeInternal, "failed to get task type")
+		return nil, errorx.New(errorx.ErrCodeInternal, "failed to get text by reader")
 	}
 	return text, nil
 }
 
 // getTaskModel get model for prediction task
 func (m *MpcModelHandler) getTaskModel(taskId string) (*pbCom.TrainModels, error) {
-	model, err := m.Storage.Load(taskId)
+	model, err := m.Storage.ModelStorage.Read(taskId)
 	if err != nil {
 		return nil, err
 	}

@@ -18,6 +18,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/PaddlePaddle/PaddleDTX/dai/requester/cmd/cli/file"
+	"github.com/PaddlePaddle/PaddleDTX/dai/requester/cmd/cli/key"
+	"github.com/PaddlePaddle/PaddleDTX/dai/requester/cmd/cli/node"
 	"github.com/PaddlePaddle/PaddleDTX/dai/requester/cmd/cli/task"
 )
 
@@ -37,4 +40,7 @@ func Execute() {
 
 func init() {
 	rootCmd.AddCommand(task.RootCmd())
+	rootCmd.AddCommand(file.RootCmd())
+	rootCmd.AddCommand(node.RootCmd())
+	rootCmd.AddCommand(key.RootCmd())
 }

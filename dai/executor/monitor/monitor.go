@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	xdbchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
@@ -32,6 +33,12 @@ type Blockchain interface {
 	// task operation
 	ListTask(opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error)
 	ExecuteTask(opt *blockchain.FLTaskExeStatusOptions) error
+	ConfirmTask(opt *blockchain.FLTaskConfirmOptions) error
+	RejectTask(opt *blockchain.FLTaskConfirmOptions) error
+	// query the list of authorization applications
+	ListFileAuthApplications(opt *xdbchain.ListFileAuthOptions) (xdbchain.FileAuthApplications, error)
+	// publish sample file's authorization application
+	PublishFileAuthApplication(opt *xdbchain.PublishFileAuthOptions) error
 }
 
 type MpcHandler interface {

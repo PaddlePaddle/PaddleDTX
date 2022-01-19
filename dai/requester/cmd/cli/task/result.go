@@ -15,10 +15,12 @@ package task
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	requestClient "github.com/PaddlePaddle/PaddleDTX/dai/requester/client"
+	"github.com/PaddlePaddle/PaddleDTX/dai/util/file"
 )
 
 var (
@@ -35,13 +37,21 @@ var getPredictResCmd = &cobra.Command{
 			fmt.Printf("GetRequestClient failed: %v\n", err)
 			return
 		}
+		if privateKey == "" {
+			privateKeyBytes, err := file.ReadFile(keyPath, file.PrivateKeyFileName)
+			if err != nil {
+				fmt.Printf("Read privateKey failed, err: %v\n", err)
+				return
+			}
+			privateKey = strings.TrimSpace(string(privateKeyBytes))
+		}
 
 		if err := client.GetPredictResult(privateKey, id, output); err != nil {
 			fmt.Printf("GetPredictResult failed：%v\n", err)
 			return
 		}
 
-		fmt.Println("ok")
+		fmt.Println("OK")
 	},
 }
 
@@ -49,10 +59,10 @@ func init() {
 	rootCmd.AddCommand(getPredictResCmd)
 
 	getPredictResCmd.Flags().StringVarP(&privateKey, "privkey", "k", "", "requester private key hex string")
+	getPredictResCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./keys", "requester's key path")
 	getPredictResCmd.Flags().StringVarP(&id, "id", "i", "", "prediction task id")
 	getPredictResCmd.Flags().StringVarP(&output, "output", "o", "", "file to store prediction outcomes")
 
-	getPredictResCmd.MarkFlagRequired("privkey")
 	getPredictResCmd.MarkFlagRequired("id")
 	getPredictResCmd.MarkFlagRequired("output")
 }

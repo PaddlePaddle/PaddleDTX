@@ -16,11 +16,7 @@ package client
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
-	"time"
 
-	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	"google.golang.org/grpc"
 
@@ -92,36 +88,4 @@ func (c *Client) ListTask(ctx context.Context, pubkeyStr, status string, start, 
 	}
 
 	return ts, nil
-}
-
-// ConfirmTask executor confirms task by id
-// agree to use local data to train or predict for requester
-func (c *Client) ConfirmTask(ctx context.Context, privkey, id string) (err error) {
-	if c.conn != nil {
-		defer c.conn.Close()
-	}
-
-	privateKey, err := ecdsa.DecodePrivateKeyFromString(privkey)
-	if err != nil {
-		return err
-	}
-	pubkey := ecdsa.PublicKeyFromPrivateKey(privateKey)
-
-	currentTime := time.Now().UnixNano()
-	m := fmt.Sprintf("%x,%s,%d", pubkey[:], id, currentTime)
-
-	sig, err := ecdsa.Sign(privateKey, hash.HashUsingSha256([]byte(m)))
-	if err != nil {
-		return errorx.Wrap(err, "failed to sign fl task")
-	}
-	in := &pbTask.ConfirmTaskRequest{
-		Owner:     pubkey[:],
-		TaskID:    id,
-		Timestamp: currentTime,
-		Signature: sig[:],
-	}
-	if _, err := c.executorClient.ConfirmTask(ctx, in); err != nil {
-		return err
-	}
-	return nil
 }

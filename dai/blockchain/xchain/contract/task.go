@@ -79,7 +79,7 @@ func (x *Xdata) PublishTask(ctx code.Context) code.Response {
 	}
 	// put executor listIndex-fltask on xchain
 	for _, ds := range t.DataSets {
-		index := packExecutorTaskListIndex(ds.Owner, t)
+		index := packExecutorTaskListIndex(ds.Executor, t)
 		if err := ctx.PutObject([]byte(index), []byte(t.ID)); err != nil {
 			return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
 				"fail to put executor listIndex-fltask on xchain"))
@@ -170,15 +170,20 @@ func (x *Xdata) setTaskConfirmStatus(ctx code.Context, isConfirm bool) code.Resp
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"fail to unmarshal FLTaskConfirmOptions"))
 	}
-	// verify sig
-	m := fmt.Sprintf("%x,%s,%d", opt.Owner, opt.TaskID, opt.CurrentTime)
-	if err := x.checkSign(opt.Signature, opt.Owner, []byte(m)); err != nil {
-		return code.Error(err)
-	}
 	t, err := x.getTaskById(ctx, opt.TaskID)
 	if err != nil {
 		return code.Error(err)
 	}
+	// executor validity check
+	if ok := x.checkExecutor(opt.Pubkey, t.DataSets); !ok {
+		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param: executor"))
+	}
+	// verify sig
+	m := fmt.Sprintf("%x,%s,%s,%d", opt.Pubkey, opt.TaskID, opt.RejectReason, opt.CurrentTime)
+	if err := x.checkSign(opt.Signature, opt.Pubkey, []byte(m)); err != nil {
+		return code.Error(err)
+	}
+
 	// check status
 	if t.Status != blockchain.TaskConfirming {
 		return code.Error(errorx.New(errorx.ErrCodeParam,
@@ -186,14 +191,14 @@ func (x *Xdata) setTaskConfirmStatus(ctx code.Context, isConfirm bool) code.Resp
 	}
 	isAllConfirm := true
 	for index, ds := range t.DataSets {
-		if bytes.Equal(ds.Owner, opt.Owner) {
+		if bytes.Equal(ds.Executor, opt.Pubkey) {
 			// judge sample file exists
 			if _, err := ctx.GetObject([]byte(ds.DataID)); err != nil {
 				return code.Error(errorx.New(errorx.ErrCodeParam, "bad param:taskId, dataId not exist"))
 			}
 			// judge task is confirmed
 			if ds.ConfirmedAt > 0 || ds.RejectedAt > 0 {
-				return code.Error(errorx.New(errorx.ErrCodeParam, "bad param:taskId, task already confirmed"))
+				return code.Error(errorx.New(errorx.ErrCodeAlreadyUpdate, "bad param:taskId, task already confirmed"))
 			}
 			if isConfirm {
 				t.DataSets[index].ConfirmedAt = opt.CurrentTime
@@ -206,13 +211,14 @@ func (x *Xdata) setTaskConfirmStatus(ctx code.Context, isConfirm bool) code.Resp
 			}
 		}
 	}
-	// if all dataSets owner confirm, task status is ready
+	// if all executor nodes confirmed task, task status is ready
 	if isAllConfirm {
 		t.Status = blockchain.TaskReady
 	}
-	// if one of dataSets owner reject, task status is rejected
+	// if one of executor nodes rejected task, task status is rejected
 	if !isConfirm {
 		t.Status = blockchain.TaskRejected
+		t.ErrMessage = opt.RejectReason
 	}
 	s, err := json.Marshal(t)
 	if err != nil {
@@ -287,6 +293,14 @@ func (x *Xdata) setTaskExecuteStatus(ctx code.Context, isFinish bool) code.Respo
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"fail to unmarshal FLTaskExeStatusOptions"))
 	}
+	t, err := x.getTaskById(ctx, opt.TaskID)
+	if err != nil {
+		return code.Error(err)
+	}
+	// executor validity check
+	if ok := x.checkExecutor(opt.Executor, t.DataSets); !ok {
+		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param:executor"))
+	}
 	// verify sig
 	m := fmt.Sprintf("%x,%s,%d", opt.Executor, opt.TaskID, opt.CurrentTime)
 	if isFinish {
@@ -295,15 +309,7 @@ func (x *Xdata) setTaskExecuteStatus(ctx code.Context, isFinish bool) code.Respo
 	if err := x.checkSign(opt.Signature, opt.Executor, []byte(m)); err != nil {
 		return code.Error(err)
 	}
-	t, err := x.getTaskById(ctx, opt.TaskID)
-	if err != nil {
-		return code.Error(err)
-	}
 
-	// executor validity check
-	if ok := x.checkExecutor(opt.Executor, t.DataSets); !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param:executor"))
-	}
 	if isFinish {
 		if t.Status != blockchain.TaskProcessing {
 			return code.Error(errorx.New(errorx.ErrCodeParam,
@@ -373,7 +379,7 @@ func (x *Xdata) checkSign(sign, owner, mes []byte) (err error) {
 
 func (x *Xdata) checkExecutor(executor []byte, dataSets []*pbTask.DataForTask) bool {
 	for _, ds := range dataSets {
-		if bytes.Equal(ds.Owner, executor) {
+		if bytes.Equal(ds.Executor, executor) {
 			return true
 		}
 	}

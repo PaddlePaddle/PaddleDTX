@@ -23,8 +23,9 @@ import (
 const (
 	prefixFlTaskIndex     = "index_fltask"
 	prefixFlTaskListIndex = "index_fltask_list"
-	prefixNodeIndex       = "index_datanode"
-	prefixNodeListIndex   = "index_datanode_list"
+	prefixNodeIndex       = "index_executor_node"
+	prefixNodeNameIndex   = "index_executor_name"
+	prefixNodeListIndex   = "index_executor_node_list"
 )
 
 // subByInt64Max return maxInt64 - N
@@ -53,12 +54,17 @@ func packFlTaskFilter(pubkey []byte) string {
 	return filter
 }
 
-// packNodeIndex pack index for saving executor node
+// packNodeIndex pack index-id contract key for saving executor node
 func packNodeIndex(nodeID []byte) string {
 	return fmt.Sprintf("%s/%x", prefixNodeIndex, nodeID)
 }
 
+// packNodeNameIndex pack index-name contract key for saving executor node
+func packNodeNameIndex(name string) string {
+	return fmt.Sprintf("%s/%s", prefixNodeNameIndex, name)
+}
+
 // packNodeListIndex pack filter for listing executor nodes
-func packNodeListIndex(node blockchain.DataNode) string {
+func packNodeListIndex(node blockchain.ExecutorNode) string {
 	return fmt.Sprintf("%s/%d/%x", prefixNodeListIndex, subByInt64Max(node.RegTime), node.ID)
 }
