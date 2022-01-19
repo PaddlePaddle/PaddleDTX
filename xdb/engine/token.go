@@ -14,9 +14,13 @@
 package engine
 
 import (
+	"encoding/hex"
+
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/file"
 )
 
 // verifyUserToken check user's token is valid or not
@@ -39,11 +43,35 @@ func verifyUserToken(userID, token string, digest []byte) error {
 	return nil
 }
 
-// verifyUserID verify if request userID is valid and equal to local nodeID
+// getPubKey get the public key from string. if pubKeyStr is empty, return the node public key
+func (e *Engine) getPubKey(pubKeyStr string) (pubKey []byte, err error) {
+	if pubKeyStr == "" {
+		nodePubKey := ecdsa.PublicKeyFromPrivateKey(e.monitor.challengingMonitor.PrivateKey)
+		return nodePubKey[:], nil
+	}
+	pubkey, err := ecdsa.DecodePublicKeyFromString(pubKeyStr)
+	if err != nil {
+		return pubKey, errorx.Wrap(err, "failed to decode publickey")
+	}
+	return pubkey[:], nil
+}
+
+// verifyUserID verify whether the request userID is valid,
+// userID can only be the local node public key or authorized dataOwner node client's public key
 func (e *Engine) verifyUserID(userID string) error {
+	userKeyFileName := hash.HashUsingSha256([]byte(userID))
+	if ok, err := file.IsFileExisted(file.AuthKeyFilePath, hex.EncodeToString(userKeyFileName)); ok {
+		logger.Info("userId:", userID, ok, err)
+		return nil
+	}
+	return e.verifyUserIDIsLocalNodeID(userID)
+}
+
+// verifyUserIsID verify if request userID is valid and equal to local nodeID
+func (e *Engine) verifyUserIDIsLocalNodeID(userID string) error {
 	localPub := ecdsa.PublicKeyFromPrivateKey(e.monitor.challengingMonitor.PrivateKey)
 	if userID != localPub.String() {
-		return errorx.New(errorx.ErrCodeNotAuthorized, "request userID does not match local userID")
+		return errorx.New(errorx.ErrCodeNotAuthorized, "request userID isn't be authorized or does not match local userID")
 	}
 	return nil
 }

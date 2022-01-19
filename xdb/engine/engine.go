@@ -20,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/aes"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
@@ -47,6 +48,7 @@ type Slicer interface {
 
 // Encryptor encrypts data and decrypts encoded data
 type Encryptor interface {
+	GetKey(fileID, sliceID string, nodeID []byte) aes.AESKey
 	Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (encryptor.EncryptedSlice, error)
 	Recover(r io.Reader, opt *encryptor.RecoverOptions) ([]byte, error)
 }
@@ -85,7 +87,7 @@ type Copier interface {
 //  For xchain they are contract methods, and for fabric they are chaincode methods
 //  see more from blockchain.xchain and blockchain.fabric
 type Blockchain interface {
-	// The following contract methods is used by storage node,
+	// The following contract methods are used by storage node,
 	// for distributed governance and healthy check of nodes
 	AddNode(opt *blockchain.AddNodeOptions) error
 	ListNodes() (blockchain.Nodes, error)
@@ -98,7 +100,7 @@ type Blockchain interface {
 	ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error)
 	GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error)
 
-	// The following contract methods is used by dataOwner node
+	// The following contract methods are used by dataOwner node
 	PublishFile(file *blockchain.PublishFileOptions) error
 	GetFileByName(owner []byte, ns, name string) (blockchain.File, error)
 	GetFileByID(id string) (blockchain.File, error)
@@ -112,6 +114,11 @@ type Blockchain interface {
 	ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
 	ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)
 	ListExpiredFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)
+	// The following contract methods used for authorizers to operate the file authorization application
+	GetAuthApplicationByID(authID string) (blockchain.FileAuthApplication, error)
+	ListFileAuthApplications(opt *blockchain.ListFileAuthOptions) (blockchain.FileAuthApplications, error)
+	ConfirmFileAuthApplication(opt *blockchain.ConfirmFileAuthOptions) error
+	RejectFileAuthApplication(opt *blockchain.ConfirmFileAuthOptions) error
 
 	ListChallengeRequests(opt *blockchain.ListChallengeOptions) ([]blockchain.Challenge, error)
 	ChallengeRequest(opt *blockchain.ChallengeRequestOptions) error
@@ -140,7 +147,7 @@ type Engine struct {
 	monitor *Monitor
 }
 
-// NewEngineOption initiates Engine by the node's configuration file
+// NewEngineOption contains parameters for initiating Engine
 type NewEngineOption struct {
 	LocalNode peer.Local
 
@@ -152,7 +159,7 @@ type NewEngineOption struct {
 	Storage    Storage
 }
 
-// NewEngine initiates Engine
+// NewEngine initiates Engine by the node's configuration file
 func NewEngine(conf *config.MonitorConf, opt *NewEngineOption) (*Engine, error) {
 	monitor, err := newMonitor(conf, opt)
 	if err != nil {

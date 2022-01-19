@@ -16,11 +16,13 @@ package nodes
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/file"
 )
 
 // getMigrateRecordsCmd represents the command to get node slices migration records
@@ -48,6 +50,15 @@ var getMigrateRecordsCmd = &cobra.Command{
 			return
 		}
 
+		if id == "" {
+			pubKeyBytes, err := file.ReadFile(keyPath, file.PublicKeyFileName)
+			if err != nil {
+				fmt.Printf("Read publicKey failed, err: %v\n", err)
+				return
+			}
+			id = strings.TrimSpace(string(pubKeyBytes))
+		}
+
 		resp, err := client.GetMigrateRecords(context.Background(), id, startTime, endTime.UnixNano(), limit)
 		if err != nil {
 			fmt.Printf("err: %v\n", err)
@@ -65,10 +76,8 @@ func init() {
 	rootCmd.AddCommand(getMigrateRecordsCmd)
 
 	getMigrateRecordsCmd.Flags().StringVarP(&id, "id", "i", "", "id")
+	getMigrateRecordsCmd.Flags().StringVarP(&keyPath, "keyPath", "", file.KeyFilePath, "node's key path")
 	getMigrateRecordsCmd.Flags().StringVarP(&start, "start", "s", "", "slice migrate startTime, example '2021-06-10 12:00:00'")
 	getMigrateRecordsCmd.Flags().StringVarP(&end, "end", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate), "slice migrate endTime, example '2021-06-10 12:00:00'")
-	getMigrateRecordsCmd.Flags().Uint64VarP(&limit, "limit", "l", 0, "limit for list slice migrate records")
-
-	getMigrateRecordsCmd.MarkFlagRequired("host")
-	getMigrateRecordsCmd.MarkFlagRequired("id")
+	getMigrateRecordsCmd.Flags().Int64VarP(&limit, "limit", "l", 0, "limit for list slice migrate records")
 }

@@ -3,7 +3,7 @@ type = "dataOwner"
 [dataOwner]
 name = "data-node1"
 listenAddress = ":80"
-privateKey = "${DATAOWNER_PRIVATEKEY}"
+keyPath = "./keys"
 publicAddress = "dataowner1.node.com:80"
 
 [dataOwner.slicer]

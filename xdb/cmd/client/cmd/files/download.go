@@ -18,10 +18,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/file"
 )
 
 var (
@@ -45,13 +47,20 @@ var downloadCmd = &cobra.Command{
 			return
 		}
 
+		if privateKey == "" {
+			privateKeyBytes, err := file.ReadFile(keyPath, file.PrivateKeyFileName)
+			if err != nil {
+				fmt.Printf("Read privateKey failed, err: %v\n", err)
+				return
+			}
+			privateKey = strings.TrimSpace(string(privateKeyBytes))
+		}
+
 		opt := httpclient.ReadOptions{
 			PrivateKey: privateKey,
-
-			Namespace: namespace,
-			FileName:  filename,
-
-			FileID: fileID,
+			Namespace:  namespace,
+			FileName:   filename,
+			FileID:     fileID,
 		}
 
 		reader, err := client.Read(context.Background(), opt)
@@ -81,11 +90,11 @@ func init() {
 	rootCmd.AddCommand(downloadCmd)
 
 	downloadCmd.Flags().StringVarP(&privateKey, "privkey", "k", "", "private key")
+	downloadCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./ukeys", "key path")
 	downloadCmd.Flags().StringVarP(&output, "output", "o", "", "output file path")
 	downloadCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace for file")
 	downloadCmd.Flags().StringVarP(&filename, "filename", "m", "", "file name")
 	downloadCmd.Flags().StringVarP(&fileID, "fileid", "f", "", "file id")
 
-	downloadCmd.MarkFlagRequired("privkey")
 	downloadCmd.MarkFlagRequired("output")
 }

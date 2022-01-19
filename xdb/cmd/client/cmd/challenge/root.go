@@ -27,7 +27,7 @@ var (
 	fileID      string
 	start       string
 	end         string
-	limit       uint64
+	limit       int64
 	list        int8
 )
 
@@ -41,7 +41,7 @@ func RootCmd() *cobra.Command {
 	return rootCmd
 }
 func init() {
-	rootCmd.PersistentFlags().StringVar(&host, "host", "", "server address of xuper db")
+	rootCmd.PersistentFlags().StringVar(&host, "host", "", "server address of the dataOwner node, example 'http://127.0.0.1:8121'")
 
 	rootCmd.MarkPersistentFlagRequired("host")
 }

@@ -158,6 +158,7 @@ func AddFileNewMerkleChallenge(ctx context.Context, challenger MerkleChallenger,
 					}
 					// decrypt
 					opt := &encryptor.RecoverOptions{
+						FileID:  file.ID,
 						SliceID: target.ID,
 						NodeID:  newNode.ID,
 					}
@@ -170,6 +171,7 @@ func AddFileNewMerkleChallenge(ctx context.Context, challenger MerkleChallenger,
 					r.Close()
 					// encrypt by target nodeID
 					encOpt := &encryptor.EncryptOptions{
+						FileID:  file.ID,
 						SliceID: target.ID,
 						NodeID:  target.NodeID,
 					}

@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/cjqpker/slidewindow"
 	"github.com/sirupsen/logrus"
@@ -78,6 +79,8 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 		cancel()
 		return nil, err
 	}
+	pubkey := ecdsa.PublicKeyFromPrivateKey(e.monitor.challengingMonitor.PrivateKey)
+	opt.User = pubkey.String()
 
 	// prepare
 	allNodes, err := e.chain.ListNodes()
@@ -110,7 +113,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 	}
 
 	// recover structure
-	fs, err := e.recoverChainFileStructure(f.Structure)
+	fs, err := e.recoverChainFileStructure(f.Structure, opt.FileID)
 	if err != nil {
 		cancel()
 		return nil, err
@@ -179,6 +182,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 
 			// decrypt
 			eOpt := encryptor.RecoverOptions{
+				FileID:  opt.FileID,
 				SliceID: target.ID,
 				NodeID:  target.NodeID,
 			}
@@ -232,7 +236,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 	}()
 
 	// decrypt recovered file
-	plain, err := e.encryptor.Recover(reader, &encryptor.RecoverOptions{})
+	plain, err := e.encryptor.Recover(reader, &encryptor.RecoverOptions{FileID: opt.FileID})
 	if err != nil {
 		return nil, errorx.NewCode(err, errorx.ErrCodeCrypto, "file decryption failed")
 	}

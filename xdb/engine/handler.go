@@ -14,6 +14,7 @@
 package engine
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -22,6 +23,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
 
+	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
@@ -35,7 +37,7 @@ func (e *Engine) Push(opt types.PushOptions, r io.Reader) (
 	if err != nil {
 		return types.PushResponse{}, errorx.Wrap(err, "failed to tell existence of slice")
 	}
-	// do not execute write to keep idempotency
+	// Do not execute write to keep idempotency
 	if exist {
 		return types.PushResponse{}, nil
 	}
@@ -47,7 +49,7 @@ func (e *Engine) Push(opt types.PushOptions, r io.Reader) (
 
 	logger.WithFields(logrus.Fields{
 		"slice_id": opt.SliceID,
-		"from":     opt.SourceId,
+		"from":     opt.SourceID,
 	}).Debug("slice received")
 
 	return types.PushResponse{}, nil
@@ -57,7 +59,7 @@ func (e *Engine) Push(opt types.PushOptions, r io.Reader) (
 // To prevent the request is intercepted and the slice is downloaded maliciously,
 // the request's validity is five minutes
 func (e *Engine) Pull(opt types.PullOptions) (io.ReadCloser, error) {
-	//check timestamp
+	// Check timestamp
 	var requestExpiredTime time.Duration = 5 * time.Minute
 	if int64(opt.Timestamp) < (time.Now().UnixNano() - requestExpiredTime.Nanoseconds()) {
 		return nil, errorx.New(errorx.ErrCodeParam, "request has expired")
@@ -70,11 +72,22 @@ func (e *Engine) Pull(opt types.PullOptions) (io.ReadCloser, error) {
 		return nil, errorx.Wrap(err, "failed to read blockchain")
 	}
 
-	// verify token
+	// Verify Signature
 	msg := fmt.Sprintf("%s,%s,%d", opt.SliceID, opt.FileID, opt.Timestamp)
 	msgDigest := hash.HashUsingSha256([]byte(msg))
-	if err := verifyUserToken(hex.EncodeToString(file.Owner), opt.Signature, msgDigest); err != nil {
-		return nil, errorx.Wrap(err, "failed to verify slice pull  token")
+
+	var verifyPubkey string
+	// If opt.Pubkey is empty, use file owner's public key to verify signature
+	if len(opt.Pubkey) == 0 || bytes.Equal(opt.Pubkey, file.Owner) {
+		verifyPubkey = hex.EncodeToString(file.Owner)
+	} else {
+		verifyPubkey = hex.EncodeToString(opt.Pubkey)
+		if err := e.checkApplierFileAuth(opt.Pubkey, file.Owner, opt.FileID); err != nil {
+			return nil, err
+		}
+	}
+	if err := verifyUserToken(verifyPubkey, opt.Signature, msgDigest); err != nil {
+		return nil, errorx.Wrap(err, "failed to verify slice pull token")
 	}
 
 	exist, err := e.storage.Exist(opt.SliceID)
@@ -96,4 +109,28 @@ func (e *Engine) Pull(opt types.PullOptions) (io.ReadCloser, error) {
 	}).Debug("slice served")
 
 	return rc, nil
+}
+
+// checkApplierFileAuth used to check applier's file authorization application
+// In addition to allowing file owners to download slice, authorized appliers can also download
+func (e *Engine) checkApplierFileAuth(applier, authorizer []byte, fileID string) error {
+	bcopt := blockchain.ListFileAuthOptions{
+		Applier:    applier,
+		Authorizer: authorizer,
+		FileID:     fileID,
+		Limit:      1,
+		TimeEnd:    time.Now().UnixNano(),
+		Status:     blockchain.FileAuthApproved,
+	}
+	fileAuths, err := e.chain.ListFileAuthApplications(&bcopt)
+	if err != nil {
+		return errorx.Wrap(err, "failed to read applier's authorization application from chain")
+	}
+	if len(fileAuths) == 0 {
+		return errorx.New(errorx.ErrCodeNotFound, "applier's Approved authorization application not found")
+	}
+	if fileAuths[0].ExpireTime < time.Now().UnixNano() {
+		return errorx.New(errorx.ErrCodeExpired, "applier's authorization application has expired")
+	}
+	return nil
 }

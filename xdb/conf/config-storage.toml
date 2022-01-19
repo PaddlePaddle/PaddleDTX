@@ -17,7 +17,9 @@ listenAddress = ":8122"
 
 # The private key of the node.
 # Different key express different identity.
-privateKey = "5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79"
+# Only need to choose one from 'privateKey' and 'keyPath', and if both exist, 'keyPath' takes precedence over 'privateKey'
+# privateKey = "5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79"
+keyPath = "./keys"
 
 # The endpoint can be connected by other node, and showed in blockchain.
 # If your network mode is 'host', it is the machine's ip and the port in publicAddress in before section.

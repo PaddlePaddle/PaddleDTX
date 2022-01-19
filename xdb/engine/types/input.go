@@ -60,7 +60,7 @@ func (o *WriteOptions) Valid() error {
 // will use fileID first if not empty
 type ReadOptions struct {
 	User      string `json:"user"`
-	Timestamp uint64 `json:"timestamp"`
+	Timestamp int64  `json:"timestamp"`
 	Token     string `json:"token"`
 	Namespace string `json:"namespace"`
 	FileName  string `json:"file_name"`
@@ -95,25 +95,17 @@ func (r *ReadOptions) Valid() error {
 
 // PushOptions options for pushing slice to storage node
 type PushOptions struct {
-	SliceID  string `json:"slice_id"`
-	SourceId string `json:"source_id"` // dataOwner node id
+	SliceID  string
+	SourceID string // dataOwner node id
 }
 
 // PullOptions options for pulling slice from storage node
 type PullOptions struct {
+	Pubkey    []byte // file owner public key or applier's public key, applier has usage requirements for files
 	SliceID   string
 	FileID    string
-	Timestamp uint64
+	Timestamp int64
 	Signature string
-}
-
-// AddNodeOptions options for adding storage node to blockchain
-type AddNodeOptions struct {
-	NodeID  string
-	Name    string
-	Address string
-	Online  bool
-	Token   string
 }
 
 // NodeOfflineOptions options for setting storage node with offline status on blockchain
@@ -132,7 +124,7 @@ type NodeOnlineOptions struct {
 
 // ListFileOptions options for listing files from blockchain
 type ListFileOptions struct {
-	Owner     []byte // file owner
+	Owner     string // file owner
 	Namespace string // file namespace
 
 	TimeStart   int64 // time period
@@ -141,13 +133,29 @@ type ListFileOptions struct {
 	Limit       uint64 // file limit
 }
 
+// Valid checks if ListFileOptions is valid
+func (o *ListFileOptions) Valid() error {
+	if len(o.Namespace) == 0 {
+		return errorx.New(errorx.ErrCodeParam, "empty namespace")
+	}
+	return nil
+}
+
 // UpdateFileEtimeOptions options for updating file expire time
 type UpdateFileEtimeOptions struct {
-	Owner       string
 	FileID      string
 	ExpireTime  int64
 	CurrentTime int64
+	User        string
 	Token       string
+}
+
+// Valid checks if UpdateFileEtimeOptions is valid
+func (o *UpdateFileEtimeOptions) Valid() error {
+	if o.ExpireTime <= time.Now().UnixNano() {
+		return errorx.New(errorx.ErrCodeParam, "invalid file expire time")
+	}
+	return nil
 }
 
 // AddNsOptions options for adding namespace on blockchain
@@ -157,16 +165,57 @@ type AddNsOptions struct {
 	Description string
 	Replica     int
 	CreateTime  int64
+	User        string
 	Token       string
 }
 
 // UpdateNsOptions options for updating namespace replica
 type UpdateNsOptions struct {
-	Owner       string
 	Namespace   string
 	Replica     int
 	CurrentTime int64
+	User        string
 	Token       string
 }
 
 type ListNsOptions ListFileOptions
+
+// ListFileAuthOptions parameters for authorizers or appliers to query the list of file authorization applications
+type ListFileAuthOptions struct {
+	Applier    string // applier's public key
+	Authorizer string // authorizer's public key
+	FileID     string
+	Status     string // file authorization application status
+	TimeStart  int64
+	TimeEnd    int64
+	Limit      int64
+}
+
+// ConfirmAuthOptions parameters for authorizers confirm or reject file authorization application
+type ConfirmAuthOptions struct {
+	User         string // authorizer's public key
+	AuthID       string
+	RejectReason string
+	ExpireTime   int64
+	Status       bool // file authorization application status
+	Token        string
+}
+
+// Valid checks if ConfirmAuthOptions is valid
+func (o *ConfirmAuthOptions) Valid(status bool) error {
+	if len(o.AuthID) == 0 {
+		return errorx.New(errorx.ErrCodeParam, "invalid param authID")
+	}
+	// if confirm authorization, expireTime can not be empty
+	if status {
+		if o.ExpireTime <= time.Now().UnixNano() {
+			return errorx.New(errorx.ErrCodeParam, "invalid param expireTime")
+		}
+	} else {
+		// if reject authorization, rejectReason can not be empty
+		if len(o.RejectReason) == 0 {
+			return errorx.New(errorx.ErrCodeParam, "invalid param rejectReason")
+		}
+	}
+	return nil
+}

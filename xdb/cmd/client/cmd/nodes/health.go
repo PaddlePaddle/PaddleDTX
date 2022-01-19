@@ -16,10 +16,12 @@ package nodes
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/file"
 )
 
 // getNodeHealthCmd represents the command to get node health status
@@ -32,7 +34,14 @@ var getNodeHealthCmd = &cobra.Command{
 			fmt.Printf("err：%v\n", err)
 			return
 		}
-
+		if id == "" {
+			pubKeyBytes, err := file.ReadFile(keyPath, file.PublicKeyFileName)
+			if err != nil {
+				fmt.Printf("Read publicKey failed, err: %v\n", err)
+				return
+			}
+			id = strings.TrimSpace(string(pubKeyBytes))
+		}
 		status, err := client.GetNodeHealth(context.Background(), id)
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
@@ -46,7 +55,5 @@ func init() {
 	rootCmd.AddCommand(getNodeHealthCmd)
 
 	getNodeHealthCmd.Flags().StringVarP(&id, "id", "i", "", "id")
-
-	getNodeHealthCmd.MarkFlagRequired("host")
-	getNodeHealthCmd.MarkFlagRequired("id")
+	getNodeHealthCmd.Flags().StringVarP(&keyPath, "keyPath", "", file.KeyFilePath, "node's key path")
 }

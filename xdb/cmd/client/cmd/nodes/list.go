@@ -52,5 +52,4 @@ var listNodesCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(listNodesCmd)
-	listNodesCmd.MarkFlagRequired("host")
 }

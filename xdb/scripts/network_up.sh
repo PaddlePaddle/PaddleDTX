@@ -52,11 +52,6 @@ IMAGETAG="1.4.8"
 # Default channel_name
 CHANNEL_NAME="mychannel"
 
-# dataOwner private key, same as xdb_test.sh's DATAOWNER_PRIVATEKEY
-# 数据拥有方私钥，同xdb_test.sh的DATAOWNER_PRIVATEKEY
-DATAOWNER_PRIVATEKEY="14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21"
-DATAOWNER_PUBLICKEY="4637ef79f14b036ced59b76408b0d88453ac9e5baa523a86890aa547eac3e3a0f4a3c005178f021c1b060d916f42082c18e1d57505cdaaeef106729e6442f4e5"
-
 function start() {
   # 1. Standardize Conf
   # 1. 标准化xchain网络配置文件
@@ -215,8 +210,9 @@ function generateVendor() {
       -v $(dirname ${PWD}):/workspace \
       -v ~/.ssh:/root/.ssh \
       -w /workspace \
+      -e GONOPROXY=**.baidu.com** \
       -e GONOSUMDB=* \
-      -e GOPROXY=https://goproxy.cn \
+      -e GOPROXY=https://goproxy.baidu-int.com \
       -e GO111MODULE=on \
       golang:1.13.4 sh -c "cd ./$TMP_CONF_NAME/blockchain/fabric/chaincode/ && go mod vendor"
 }
@@ -228,8 +224,9 @@ function compileXchainContract() {
       -v $(dirname ${PWD}):/workspace \
       -v ~/.ssh:/root/.ssh \
       -w /workspace \
+      -e GONOPROXY=**.baidu.com** \
       -e GONOSUMDB=* \
-      -e GOPROXY=https://goproxy.cn \
+      -e GOPROXY=https://goproxy.baidu-int.com \
       -e GO111MODULE=on \
       golang:1.13.4 sh -c "go build -o ./$TMP_CONF_NAME/blockchain/xchain/contract/$CONTRACT_NAME ./blockchain/xchain/contract"
   # Copy contract file to xchain1 container
