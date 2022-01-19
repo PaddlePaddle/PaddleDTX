@@ -455,7 +455,7 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 
 	启动服务：
 	```
-	$ cd PaddleDTX/testdata/xdb
+	$ cd PaddleDTX/testdata/executor
 	$ docker-compose -f docker-compose.yml up -d
 	```
 
