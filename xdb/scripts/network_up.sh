@@ -210,9 +210,8 @@ function generateVendor() {
       -v $(dirname ${PWD}):/workspace \
       -v ~/.ssh:/root/.ssh \
       -w /workspace \
-      -e GONOPROXY=**.baidu.com** \
       -e GONOSUMDB=* \
-      -e GOPROXY=https://goproxy.baidu-int.com \
+      -e GOPROXY=https://goproxy.cn \
       -e GO111MODULE=on \
       golang:1.13.4 sh -c "cd ./$TMP_CONF_NAME/blockchain/fabric/chaincode/ && go mod vendor"
 }
@@ -224,9 +223,8 @@ function compileXchainContract() {
       -v $(dirname ${PWD}):/workspace \
       -v ~/.ssh:/root/.ssh \
       -w /workspace \
-      -e GONOPROXY=**.baidu.com** \
       -e GONOSUMDB=* \
-      -e GOPROXY=https://goproxy.baidu-int.com \
+      -e GOPROXY=https://goproxy.cn \
       -e GO111MODULE=on \
       golang:1.13.4 sh -c "go build -o ./$TMP_CONF_NAME/blockchain/xchain/contract/$CONTRACT_NAME ./blockchain/xchain/contract"
   # Copy contract file to xchain1 container
