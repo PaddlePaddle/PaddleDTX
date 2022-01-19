@@ -10,6 +10,8 @@ services:
       - 38106:80
     volumes:
       - ./node1/conf:/home/conf
+      - ./node1/keys:/home/keys
+      - ./requester/keys:/home/reqkeys
       - ./node1/logs:/home/logs
 
   executor2:
@@ -23,6 +25,8 @@ services:
       - 38107:80
     volumes:
       - ./node2/conf:/home/conf
+      - ./node2/keys:/home/keys
+      - ./requester/keys:/home/reqkeys
       - ./node2/logs:/home/logs
 networks:
   blockchain_xchain_network:

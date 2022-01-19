@@ -21,8 +21,8 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
 )
 
-// RegisterDataNode registers Executor node to xchain
-func (x *XChain) RegisterDataNode(opt *blockchain.AddNodeOptions) error {
+// RegisterExecutorNode registers Executor node to xchain
+func (x *XChain) RegisterExecutorNode(opt *blockchain.AddNodeOptions) error {
 	opts, err := json.Marshal(*opt)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal,
@@ -31,42 +31,59 @@ func (x *XChain) RegisterDataNode(opt *blockchain.AddNodeOptions) error {
 	args := map[string]string{
 		"opt": string(opts),
 	}
-	mName := "RegisterDataNode"
+	mName := "RegisterExecutorNode"
 	if _, err = x.InvokeContract(args, mName); err != nil {
 		return err
 	}
 	return nil
 }
 
-// ListDataNodes gets all Executor nodes from from xchain
-func (x *XChain) ListDataNodes() (blockchain.DataNodes, error) {
-	var nodes blockchain.DataNodes
+// ListExecutorNodes gets all Executor nodes from xchain
+func (x *XChain) ListExecutorNodes() (blockchain.ExecutorNodes, error) {
+	var nodes blockchain.ExecutorNodes
 	args := map[string]string{}
-	mName := "ListDataNodes"
+	mName := "ListExecutorNodes"
 	s, err := x.QueryContract(args, mName)
 	if err != nil {
 		return nil, err
 	}
 	if err = json.Unmarshal(s, &nodes); err != nil {
 		return nil, errorx.NewCode(err, errorx.ErrCodeInternal,
-			"fail to unmarshal data nodes")
+			"fail to unmarshal executor nodes")
 	}
 	return nodes, nil
 }
 
-// GetDataNodeByID gets Executor node by ID
-func (x *XChain) GetDataNodeByID(id []byte) (node blockchain.DataNode, err error) {
+// GetExecutorNodeByID gets Executor node by ID
+func (x *XChain) GetExecutorNodeByID(id []byte) (node blockchain.ExecutorNode, err error) {
 	args := map[string]string{
 		"id": string(id),
 	}
-	mName := "GetDataNodeByID"
+	mName := "GetExecutorNodeByID"
 	s, err := x.QueryContract(args, mName)
 	if err != nil {
 		return node, err
 	}
 	if err = json.Unmarshal(s, &node); err != nil {
 		return node, errorx.NewCode(err, errorx.ErrCodeInternal,
-			"fail to unmarshal data nodes")
+			"fail to unmarshal executor node")
+	}
+	return node, err
+}
+
+// GetExecutorNodeByName gets Executor node by name
+func (x *XChain) GetExecutorNodeByName(name string) (node blockchain.ExecutorNode, err error) {
+	args := map[string]string{
+		"name": name,
+	}
+	mName := "GetExecutorNodeByName"
+	s, err := x.QueryContract(args, mName)
+	if err != nil {
+		return node, err
+	}
+	if err = json.Unmarshal(s, &node); err != nil {
+		return node, errorx.NewCode(err, errorx.ErrCodeInternal,
+			"fail to unmarshal executor node")
 	}
 	return node, err
 }

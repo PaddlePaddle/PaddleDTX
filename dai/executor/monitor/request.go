@@ -14,13 +14,17 @@
 package monitor
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
+	xdbchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
@@ -49,6 +53,12 @@ func (t *TaskMonitor) loopRequest(ctx context.Context) {
 		case <-ticker.C:
 		}
 
+		// query confirming tasks and publish file authorization applications,
+		// if the file authorization application has been passed, confirm the task
+		if err := t.getUnconfirmedTaskAndConfirm(); err != nil {
+			logger.WithError(err).Error("failed to find confirming tasks to confirm")
+		}
+
 		//checks blockchain every some seconds to find tasks ready to execute,
 		//then starts Multi-Party Computation for each task.
 		if err := t.getToProcessTaskAndStart(); err != nil {
@@ -59,6 +69,152 @@ func (t *TaskMonitor) loopRequest(ctx context.Context) {
 		// then stops expired tasks
 		t.MpcHandler.CheckMpcTimeOutTasks()
 	}
+}
+
+// getUnconfirmedTaskAndConfirm query confirming tasks that need to be confirmed by the
+// executor node from chain, check whether the executor node has permission to use the sample file,
+// if not, publishes a file authorization application, otherwise confrims or rejects the task
+func (t *TaskMonitor) getUnconfirmedTaskAndConfirm() error {
+	// 1. find all confirming tasks from chain
+	taskList, err := t.Blockchain.ListTask(&blockchain.ListFLTaskOptions{
+		PubKey:    t.PublicKey[:],
+		Status:    blockchain.TaskConfirming,
+		TimeStart: 0,
+		TimeEnd:   time.Now().UnixNano(),
+		Limit:     blockchain.TaskListMaxNum,
+	})
+	if err != nil {
+		return errorx.Wrap(err, "failed to find Confirming task list")
+	}
+	if len(taskList) == 0 {
+		logger.WithField("amount", len(taskList)).Debug("no Confirming task found")
+		return nil
+	}
+	// 2. query the list of file authorization applications
+	// applier is the executor's public key, authorizer is the file owner's public key
+	for _, task := range taskList {
+		for _, ds := range task.DataSets {
+			if bytes.Equal(ds.Executor, t.PublicKey[:]) {
+
+				currentTime := time.Now().UnixNano()
+				fileAuths, err := t.Blockchain.ListFileAuthApplications(&xdbchain.ListFileAuthOptions{
+					Applier:    t.PublicKey[:],
+					Authorizer: ds.Owner,
+					FileID:     ds.DataID,
+					TimeStart:  0,
+					TimeEnd:    currentTime,
+					Limit:      1,
+				})
+				if err != nil {
+					return errorx.Wrap(err,
+						"failed to find the file authorization application, fileID: %s, Applier: %x, Authorizer: %x", ds.DataID, t.PublicKey[:], ds.Owner)
+				}
+
+				// 3. if the authorization application has not been published or the authorization application has expired,
+				// then publish the file authorization application
+				if len(fileAuths) == 0 || (fileAuths[0].Status == xdbchain.FileAuthApproved &&
+					fileAuths[0].ExpireTime <= currentTime) {
+					if err := t.publishFileAuthApplication(ds.DataID, task.ID, ds.Owner); err != nil {
+						return err
+					}
+				} else {
+					// 4. if the authorization application is rejected, rejected the task
+					if fileAuths[0].Status == xdbchain.FileAuthRejected {
+						rejectReason := fmt.Sprintf("File authorization application is refused, authID: %s, reason: %s",
+							fileAuths[0].ID, fileAuths[0].RejectReason)
+						if err := t.confirmTask(task.ID, rejectReason, false); err != nil {
+							return errorx.Wrap(err, "reject task failed, taskID: %s, Executor: %x", task.ID, t.PublicKey[:])
+						}
+					} else if fileAuths[0].Status == xdbchain.FileAuthApproved && fileAuths[0].ExpireTime > currentTime {
+						// if the authorization application has been passed and has not expired, then confirm the task
+						if err := t.confirmTask(task.ID, "", true); err != nil {
+							return errorx.Wrap(err, "confirm task failed, taskID: %s, Executor: %x", task.ID, t.PublicKey[:])
+						}
+					} else {
+						logger.Infof("the file authorization application is Unapproved, fileAuthID: %s, taskID: %s", fileAuths[0].ID, task.ID)
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// confirmTask after the file owner confirms or rejects the executor's file authorization application
+// then the executor node confirms or rejects the task
+func (t *TaskMonitor) confirmTask(taskID, rejectReason string, isConfirm bool) error {
+	currentTime := time.Now().UnixNano()
+	confirmOptions := &blockchain.FLTaskConfirmOptions{
+		Pubkey:       t.PublicKey[:],
+		TaskID:       taskID,
+		CurrentTime:  currentTime,
+		RejectReason: rejectReason,
+	}
+	m := fmt.Sprintf("%x,%s,%s,%d", t.PublicKey[:], taskID, rejectReason, currentTime)
+
+	sig, err := ecdsa.Sign(t.PrivateKey, hash.HashUsingSha256([]byte(m)))
+	if err != nil {
+		return errorx.Wrap(err, "failed to sign confirm fl task")
+	}
+
+	// invoke contract to confirm or reject the task
+	confirmOptions.Signature = sig[:]
+	if isConfirm {
+		if err := t.Blockchain.ConfirmTask(confirmOptions); err != nil {
+			if code, _ := errorx.Parse(err); code == errorx.ErrCodeAlreadyUpdate {
+				logger.Debugf("task already confirmed, taskID: %s, Executor: %x", taskID, t.PublicKey[:])
+				return nil
+			}
+			return err
+		}
+		logger.Infof("confrims the task successfully, taskID: %s", taskID)
+	} else {
+		if err := t.Blockchain.RejectTask(confirmOptions); err != nil {
+			if code, _ := errorx.Parse(err); code == errorx.ErrCodeAlreadyUpdate {
+				logger.Debugf("task already rejected, taskID: %s, Executor: %x", taskID, t.PublicKey[:])
+				return nil
+			}
+			return err
+		}
+		logger.Infof("rejects the task successfully, taskID: %s, rejectReason: %s", taskID, rejectReason)
+	}
+	return nil
+}
+
+// publishFileAuthApplication the executor node publishes a file authorization application,
+// when the file owner confirms the file authorization application, the executor node can confirm the task
+func (t *TaskMonitor) publishFileAuthApplication(fileID, taskID string, fileOwner []byte) error {
+	// generate a uuid as fileAuthID
+	fileAuthUuid, err := uuid.NewRandom()
+	if err != nil {
+		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to generate fileAuthID")
+	}
+	opt := xdbchain.PublishFileAuthOptions{
+		FileAuthApplication: xdbchain.FileAuthApplication{
+			ID:          fileAuthUuid.String(),
+			FileID:      fileID,
+			Name:        fmt.Sprintf("TaskID-%s", taskID),
+			Description: "Used for the executor node to training or predicting task",
+			CreateTime:  time.Now().UnixNano(),
+			Applier:     t.PublicKey[:],
+			Authorizer:  fileOwner,
+		},
+	}
+	// sign file authorization application
+	s, err := json.Marshal(opt.FileAuthApplication)
+	if err != nil {
+		return errorx.Wrap(err, "failed to marshal file authorization application")
+	}
+	sig, err := ecdsa.Sign(t.PrivateKey, hash.HashUsingSha256(s))
+	if err != nil {
+		return errorx.Wrap(err, "failed to sign file authorization application")
+	}
+	opt.Signature = sig[:]
+	// publish file authorization application into chain
+	if err := t.Blockchain.PublishFileAuthApplication(&opt); err != nil {
+		return errorx.Wrap(err, "failed to publish file authorization application")
+	}
+	return nil
 }
 
 // getToProcessTaskAndStart process tasks in Processing status when restarting server

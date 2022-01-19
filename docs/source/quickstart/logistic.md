@@ -39,6 +39,7 @@
 
 * Vertical logistic train sample files 值为数据持有方 A 上传 train_dataA.csv 和数据持有方 B 上传 train_dataB.csv 所得的鸢尾花品种分类样本文件ID
 * Vertical logistic prediction sample files 值为数据持有方 A 上传predict_dataA.csv和数据持有方 B 上传 predict_dataB.csv 所得的鸢尾花品种分类的样本文件ID
+* upload_files.csv 存储了鸢尾花训练和预测所需的样本文件ID
 
 样本文件查看：
 

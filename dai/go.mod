@@ -4,7 +4,8 @@ go 1.16
 
 require (
 	github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20220105065128-fc00cae449fa
-	github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20220105070447-3045ca6cf1af
+	github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20220119113024-2de612cb5784
+	github.com/cjqpker/slidewindow v1.0.2
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.2.0

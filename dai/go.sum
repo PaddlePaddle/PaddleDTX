@@ -33,6 +33,8 @@ github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20220105065128-fc00cae449fa h1:9
 github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20220105065128-fc00cae449fa/go.mod h1:6Kw5leppm1dLfZrhdjyXHb6XtCipI0DONehWvlujWDM=
 github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20220105070447-3045ca6cf1af h1:2LUrMqkjjDLTGNNGL3HQ15v9J4ekYB3lrH/kK5uzQlc=
 github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20220105070447-3045ca6cf1af/go.mod h1:FxykNolpEwoOoMZNM9rOG6AXMO6l5Rc5QHuMv+2SNDQ=
+github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20220119113024-2de612cb5784 h1:kgazsJxOuCVH39wcbluqoxFo2Bw0Qt515Zufw8561yw=
+github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20220119113024-2de612cb5784/go.mod h1:FxykNolpEwoOoMZNM9rOG6AXMO6l5Rc5QHuMv+2SNDQ=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
 github.com/Shopify/sarama v1.30.0/go.mod h1:zujlQQx1kzHsh4jfV1USnptCQrHAEZ2Hk8fTKCulPVs=
 github.com/Shopify/toxiproxy/v2 v2.1.6-0.20210914104332-15ea381dcdae/go.mod h1:/cvHQkZ1fst0EmZnA5dFtiQdWCNCFYzb+uE2vqVgvx0=
@@ -85,6 +87,7 @@ github.com/chris-ramon/douceur v0.2.0/go.mod h1:wDW5xjJdeoMm1mRt4sD4c/LbF/mWdEpR
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
+github.com/cjqpker/slidewindow v1.0.2 h1:mbJn4r4j2q4AX7+diR29WOC81zv6j49Rm0J2KRo11+c=
 github.com/cjqpker/slidewindow v1.0.2/go.mod h1:07Hen47YX1SUCrblMZzLCY6Bpnsk22ePUqMXN85BXu4=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloudflare/bn256 v0.0.0-20200818021822-8aba7cd1ae4c h1:RGh+ACnmFpxIwfd0iTmNN0duV6KrTV4wRnZta6Eh7QA=

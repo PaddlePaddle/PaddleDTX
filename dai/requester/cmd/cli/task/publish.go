@@ -15,17 +15,20 @@ package task
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
 	pbCom "github.com/PaddlePaddle/PaddleDTX/dai/protos/common"
 	requestClient "github.com/PaddlePaddle/PaddleDTX/dai/requester/client"
+	"github.com/PaddlePaddle/PaddleDTX/dai/util/file"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
 var (
 	files       string
+	executors   string
 	algorithm   string
 	taskType    string
 	taskName    string
@@ -99,10 +102,19 @@ var publishCmd = &cobra.Command{
 				BatchSize: int64(batchSize),
 			},
 		}
+		if privateKey == "" {
+			privateKeyBytes, err := file.ReadFile(keyPath, file.PrivateKeyFileName)
+			if err != nil {
+				fmt.Printf("Read privateKey failed, err: %v\n", err)
+				return
+			}
+			privateKey = strings.TrimSpace(string(privateKeyBytes))
+		}
 
 		taskID, err := client.Publish(requestClient.PublishOptions{
 			PrivateKey:  privateKey,
 			Files:       files,
+			Executors:   executors,
 			TaskName:    taskName,
 			AlgoParam:   algorithmParams,
 			Description: description,
@@ -121,9 +133,11 @@ func init() {
 
 	publishCmd.Flags().StringVarP(&taskName, "name", "n", "", "task's name")
 	publishCmd.Flags().StringVarP(&privateKey, "privkey", "k", "", "requester's private key hex string")
+	publishCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./keys", "requester's key path")
 	publishCmd.Flags().StringVarP(&taskType, "type", "t", "", "task type, 'train' or 'predict'")
 	publishCmd.Flags().StringVarP(&algorithm, "algorithm", "a", "", "algorithm assigned to task, 'linear-vl' and 'logistic-vl' are supported")
 	publishCmd.Flags().StringVarP(&files, "files", "f", "", "sample files IDs with ',' as delimiter, like '123,456'")
+	publishCmd.Flags().StringVarP(&executors, "executors", "e", "", "executor node names with ',' as delimiter, like 'executor1,executor2'")
 
 	// optional params
 	publishCmd.Flags().StringVarP(&label, "label", "l", "", "target feature for training task")
@@ -140,8 +154,8 @@ func init() {
 		"size of samples for one round of training loop, 0 for BGD(Batch Gradient Descent), non-zero for SGD(Stochastic Gradient Descent) or MBGD(Mini-Batch Gradient Descent)")
 
 	publishCmd.MarkFlagRequired("name")
-	publishCmd.MarkFlagRequired("privkey")
 	publishCmd.MarkFlagRequired("type")
 	publishCmd.MarkFlagRequired("algorithm")
 	publishCmd.MarkFlagRequired("files")
+	publishCmd.MarkFlagRequired("executors")
 }
