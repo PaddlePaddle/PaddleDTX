@@ -69,7 +69,7 @@ func (e *Engine) packChainFile(fileID, challengeAlgorithm string, opt types.Writ
 		}
 		chainSlices = append(chainSlices, sps)
 	}
-	structure, err := e.packChainFileStructure(originalSlices)
+	structure, err := e.packChainFileStructure(originalSlices, fileID)
 	if err != nil {
 		return blockchain.File{}, errorx.Wrap(err, "failed to pack chain file structure")
 	}
@@ -101,7 +101,7 @@ func (e *Engine) packChainFile(fileID, challengeAlgorithm string, opt types.Writ
 }
 
 // packChainFileStructure pack file private structure and encrypt it
-func (e *Engine) packChainFileStructure(originalSlices slicer.SliceMetas) ([]byte, error) {
+func (e *Engine) packChainFileStructure(originalSlices slicer.SliceMetas, fileID string) ([]byte, error) {
 	structure := make(blockchain.FileStructure, 0, len(originalSlices))
 	for _, s := range originalSlices {
 		structure = append(structure, blockchain.PrivateSliceMeta{
@@ -114,7 +114,9 @@ func (e *Engine) packChainFileStructure(originalSlices slicer.SliceMetas) ([]byt
 		return nil, err
 	}
 	// encrypt structure
-	encStruct, err := e.encryptor.Encrypt(bytes.NewReader(raw), &encryptor.EncryptOptions{})
+	encStruct, err := e.encryptor.Encrypt(bytes.NewReader(raw), &encryptor.EncryptOptions{
+		FileID: fileID,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -122,9 +124,11 @@ func (e *Engine) packChainFileStructure(originalSlices slicer.SliceMetas) ([]byt
 }
 
 // recoverChainFileStructure get file structure from blockchain and decrypt it
-func (e *Engine) recoverChainFileStructure(bs []byte) (blockchain.FileStructure, error) {
+func (e *Engine) recoverChainFileStructure(bs []byte, fileID string) (blockchain.FileStructure, error) {
 	// decrypt structure
-	decStruct, err := e.encryptor.Recover(bytes.NewReader(bs), &encryptor.RecoverOptions{})
+	decStruct, err := e.encryptor.Recover(bytes.NewReader(bs), &encryptor.RecoverOptions{
+		FileID: fileID,
+	})
 	if err != nil {
 		return nil, err
 	}

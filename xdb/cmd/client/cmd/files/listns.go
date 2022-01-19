@@ -47,6 +47,7 @@ var nsListCmd = &cobra.Command{
 			fmt.Printf("err：%v\n", err)
 			return
 		}
+
 		opt := httpclient.ListNsOptions{
 			Owner:     owner,
 			TimeStart: startTime,
@@ -59,7 +60,7 @@ var nsListCmd = &cobra.Command{
 			fmt.Printf("err：%v\n", err)
 			return
 		}
-		//返回ns列表，及ns下文件个数，例如ns名称、ns描述、文件个数、创建时间、副本数
+		// Print the list of ns, such as ns name, ns description, number of files, ns creation time, file replicas
 		for _, ns := range response {
 			ctime := time.Unix(0, ns.CreateTime).Format(timeTemplate)
 			utime := time.Unix(0, ns.UpdateTime).Format(timeTemplate)
@@ -78,7 +79,6 @@ func init() {
 	nsListCmd.Flags().StringVarP(&owner, "owner", "o", "", "owner for file")
 	nsListCmd.Flags().StringVarP(&start, "start", "s", "", "ns create after startTime, example '2021-06-10 12:00:00'")
 	nsListCmd.Flags().StringVarP(&end, "end", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate), "ns create before endTime, example '2021-06-10 12:00:00'")
-	nsListCmd.Flags().Uint64VarP(&limit, "limit", "l", 0, "limit for list ns")
+	nsListCmd.Flags().Int64VarP(&limit, "limit", "l", 0, "limit for list ns")
 
-	nsListCmd.MarkFlagRequired("owner")
 }

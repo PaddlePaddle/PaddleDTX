@@ -55,6 +55,5 @@ func init() {
 	getNsCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace for file")
 	getNsCmd.Flags().StringVarP(&owner, "owner", "o", "", "owner for namespace")
 
-	getNsCmd.MarkFlagRequired("owner")
 	getNsCmd.MarkFlagRequired("namespace")
 }

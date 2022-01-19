@@ -113,6 +113,7 @@ func (m *RandomCopier) Select(slice slicer.Slice, nodes blockchain.NodeHs, opt *
 
 // Push pushes slices onto Storage Node
 func (m *RandomCopier) Push(ctx context.Context, id, sourceId string, r io.Reader, node *blockchain.Node) error {
+	// Todo add signature when pushing slices into storage nodes
 	url := fmt.Sprintf("http://%s/v1/slice/push?slice_id=%s&source_id=%s", node.Address, id, sourceId)
 
 	var resp etype.PushResponse
@@ -129,7 +130,7 @@ func (m *RandomCopier) Pull(ctx context.Context, id, fileId string, node *blockc
 	msg := fmt.Sprintf("%s,%s,%d", id, fileId, timestamp)
 	sig, err := ecdsa.Sign(m.privateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
-		return nil, errorx.Wrap(err, "failed to sign sile pull ")
+		return nil, errorx.Wrap(err, "failed to sign file pull")
 	}
 	url := fmt.Sprintf("http://%s/v1/slice/pull?slice_id=%s&file_id=%s&timestamp=%d&signature=%s",
 		node.Address, id, fileId, timestamp, sig.String())
@@ -164,7 +165,7 @@ func (m *RandomCopier) ReplicaExpansion(ctx context.Context, opt *copier.Replica
 	for i := 0; i < sliceExpandNum; i++ {
 		pushRes := false
 		for _, n := range nNodes {
-			es, err := common.EncAndPush(ctx, m, enc, plainText, opt.SliceId, sourceId, &n)
+			es, err := common.EncAndPush(ctx, m, enc, plainText, opt.SliceId, sourceId, fileId, &n)
 
 			if err != nil {
 				logger.WithFields(logrus.Fields{

@@ -16,11 +16,13 @@ package nodes
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/file"
 )
 
 // getNodeHeartbeatCmd represents the command to get number of heartbeats
@@ -42,6 +44,14 @@ var getNodeHeartbeatCmd = &cobra.Command{
 			}
 			ctime = tamp.UnixNano()
 		}
+		if id == "" {
+			pubKeyBytes, err := file.ReadFile(keyPath, file.PublicKeyFileName)
+			if err != nil {
+				fmt.Printf("Read publicKey failed, err: %v\n", err)
+				return
+			}
+			id = strings.TrimSpace(string(pubKeyBytes))
+		}
 
 		hmp, err := client.GetNodeHeartbeat(context.Background(), id, ctime)
 		if err != nil {
@@ -56,8 +66,6 @@ func init() {
 	rootCmd.AddCommand(getNodeHeartbeatCmd)
 
 	getNodeHeartbeatCmd.Flags().StringVarP(&id, "id", "i", "", "id")
+	getNodeHeartbeatCmd.Flags().StringVarP(&keyPath, "keyPath", "", file.KeyFilePath, "node's key path")
 	getNodeHeartbeatCmd.Flags().StringVarP(&start, "ctime", "c", "", "heartbeatnum of given day, example '2021-07-10 12:00:00'")
-
-	getNodeHeartbeatCmd.MarkFlagRequired("host")
-	getNodeHeartbeatCmd.MarkFlagRequired("id")
 }

@@ -80,6 +80,7 @@ func PullAndDec(ctx context.Context, copier MigrateCopier, encrypt MigrateEncryp
 
 	// decrypt the slice
 	decOpt := encryptor.RecoverOptions{
+		FileID:  fileId,
 		SliceID: slice.ID,
 		NodeID:  node.ID,
 	}
@@ -88,9 +89,10 @@ func PullAndDec(ctx context.Context, copier MigrateCopier, encrypt MigrateEncryp
 
 // EncAndPush encrypt a slice and push to specified storage node
 func EncAndPush(ctx context.Context, copier MigrateCopier, encrypt MigrateEncryptor,
-	plaintext []byte, sliceID, sourceId string, node *blockchain.Node) (encryptor.EncryptedSlice, error) {
+	plaintext []byte, sliceID, sourceID, fileID string, node *blockchain.Node) (encryptor.EncryptedSlice, error) {
 
 	encOpt := encryptor.EncryptOptions{
+		FileID:  fileID,
 		SliceID: sliceID,
 		NodeID:  node.ID,
 	}
@@ -98,7 +100,7 @@ func EncAndPush(ctx context.Context, copier MigrateCopier, encrypt MigrateEncryp
 	if err != nil {
 		return es, err
 	}
-	return es, copier.Push(ctx, es.SliceID, sourceId, bytes.NewReader(es.CipherText), node)
+	return es, copier.Push(ctx, es.SliceID, sourceID, bytes.NewReader(es.CipherText), node)
 }
 
 // GetSigmaISliceIdx get random challenge material for a slice

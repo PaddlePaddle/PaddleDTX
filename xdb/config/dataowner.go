@@ -17,6 +17,7 @@ type DataOwnerConf struct {
 	Name          string
 	ListenAddress string
 	PrivateKey    string
+	KeyPath       string
 	PublicAddress string
 
 	Slicer     *DataOwnerSlicerConf

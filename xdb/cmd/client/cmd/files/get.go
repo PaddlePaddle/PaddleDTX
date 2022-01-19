@@ -94,7 +94,6 @@ func init() {
 
 	getByIDCmd.MarkFlagRequired("id")
 
-	getByNameCmd.MarkFlagRequired("owner")
 	getByNameCmd.MarkFlagRequired("namespace")
 	getByNameCmd.MarkFlagRequired("filename")
 }

@@ -16,7 +16,6 @@ package engine
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -82,14 +81,16 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 		return resp, errorx.Wrap(err, "failed to verify token")
 	}
 
+	pubkey := ecdsa.PublicKeyFromPrivateKey(e.monitor.challengingMonitor.PrivateKey)
+	opt.User = pubkey.String()
+
 	// duplicate check
-	pubkey, _ := hex.DecodeString(opt.User)
-	if _, err := e.chain.GetFileByName(pubkey, opt.Namespace, opt.FileName); err == nil {
+	if _, err := e.chain.GetFileByName(pubkey[:], opt.Namespace, opt.FileName); err == nil {
 		return resp, errorx.New(errorx.ErrCodeAlreadyExists, "duplicated name")
 	} else if !errorx.Is(err, errorx.ErrCodeNotFound) {
 		return resp, errorx.Wrap(err, "failed to read blockchain")
 	}
-	ns, err := e.chain.GetNsByName(pubkey, opt.Namespace)
+	ns, err := e.chain.GetNsByName(pubkey[:], opt.Namespace)
 	if err != nil {
 		return resp, errorx.Wrap(err, "failed to get ns from blockchain")
 	}
@@ -115,7 +116,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	}).Info("write file")
 
 	// encrypt file first
-	cipher, err := e.encryptor.Encrypt(r, &encryptor.EncryptOptions{})
+	cipher, err := e.encryptor.Encrypt(r, &encryptor.EncryptOptions{FileID: fileID.String()})
 	if err != nil {
 		logger.WithError(err).Error("file encryption failed")
 		return resp, errorx.NewCode(err, errorx.ErrCodeCrypto, "file encryption failed")
@@ -158,7 +159,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 
 	// Encrypt. encryptedSliceQueue will be closed when locatedSliceQueue is closed
 	encryptedSliceQueue := make(chan encryptor.EncryptedSlice, 10)
-	go e.encryptRoutine(ctx, locatedSliceQueue, encryptedSliceQueue, func(err error) {
+	go e.encryptRoutine(ctx, fileID.String(), locatedSliceQueue, encryptedSliceQueue, func(err error) {
 		logger.WithError(err).Error("slice encryption stopped")
 		errOccurred = err
 		cancel()
@@ -194,7 +195,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	}
 
 	// if push fails again, push to another node
-	finishedQueue3 := e.pushToOtherNode(ctx, opt.User,
+	finishedQueue3 := e.pushToOtherNode(ctx, opt.User, fileID.String(),
 		failedTwice, finishedEncSlices, nodes, func(err error) {
 			logger.WithError(err).Error("pushToOtherNode failed")
 			errOccurred = err
@@ -297,7 +298,7 @@ func (e *Engine) locateRoutine(ctx context.Context, replica int, nodes blockchai
 	close(locatedQueue)
 }
 
-func (e *Engine) encryptRoutine(ctx context.Context, locatedQueue <-chan copier.LocatedSlice,
+func (e *Engine) encryptRoutine(ctx context.Context, fileID string, locatedQueue <-chan copier.LocatedSlice,
 	encryptedQueue chan<- encryptor.EncryptedSlice, onErr func(err error)) {
 	wg := sync.WaitGroup{}
 
@@ -344,6 +345,7 @@ func (e *Engine) encryptRoutine(ctx context.Context, locatedQueue <-chan copier.
 				}
 
 				eopt := encryptor.EncryptOptions{
+					FileID:  fileID,
 					SliceID: lSlice.Slice.ID,
 					NodeID:  lSlice.Nodes.ID,
 				}
@@ -459,7 +461,7 @@ func (e *Engine) retryRoutine(ctx context.Context, failedSlices []encryptor.Encr
 }
 
 // pushToOtherNode re-push failed slice to another node
-func (e *Engine) pushToOtherNode(ctx context.Context, owner string, failedSlices []encryptor.EncryptedSlice,
+func (e *Engine) pushToOtherNode(ctx context.Context, owner, fileID string, failedSlices []encryptor.EncryptedSlice,
 	finishedEncSlices []encryptor.EncryptedSlice, nodes blockchain.NodeHs, onErr func(error)) []encryptor.EncryptedSlice {
 
 	var finishedSlices []encryptor.EncryptedSlice
@@ -486,6 +488,7 @@ func (e *Engine) pushToOtherNode(ctx context.Context, owner string, failedSlices
 
 			// decrypt
 			ropt := encryptor.RecoverOptions{
+				FileID:  fileID,
 				SliceID: slice.SliceID,
 				NodeID:  slice.NodeID,
 			}
@@ -497,12 +500,14 @@ func (e *Engine) pushToOtherNode(ctx context.Context, owner string, failedSlices
 
 			// re-encrypt
 			eopt := encryptor.EncryptOptions{
+				FileID:  fileID,
 				SliceID: slice.SliceID,
 				NodeID:  node.ID,
 			}
 			es, err := e.encryptor.Encrypt(bytes.NewReader(plain), &eopt)
 			if err != nil {
 				logger.WithFields(logrus.Fields{
+					"file_iD":     fileID,
 					"slice_id":    slice.SliceID,
 					"target_node": string(node.ID),
 				}).WithError(err).Error("failed to re-encrypt")

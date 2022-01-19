@@ -181,8 +181,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 							}
 							if nh == blockchain.NodeHealthBad {
 								newSlices, mSlice, selectedNodes, err = m.migrateNode(ctx, slice, nodeSliceMap, healthNodes,
-									healthNodesMap, selectedNodes, file.ID, newSlices, chanllengeAlgorithm,
-									hex.EncodeToString(file.Owner), pdp)
+									healthNodesMap, selectedNodes, file.ID, newSlices, chanllengeAlgorithm, hex.EncodeToString(file.Owner), pdp)
 								if err != nil {
 									l.WithFields(logrus.Fields{
 										"file_id":  file.ID,
@@ -205,8 +204,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 							for _, slice := range yellowNodeSlices {
 								nodeSliceMap := nodeSliceMap(newSlices, slice.ID)
 								newSlices, mSlice, selectedNodes, err = m.migrateNode(ctx, slice, nodeSliceMap, greenNodes,
-									healthNodesMap, selectedNodes, file.ID, newSlices, chanllengeAlgorithm,
-									hex.EncodeToString(file.Owner), pdp)
+									healthNodesMap, selectedNodes, file.ID, newSlices, chanllengeAlgorithm, hex.EncodeToString(file.Owner), pdp)
 								if err != nil {
 									l.WithFields(logrus.Fields{
 										"file_id":  file.ID,
@@ -312,7 +310,7 @@ func (m FileMaintainer) migrateNode(ctx context.Context, slice blockchain.Public
 		}).Debug("migrate slice")
 
 		// push to new node
-		if es, err := common.EncAndPush(ctx, m.copier, m.encryptor, plaintext, slice.ID, sourceId, &node); err == nil {
+		if es, err := common.EncAndPush(ctx, m.copier, m.encryptor, plaintext, slice.ID, sourceId, fileID, &node); err == nil {
 			l.WithFields(logrus.Fields{
 				"slice_id":    slice.ID,
 				"old_node":    string(slice.NodeID),

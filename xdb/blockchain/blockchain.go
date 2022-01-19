@@ -19,10 +19,16 @@ import (
 )
 
 const (
+	// Define the status of the challenge stored in Contract
 	ChallengeToProve = "ToProve"
 	ChallengeProved  = "Proved"
 	ChallengeFailed  = "Failed"
+	// Define File authorization status stored in Contract
+	FileAuthUnapproved = "Unapproved" // the applier published file's authorization application and the authorizer has not yet approved
+	FileAuthApproved   = "Approved"   // the authorizer approved applier's authorization application
+	FileAuthRejected   = "Rejected"   // the authorizer rejected applier's authorization application
 
+	// Define the status of the node health
 	NodeHealthGood   = "Green"
 	NodeHealthMedium = "Yellow"
 	NodeHealthBad    = "Red"
@@ -33,16 +39,20 @@ const (
 
 	DefaultChallProvedRate = 0.85
 	DefaultHearBeatRate    = 0.85
-
+	// Define the challenge ratio and the health ratio
+	// Storage node's health is determined by the approved challenge ratio and the heartbeat ratio
 	NodeHealthChallProp     = 0.7
 	NodeHealthHeartBeatProp = 0.3
 
-	NodeHealthBoundGood   = 0.85
-	NodeHealthBoundMedium = 0.6
+	// Define the threshold for the storage node's health
+	NodeHealthBoundGood   = 0.85 // health ratio greater than 0.85 means node's status is Green
+	NodeHealthBoundMedium = 0.6  // health ratio between 0.6 and 0.85 means node's status is Yellow
 
 	FileRetainPeriod = 7 * 24 * time.Hour
 
 	ContractMessageMaxSize = 4 * 1024 * 1024
+	// Define the maximum number of list query
+	ListMaxNumber = 100
 )
 
 // PublicSliceMeta public, description of a slice stored on a specific node
@@ -149,6 +159,7 @@ type ListChallengeOptions struct {
 	Limit     uint64 // challenge limit
 }
 
+// ChallengeRequestOptions used for dataOwner nodes to add challenge request on chain
 type ChallengeRequestOptions struct {
 	ChallengeID   string
 	FileOwner     []byte
@@ -175,6 +186,7 @@ type Range struct {
 	End   uint64
 }
 
+// ChallengeAnswerOptions used for storage nodes to answer challenge request on chain
 type ChallengeAnswerOptions struct {
 	ChallengeID string
 	Sigma       []byte
@@ -187,6 +199,7 @@ type ChallengeAnswerOptions struct {
 
 type Nodes []Node
 
+// Node define storage node info stored on chain
 type Node struct {
 	ID       []byte
 	Name     string
@@ -221,6 +234,8 @@ type UpdateExptimeOptions struct {
 	Signature     []byte
 }
 
+// UpdateFilePSMOptions used to update the slice public info on chain
+// when the dataOwner migrates slice from bad storage node to good storage node
 type UpdateFilePSMOptions struct {
 	FileID    string
 	Owner     []byte
@@ -251,11 +266,13 @@ type AddNsOptions struct {
 	Signature []byte
 }
 
+// Namespace define file namespace stored on chain
+// Used by dataOwner to store files, like a folder
 type Namespace struct {
 	Name            string
 	Description     string
-	Owner           []byte
-	Replica         int
+	Owner           []byte // file namespace owner
+	Replica         int    // The replicas of files under the namespace
 	FilesStructSize int
 	FileTotalNum    int64
 	CreateTime      int64
@@ -304,4 +321,53 @@ type UpdateNsFilesCapOptions struct {
 	Name        string
 	CurrentTime int64
 	Signature   []byte
+}
+
+// FileAuthApplication define the file's authorization application stored on chain
+type FileAuthApplication struct {
+	ID           string
+	FileID       string // file ID to authorize
+	Name         string
+	Description  string
+	Applier      []byte // applier's public key, who needs to use files
+	Authorizer   []byte // file's owner
+	AuthKey      []byte // authorization key, appliers used the key to decrypt the file
+	Status       string
+	RejectReason string // reason of the rejected authorization
+	CreateTime   int64
+	ApprovalTime int64 // time when authorizer confirmed or rejected the authorization
+	ExpireTime   int64 // expiration time for file use
+
+	// extension
+	Ext []byte
+}
+
+type FileAuthApplications []*FileAuthApplication
+
+// PublishFileAuthOptions parameters for appliers to publish file authorization application
+type PublishFileAuthOptions struct {
+	FileAuthApplication FileAuthApplication
+	Signature           []byte
+}
+
+// ConfirmFileAuthOptions parameters for authorizers to confirm or reject file authorization application
+type ConfirmFileAuthOptions struct {
+	ID           string
+	AuthKey      []byte // authorized file decryption key, if authorizer confirms authorization, it cannot be empty
+	RejectReason string // if authorizer rejects authorization, it cannot be empty
+	CurrentTime  int64
+	ExpireTime   int64
+
+	Signature []byte // authorizer's signature
+}
+
+// ConfirmFileAuthOptions parameters for authorizers or appliers to query the list of file authorization application
+type ListFileAuthOptions struct {
+	Applier    []byte // applier's public key
+	Authorizer []byte // authorizer's public key
+	FileID     string
+	Status     string // file authorization application status
+	TimeStart  int64
+	TimeEnd    int64
+	Limit      int64 // limit number of applications in list request
 }

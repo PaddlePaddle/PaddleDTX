@@ -16,11 +16,6 @@
 # Script to test xdb service, create namespace and upload file with docker-compose.
 # Usage: ./xdb_test.sh {create_namespace | upload_file | download_file | filelist | getfilebyid
 
-# dataOwner private key, same as xdb_test.sh's DATAOWNER_PRIVATEKEY
-# 数据拥有方私钥，同xdb_test.sh的DATAOWNER_PRIVATEKEY
-DATAOWNER_PRIVATEKEY="14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21"
-DATAOWNER_PUBLICKEY="4637ef79f14b036ced59b76408b0d88453ac9e5baa523a86890aa547eac3e3a0f4a3c005178f021c1b060d916f42082c18e1d57505cdaaeef106729e6442f4e5"
-
 # Expiration time of file storage
 # 文件存储的到期时间
 ARCH=$(uname -s | grep Darwin)
@@ -35,7 +30,7 @@ fi
 function createNamespace() {
   paramCheck "$NAMESPACE" "Namespace of file cannot be empty"
   dataownerAddnsResult=`docker exec -it dataowner.node.com sh -c "
-    ./xdb-cli files addns  --host http://dataowner.node.com:80 -k $DATAOWNER_PRIVATEKEY -n $NAMESPACE -r 2"`
+    ./xdb-cli files addns --keyPath ./ukeys --host http://dataowner.node.com:80 -n $NAMESPACE -r 2"`
   echo "======> DataOwner create files storage namespace of $NAMESPACE: $dataownerAddnsResult"
   isAddNsRes=$(echo $dataownerAddnsResult | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1')
   if [ "$isAddNsRes" != "OK" ]; then
@@ -56,7 +51,7 @@ function uploadFile() {
   # 将上传的文件拷贝到dataowner.node.com容器
   docker cp $FILE_PATH dataowner.node.com:/home/uploadFiles/$fileName
   uploadResult=`docker exec -it dataowner.node.com sh -c "
-    ./xdb-cli files upload --host http://dataowner.node.com:80  -e '$FILE_EXPIRETIME' -n $NAMESPACE -m $fileName -k $DATAOWNER_PRIVATEKEY \
+    ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner.node.com:80  -e '$FILE_EXPIRETIME' -n $NAMESPACE -m $fileName \
     -i /home/uploadFiles/$fileName -d '$FILE_DES'"`
   echo "======> DataOwner upload file: $uploadResult"
 }
@@ -76,7 +71,7 @@ function downloadFile() {
 
   docker exec -it dataowner.node.com sh -c "rm -rf downloadFiles && mkdir downloadFiles"
   downloadResult=`docker exec -it dataowner.node.com sh -c "
-  ./xdb-cli files download --host http://dataowner.node.com:80 -f $FILEID -k $DATAOWNER_PRIVATEKEY -o /home/downloadFiles/$fileName"`
+  ./xdb-cli files download --keyPath ./ukeys --host http://dataowner.node.com:80 -f $FILEID -o /home/downloadFiles/$fileName"`
   # Copy file to the current directory
   # 将下载的文件拷贝到当前目录
   docker cp dataowner.node.com:/home/downloadFiles/$fileName ./
@@ -88,7 +83,7 @@ function downloadFile() {
 function fileList() {
   paramCheck "$NAMESPACE" "Namespace of file cannot be empty"
   docker exec -it dataowner.node.com sh -c "
-  ./xdb-cli files list --host http://dataowner.node.com:80 -n $NAMESPACE -o  $DATAOWNER_PUBLICKEY"
+  ./xdb-cli files list --host http://dataowner.node.com:80 -n $NAMESPACE"
 }
 
 # getFileById get file info by file ID from xdb network

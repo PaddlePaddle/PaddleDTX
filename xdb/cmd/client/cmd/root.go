@@ -20,6 +20,7 @@ import (
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/cmd/client/cmd/challenge"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/cmd/client/cmd/files"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/cmd/client/cmd/key"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/cmd/client/cmd/nodes"
 )
 
@@ -40,4 +41,5 @@ func init() {
 	rootCmd.AddCommand(files.RootCmd())
 	rootCmd.AddCommand(nodes.RootCmd())
 	rootCmd.AddCommand(challenge.RootCmd())
+	rootCmd.AddCommand(key.RootCmd())
 }

@@ -17,11 +17,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/file"
 )
 
 var (
@@ -55,9 +57,17 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		opt := httpclient.WriteOptions{
-			PrivateKey: privateKey,
+		if privateKey == "" {
+			privateKeyBytes, err := file.ReadFile(keyPath, file.PrivateKeyFileName)
+			if err != nil {
+				fmt.Printf("Read privateKey failed, err: %v\n", err)
+				return
+			}
+			privateKey = strings.TrimSpace(string(privateKeyBytes))
+		}
 
+		opt := httpclient.WriteOptions{
+			PrivateKey:  privateKey,
 			Namespace:   namespace,
 			FileName:    filename,
 			ExpireTime:  stamp.UnixNano(),
@@ -79,6 +89,7 @@ func init() {
 	rootCmd.AddCommand(uploadCmd)
 
 	uploadCmd.Flags().StringVarP(&privateKey, "privkey", "k", "", "private key")
+	uploadCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./ukeys", "key path")
 	uploadCmd.Flags().StringVarP(&input, "input", "i", "", "input file path")
 	uploadCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace for file")
 	uploadCmd.Flags().StringVarP(&filename, "filename", "m", "", "file name")
@@ -86,7 +97,6 @@ func init() {
 	uploadCmd.Flags().StringVarP(&expireTime, "expireTime", "e", "", "expire time, example '2021-06-10 12:00:00'")
 	uploadCmd.Flags().StringVar(&extra, "ext", "", "file extra info")
 
-	uploadCmd.MarkFlagRequired("privkey")
 	uploadCmd.MarkFlagRequired("input")
 	uploadCmd.MarkFlagRequired("namespace")
 	uploadCmd.MarkFlagRequired("filename")

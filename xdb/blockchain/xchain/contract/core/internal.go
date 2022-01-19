@@ -23,13 +23,21 @@ import (
 )
 
 const (
-	prefixFilenameIndex         = "index_fn"
-	prefixFilenameListIndex     = "index_fn_list"
-	prefixFileNsIndex           = "index_fns"
-	prefixFileNsListIndex       = "index_fns_list"
+	// Define the contract prefix key of file and file namespace operations
+	prefixFilenameIndex     = "index_fn"
+	prefixFilenameListIndex = "index_fn_list"
+	prefixFileNsIndex       = "index_fns"
+	prefixFileNsListIndex   = "index_fns_list"
+	// Define the contract prefix key of file authorization application operations
+	prefixFileAuthIndex           = "index_fileauth"
+	prefixFileAuthApplierIndex    = "index_fa_applier"
+	prefixFileAuthAuthorizerIndex = "index_fa_authorizer"
+	prefixFileAuthListIndex       = "index_fa_list"
+	// Define the contract prefix key of file challenge operations
 	prefixChallenge             = "index_chal"
 	prefixChallengeIndex4Owner  = "index_cho"
 	prefixChallengeIndex4Target = "index_cht"
+	// Define the contract prefix key of storage node operations
 	prefixNodeIndex             = "index_node"
 	prefixNodeListIndex         = "index_node_list"
 	prefixNodeHeartbeatIndex    = "index_hbnode"
@@ -62,7 +70,8 @@ func packNodeSliceFilter(target string) string {
 	return fmt.Sprintf("%s/%s/", prefixNodeFileSlice, target)
 }
 
-//  example: string(key) = index_fslice/7935e6d162b2eed64/1625039335453720000/fileid11
+// getNodeSliceFileId return fileID and file's expireTime by contract key
+// Example: string(key) = index_fslice/nodeID/expireTime/fileId
 func getNodeSliceFileId(key []byte) (string, int64) {
 	str_arr := strings.Split(string(key), "/")
 	expireTime, err := strconv.ParseInt(str_arr[2], 10, 64)
@@ -80,7 +89,8 @@ func packNodeSliceMigrateFilter(target string) string {
 	return fmt.Sprintf("%s/%s/", prefixNodeSliceMigrateIndex, target)
 }
 
-// example: string(key) = index_slicemirgate/7935e6d162b2eed64/1625039335453720000
+// getNodeSliceMigrateTime return slice's migrateTime by contract key
+// Example: string(key) = index_slicemigrate/nodeID/migrateTime
 func getNodeSliceMigrateTime(key []byte) int64 {
 	str_arr := strings.Split(string(key), "/")
 	expireTime, err := strconv.ParseInt(str_arr[2], 10, 64)
@@ -118,6 +128,36 @@ func packFileNameFilter(owner []byte, ns string) string {
 	return filter
 }
 
+// packFileAuthIndex define the contract key for file authorization application
+func packFileAuthIndex(id string) string {
+	return fmt.Sprintf("%s/%s", prefixFileAuthIndex, id)
+}
+
+func packFileAuthApplierIndex(applier []byte, authId string, createTime int64) string {
+	return fmt.Sprintf("%s/%x/%d/%s", prefixFileAuthApplierIndex, applier, subByInt64Max(createTime), authId)
+}
+
+func packFileAuthAuthorizerIndex(authorizer []byte, authId string, createTime int64) string {
+	return fmt.Sprintf("%s/%x/%d/%s", prefixFileAuthAuthorizerIndex, authorizer, subByInt64Max(createTime), authId)
+}
+
+// packApplierAndAuthorizerIndex define the contract key for applier and authorizer file authorization application
+func packApplierAndAuthorizerIndex(applier, authorizer []byte, authId string, createTime int64) string {
+	return fmt.Sprintf("%s/%x/%x/%d/%s", prefixFileAuthListIndex, applier, authorizer, subByInt64Max(createTime), authId)
+}
+
+// packFileAuthFilter get the contract key for the authorization list of iterative query
+func packFileAuthFilter(applier, authorizer []byte) string {
+	// If Applier and Authorizer public key not empty
+	if len(applier) > 0 && len(authorizer) > 0 {
+		return prefixFileAuthListIndex + "/" + fmt.Sprintf("%x/%x/", applier, authorizer)
+	} else if len(applier) > 0 {
+		return prefixFileAuthApplierIndex + "/" + fmt.Sprintf("%x/", applier)
+	} else {
+		return prefixFileAuthAuthorizerIndex + "/" + fmt.Sprintf("%x/", authorizer)
+	}
+}
+
 func packChallengeIndex(id string) string {
 	return fmt.Sprintf("%s/%s", prefixChallenge, id)
 }
@@ -130,6 +170,9 @@ func packChallengeIndex4Target(c *blockchain.Challenge) string {
 	return fmt.Sprintf("%s/%x/%d/%s", prefixChallengeIndex4Target, c.TargetNode, subByInt64Max(c.ChallengeTime), c.ID)
 }
 
+// packChallengeFilter get the contract key for the challenge list of iterative query
+// for dataOwner node, query request challenge list
+// for storage node, query response challenge list
 func packChallengeFilter(owner, target []byte) string {
 	prefix := prefixChallengeIndex4Owner + "/" // default
 

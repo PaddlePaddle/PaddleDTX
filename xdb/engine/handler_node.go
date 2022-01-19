@@ -14,7 +14,6 @@
 package engine
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -26,49 +25,6 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
-
-// AddNode adds storage node into blockchain
-func (e *Engine) AddNode(opt types.AddNodeOptions) (err error) {
-	if err := e.verifyUserID(opt.NodeID); err != nil {
-		return err
-	}
-
-	msg := fmt.Sprintf("%s:%s", opt.Name, opt.Address)
-	h := hash.HashUsingSha256([]byte(msg))
-	if err := verifyUserToken(opt.NodeID, opt.Token, h); err != nil {
-		return err
-	}
-
-	timestamp := time.Now().UnixNano()
-	addopt := blockchain.AddNodeOptions{
-		Node: blockchain.Node{
-			ID:       []byte(opt.NodeID),
-			Address:  opt.Address,
-			Name:     opt.Name,
-			Online:   opt.Online,
-			RegTime:  timestamp,
-			UpdateAt: timestamp,
-		},
-	}
-	// sign node info
-	s, err := json.Marshal(addopt.Node)
-	if err != nil {
-		return errorx.Wrap(err, "failed to marshal node")
-	}
-	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.HashUsingSha256(s))
-	if err != nil {
-		return errorx.Wrap(err, "failed to sign node")
-	}
-	addopt.Signature = sig[:]
-	if err := e.chain.AddNode(&addopt); err != nil {
-		if errorx.Is(err, errorx.ErrCodeAlreadyExists) {
-			return errorx.New(errorx.ErrCodeAlreadyExists, "duplicated node")
-		} else {
-			return errorx.Wrap(err, "failed to read blockchain")
-		}
-	}
-	return nil
-}
 
 // ListNodes lists storage nodes from blockchain
 func (e *Engine) ListNodes() (blockchain.Nodes, error) {
@@ -94,7 +50,7 @@ func (e *Engine) GetNode(id []byte) (blockchain.Node, error) {
 
 // NodeOffline set storage node status to offline
 func (e *Engine) NodeOffline(opt types.NodeOfflineOptions) error {
-	if err := e.verifyUserID(opt.NodeID); err != nil {
+	if err := e.verifyUserIDIsLocalNodeID(opt.NodeID); err != nil {
 		return err
 	}
 	sig, err := ecdsa.DecodeSignatureFromString(opt.Token)
@@ -119,12 +75,18 @@ func (e *Engine) NodeOffline(opt types.NodeOfflineOptions) error {
 
 // NodeOnline set storage node status to online
 func (e *Engine) NodeOnline(opt types.NodeOnlineOptions) error {
-	if err := e.verifyUserID(opt.NodeID); err != nil {
+	if err := e.verifyUserIDIsLocalNodeID(opt.NodeID); err != nil {
 		return err
 	}
-	sig, err := ecdsa.DecodeSignatureFromString(opt.Token)
+
+	m := fmt.Sprintf("%s,%d", opt.NodeID, opt.Nonce)
+	h := hash.HashUsingSha256([]byte(m))
+	if err := verifyUserToken(opt.NodeID, opt.Token, h); err != nil {
+		return err
+	}
+	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, h)
 	if err != nil {
-		return errorx.Wrap(err, "failed to decode signature")
+		return errorx.Wrap(err, "failed to sign node")
 	}
 
 	nodeOpts := &blockchain.NodeOperateOptions{

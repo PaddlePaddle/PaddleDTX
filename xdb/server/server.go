@@ -27,27 +27,32 @@ import (
 )
 
 // Handler defines all apis exposed
+// The handler under the engine implements the following methods
 type Handler interface {
+	// The dataOwner node uses Write() and Read() to publish or download files
 	Write(context.Context, etype.WriteOptions, io.Reader) (etype.WriteResponse, error)
 	Read(context.Context, etype.ReadOptions) (io.ReadCloser, error)
 
 	ListFiles(etype.ListFileOptions) ([]blockchain.File, error)
 	ListExpiredFiles(etype.ListFileOptions) ([]blockchain.File, error)
-	GetFileByID(ctx context.Context, id string) (file blockchain.FileH, err error)
-	GetFileByName(ctx context.Context, owner []byte, ns, name string) (file blockchain.FileH, err error)
+	GetFileByID(ctx context.Context, id string) (blockchain.FileH, error)
+	GetFileByName(ctx context.Context, pubkey, ns, name string) (blockchain.FileH, error)
 	UpdateFileExpireTime(ctx context.Context, opt etype.UpdateFileEtimeOptions) error
 	AddFileNs(opt etype.AddNsOptions) error
 	UpdateNsReplica(ctx context.Context, opt etype.UpdateNsOptions) error
 	ListFileNs(opt etype.ListNsOptions) ([]blockchain.Namespace, error)
-	GetNsByName(ctx context.Context, owner []byte, name string) (blockchain.NamespaceH, error)
-	GetFileSysHealth(ctx context.Context, owner []byte) (blockchain.FileSysHealth, error)
+	GetNsByName(ctx context.Context, pubkey, name string) (blockchain.NamespaceH, error)
+	GetFileSysHealth(ctx context.Context, pubkey string) (blockchain.FileSysHealth, error)
 	GetChallengeById(id string) (blockchain.Challenge, error)
 	GetChallenges(opt blockchain.ListChallengeOptions) ([]blockchain.Challenge, error)
-
+	// The Storage node uses Push() or Pull() to store or provide ciphertext slices
 	Push(etype.PushOptions, io.Reader) (etype.PushResponse, error)
 	Pull(etype.PullOptions) (io.ReadCloser, error)
+	// The dataOwner node uses the following methods to operate the applier's authorization request
+	ListFileAuths(etype.ListFileAuthOptions) (blockchain.FileAuthApplications, error)
+	ConfirmAuth(etype.ConfirmAuthOptions) error
+	GetAuthByID(id string) (blockchain.FileAuthApplication, error)
 
-	AddNode(etype.AddNodeOptions) error
 	ListNodes() (blockchain.Nodes, error)
 	GetNode([]byte) (blockchain.Node, error)
 	GetHeartbeatNum([]byte, int64) (int, int, error)
@@ -80,6 +85,7 @@ func New(listenAddress string, h Handler) (*Server, error) {
 	return server, nil
 }
 
+// setRoute define the routing of node's server
 func (s *Server) setRoute(serverType string) (err error) {
 	v1 := s.app.Party("/v1")
 	nodeParty := v1.Party("/node")
@@ -90,7 +96,6 @@ func (s *Server) setRoute(serverType string) (err error) {
 		sliceParty.Post("/push", s.push)
 		sliceParty.Get("/pull", s.pull)
 
-		nodeParty.Post("/add", s.addNode)
 		nodeParty.Get("/list", s.listNodes)
 		nodeParty.Get("/get", s.getNode)
 		nodeParty.Get("/health", s.getNodeHealth)
@@ -113,6 +118,9 @@ func (s *Server) setRoute(serverType string) (err error) {
 		fileParty.Get("/listns", s.listFileNs)
 		fileParty.Get("/getns", s.getNsByName)
 		fileParty.Get("/getsyshealth", s.getSysHealth)
+		fileParty.Get("/listauth", s.listFileAuths)
+		fileParty.Post("/confirmauth", s.confirmAuth)
+		fileParty.Get("/getauthbyid", s.getAuthByID)
 
 		nodeParty.Get("/list", s.listNodes)
 		nodeParty.Get("/get", s.getNode)

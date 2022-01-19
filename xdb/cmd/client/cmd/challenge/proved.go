@@ -85,7 +85,7 @@ func init() {
 	provedCmd.Flags().StringVarP(&fileID, "file", "f", "", "file ID")
 	provedCmd.Flags().StringVarP(&start, "start", "s", "", "challenge before startTime, example '2021-06-10 12:00:00'")
 	provedCmd.Flags().StringVarP(&end, "end", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate), "challenge after endTime, example '2021-06-10 12:00:00'")
-	provedCmd.Flags().Uint64VarP(&limit, "limit", "l", 0, "limit")
+	provedCmd.Flags().Int64VarP(&limit, "limit", "l", 0, "limit")
 	provedCmd.Flags().Int8VarP(&list, "list", "", 1, "show challenges list or not, 0 not to show")
 
 	provedCmd.MarkFlagRequired("node")
