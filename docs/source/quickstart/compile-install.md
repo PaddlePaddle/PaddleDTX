@@ -203,7 +203,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		[dataOwner.blockchain]
 		    type = "xchain"
 		    [dataOwner.blockchain.xchain]
-				# 助记词为用户部署区块链网络后，安装合约过程中创建的区块链账户，取值./ukeys/mnemonic
+		        # 助记词为用户部署区块链网络后，安装合约过程中创建的区块链账户，取值./ukeys/mnemonic
 		        mnemonic = "充 雄 孔 坝 低 狠 争 短 摸 拜 晨 造"
 		        contractName = "paddlempc"
 		        contractAccount = "XC1234567890123456@xuper"
@@ -253,7 +253,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	```
 	请妥善保存您创建的公私钥对，在后续的配置及命令行使用时您将会频繁的用到它。
 
-	*注意: 任务执行节点的账户也是通过公私钥对来标明, 一个任务执行节点可对应一个或多个数据持有节点。任务发布后时，任务执行节点会向数据持有节点发起文件授权申请，数据持有节点可通过或拒绝样本文件授权申请。*
+	*注意: 任务执行节点的账户也是通过公私钥对来标明。任务发布后时，任务执行节点会向数据持有节点发起文件授权申请，数据持有节点可通过或拒绝样本文件授权申请。*
 
 	1. 准备两个任务执行节点的配置
 		```
@@ -271,19 +271,19 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		keyPath = "./keys"
 		
 		[executor.storage]
-			# 定义模型存储的路径
-			localModelStoragePath = "./models"
-			# 定义预测结果存储的方式，默认本地存储，如果用户采取XuperDB方式存储，则需提前生成数据持有节点客户端./ukeys并授权，同时创建预测结果存储的命名空间
-			type = 'Local'
-			[executor.storage.XuperDB]
-				host = "http://127.0.0.1:8121"
-				keyPath = "./ukeys"
-				namespace = "mpc"
-			[executor.storage.Local]
-       			localPredictStoragePath = "./predictions"
+		    # 定义模型存储的路径
+		    localModelStoragePath = "./models"
+		    # 定义预测结果存储的方式，默认本地存储，如果用户采取XuperDB方式存储，则需提前生成数据持有节点客户端./ukeys并授权，同时创建预测结果存储的命名空间
+		    type = 'Local'
+		    [executor.storage.XuperDB]
+		        host = "http://127.0.0.1:8121"
+		        keyPath = "./ukeys"
+		        namespace = "mpc"
+		    [executor.storage.Local]
+		        localPredictStoragePath = "./predictions"
 		[executor.blockchain]
 		    [executor.blockchain.xchain]
-				# 助记词为用户部署区块链网络后，安装合约过程中创建的区块链账户，取值./ukeys/mnemonic
+		        # 助记词为用户部署区块链网络后，安装合约过程中创建的区块链账户，取值./ukeys/mnemonic
 		        mnemonic = "充 雄 孔 坝 低 狠 争 短 摸 拜 晨 造"
 		        contractName = "paddlempc"
 		        contractAccount = "XC1234567890123456@xuper"
@@ -299,19 +299,19 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		keyPath = "./keys"
 
 		[executor.storage]
-			# 定义模型存储的路径
-			localModelStoragePath = "./models"
-			# 定义预测结果存储的方式，默认本地存储，如果用户采取XuperDB方式存储，则需提前生成数据持有节点客户端./ukeys并授权，同时创建预测结果存储的命名空间
-			type = 'Local'
-			[executor.storage.XuperDB]
-				host = "http://127.0.0.1:8121"
-				keyPath = "./ukeys"
-				namespace = "mpc"
-			[executor.storage.Local]
-       			localPredictStoragePath = "./predictions"
+		    # 定义模型存储的路径
+		    localModelStoragePath = "./models"
+		    # 定义预测结果存储的方式，默认本地存储，如果用户采取XuperDB方式存储，则需提前生成数据持有节点客户端./ukeys并授权，同时创建预测结果存储的命名空间
+		    type = 'Local'
+		    [executor.storage.XuperDB]
+		        host = "http://127.0.0.1:8121"
+		        keyPath = "./ukeys"
+		        namespace = "mpc"
+		    [executor.storage.Local]
+		        localPredictStoragePath = "./predictions"
 		[executor.blockchain]
 		    [executor.blockchain.xchain]
-				# 助记词为用户部署区块链网络后，安装合约过程中创建的区块链账户，取值./ukeys/mnemonic
+		        # 助记词为用户部署区块链网络后，安装合约过程中创建的区块链账户，取值./ukeys/mnemonic
 		        mnemonic = "充 雄 孔 坝 低 狠 争 短 摸 拜 晨 造"
 		        contractName = "paddlempc"
 		        contractAccount = "XC1234567890123456@xuper"
