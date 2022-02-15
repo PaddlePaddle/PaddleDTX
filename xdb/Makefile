@@ -31,7 +31,7 @@ compile: build
 
 build:
 	$(GOBUILD) -o $(HOMEDIR)/bin/xdb
-	$(GOBUILD) -o $(HOMEDIR)/bin/xdb-cli $(HOMEDIR)/cmd/client
+	$(GOBUILD) -o $(HOMEDIR)/bin/xdb-cli ./cmd/client
 
 # make test, test your code
 test: prepare test-case
