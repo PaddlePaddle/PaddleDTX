@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pdp
+package pairing
 
 import (
 	"crypto/rand"
@@ -21,6 +21,8 @@ import (
 
 	bls12_381_ecc "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	bls12_381_fr "github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
+
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 )
 
 func init() {
@@ -28,8 +30,8 @@ func init() {
 	order = bls12_381_fr.Modulus()
 }
 
-// GenRandomKeyPair generate a random private/public key pair for client
-func GenRandomKeyPair() (*PrivateKey, *PublicKey, error) {
+// GenKeyPair generate a random private/public key pair for client
+func GenKeyPair() (*PrivateKey, *PublicKey, error) {
 	sk, err := RandomWithinOrder()
 	if err != nil {
 		return nil, nil, err
@@ -73,7 +75,7 @@ func concatBigInt(list []*big.Int, modulus *big.Int) (*big.Int, error) {
 }
 
 // CalculateSigmaI calculate sigma_i using each segment and private key
-// sigma_i = sk * ( H(v||i) + mi*u*g1 )
+// sigma_i = sk * ( H(v||i) + SHA256(mi||r_j)*u*g1 )
 func CalculateSigmaI(param CalculateSigmaIParams) (*bls12_381_ecc.G1Affine, error) {
 	// 1. H(v||i)
 	vi, err := concatBigInt([]*big.Int{param.RandomV, param.Index}, order)
@@ -82,18 +84,32 @@ func CalculateSigmaI(param CalculateSigmaIParams) (*bls12_381_ecc.G1Affine, erro
 	}
 	hvi := hashToG1(vi)
 
-	// 2. mi mod order
-	miInt := new(big.Int).SetBytes(param.Content)
-	miInt = new(big.Int).Mod(miInt, order)
-
-	// 3. mi*u*g1
-	mig1 := new(bls12_381_ecc.G1Affine).ScalarMultiplication(&g1Gen, miInt)
+	// 2. SHA256(mi||r_j)*u*g1
+	rj := genRandNumByRound(param.Round, param.Privkey.X)
+	hashMi := hash.HashUsingSha256(append(param.Content, rj...))
+	hashMiInt := new(big.Int).SetBytes(hashMi)
+	mig1 := new(bls12_381_ecc.G1Affine).ScalarMultiplication(&g1Gen, hashMiInt)
 	miug1 := new(bls12_381_ecc.G1Affine).ScalarMultiplication(mig1, param.RandomU)
 
-	// 4. H(v||i) + mi*u*g1
+	// 3. H(v||i) + SHA256(mi||r_j)*u*g1
 	add := new(bls12_381_ecc.G1Affine).Add(hvi, miug1)
 
-	// 5. sk * (H(v||i) + mi*u*g1)
+	// 4. sk * (H(v||i) + SHA256(mi||r_j)*u*g1)
 	sigmaI := new(bls12_381_ecc.G1Affine).ScalarMultiplication(add, param.Privkey.X)
 	return sigmaI, nil
+}
+
+// hashG1toBigInt convert a point in G1 to big int, hash(x|y) mod N
+func hashG1toBigInt(p *bls12_381_ecc.G1Affine) *big.Int {
+	xy := p.X.String() + p.Y.String()
+	hash := sha256.Sum256([]byte(xy))
+	res := new(big.Int).SetBytes(hash[:])
+	return new(big.Int).Mod(res, order)
+}
+
+// genRandNumByRound calculate random number for j-th round challenge r_j=hashG1toBigInt(j*sk*g1)
+func genRandNumByRound(round int64, sk *big.Int) []byte {
+	jsk := new(big.Int).Mul(big.NewInt(round), sk)
+	jskG1 := new(bls12_381_ecc.G1Affine).ScalarMultiplication(&g1Gen, jsk)
+	return hashG1toBigInt(jskG1).Bytes()
 }

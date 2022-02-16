@@ -190,10 +190,10 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		    type = "pdp"
 		    [dataOwner.challenger.pdp]
 		        maxIndexNum = 5
-		        sk = "W4HyiC7kx+bafMftHrD7Mz4ff2/0Bb103fUIrbRVkFk="
-		        pk = "AVcT6JO4Ddcq+JjC2Vw/kGZSrCjEeCu1Lu1EFya9C96Nb/HtJkaHEJ4Ni89leAAaCbKu/oEFrfEpb3oAaEd2JqNuyBlWZ0MZk7PmFkaUlYaTVvQRUWRRSmiIZa+iNtJEIYC/AC5C88k1vRoXq3m7VonvJUFP95oLX3CSMMfSiUln"
-		        randu = "AfM3n7CzmkbVEBRPOYV8gH1qpyaQdTNA1MZ7PHYfmWs="
-		        randv = "TKOt9kE7m5O7fCztoyy1J+WpNugLxKPS3hweeUK+09Y="
+		        sk = "Fudm9gDXNlEdCkieMid1WHIHd9K/M/CctBPlF/4y+AU="
+		        pk = "B60Vdoq4SVUpVRZf1FM7ImRXo/22q0ZjYMHlaB4HgUXMSsu+2iCrNkk3gROXOUDvB8zWMcBGCnBCAnb6N9WOaBPbKkYWnp/iodp0+GFWvW1DCnAYNV2+vdaFkHaezsqeDqRDsdqV2uG47PTE2xdkljSblWNgKhsHYp7LgCcbBWiMO3TcrzUdq+ETxfIu1Bi7AzSHHAj8oc7toGT0anrO9LPSDcde8rCdsptX5CLH7WvRF0AXrqhX4Mr7i+547qI3"
+		        randu = "NA1xy6JCWWc8IB4x1CM4DCoxKTqEele6zqD8kCfuj5s="
+		        randv = "TV0J8YFWEsybwFdwm3DJvUHXx88YXkzK97Zpvj/tyGc="
 
 		    [dataOwner.challenger.merkle]
 		        leveldbRoot = "./challenger"
@@ -357,7 +357,7 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 	$ cd PaddleDTX/dai
 	$ sh build_image.sh
 	```
-	产出镜像名和版本号为 *registry.baidubce.com/paddledtx/paddledtx-dai:1.0* ，可以通过修改 *build_image.sh* 脚本来修改镜像名和版本号。	
+	产出镜像名和版本号为 *registry.baidubce.com/paddledtx/paddledtx-dai:1.0* ，可以通过修改 *build_image.sh* 脚本来修改镜像名和版本号。
 
 3. 编译合约
 	```

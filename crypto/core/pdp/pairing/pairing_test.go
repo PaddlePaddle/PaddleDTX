@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pdp
+package pairing
 
 import (
 	"crypto/rand"
@@ -26,15 +26,16 @@ import (
 
 var fileNames = []string{"./testdata0", "./testdata1", "./testdata2"}
 
-func TestPDP(t *testing.T) {
+func TestPairing(t *testing.T) {
 	// create random test files
 	createFiles(t, fileNames)
 	defer removeFiles(fileNames)
 
 	indexList := []int{0, 1, 2}
+	challengeRound := int64(100)
 
 	// 1. generate key pair
-	sk, pk, err := GenRandomKeyPair()
+	sk, pk, err := GenKeyPair()
 	if err != nil {
 		t.Errorf("failed to generate random client keypair, err: %v", err)
 	}
@@ -50,7 +51,7 @@ func TestPDP(t *testing.T) {
 	}
 
 	// 3. calculate sigmas
-	sigmas := []*bls12_381_ecc.G1Affine{}
+	var sigmas []*bls12_381_ecc.G1Affine
 	for idx, fileName := range fileNames {
 		index := new(big.Int).SetInt64(int64(idx))
 		content, err := ioutil.ReadFile(fileName)
@@ -64,6 +65,7 @@ func TestPDP(t *testing.T) {
 			RandomV: randomV,
 			RandomU: randomU,
 			Privkey: sk,
+			Round:   challengeRound,
 		}
 		sigma, err := CalculateSigmaI(param)
 		if err != nil {
@@ -73,7 +75,7 @@ func TestPDP(t *testing.T) {
 	}
 
 	// 4. generate challenge
-	indices, vs, err := GenerateChallenge(indexList)
+	indices, vs, randSeed, err := GenerateChallenge(indexList, challengeRound, sk)
 	if err != nil {
 		t.Errorf("failed to generate challenge, err: %v", err)
 	}
@@ -89,10 +91,11 @@ func TestPDP(t *testing.T) {
 	}
 
 	proveParam := ProofParams{
-		Content:  contents,
-		Indices:  indices,
-		RandomVs: vs,
-		Sigmas:   sigmas,
+		Content:       contents,
+		Indices:       indices,
+		RandomVs:      vs,
+		Sigmas:        sigmas,
+		RandThisRound: randSeed,
 	}
 	sigma, mu, err := Prove(proveParam)
 	if err != nil {

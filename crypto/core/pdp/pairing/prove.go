@@ -11,34 +11,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pdp
+package pairing
 
 import (
 	"fmt"
 	"math/big"
 
 	bls12_381_ecc "github.com/consensys/gnark-crypto/ecc/bls12-381"
+
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 )
 
-// GenerateChallenge generate a random challenge using index numbers
-// challenge = {index}, {vi}
-func GenerateChallenge(indexList []int) ([]*big.Int, []*big.Int, error) {
+// GenerateChallenge generate a random challenge using index numbers for a specified round
+// challenge = {index}, {vi}, randNum
+func GenerateChallenge(indexList []int, round int64, privkey *PrivateKey) ([]*big.Int, []*big.Int, []byte, error) {
 	var indices []*big.Int
 	var randomVs []*big.Int
 	for _, index := range indexList {
 		indices = append(indices, new(big.Int).SetInt64(int64(index)))
 		v, err := RandomWithinOrder()
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		randomVs = append(randomVs, v)
 	}
-	return indices, randomVs, nil
+	randThisRound := genRandNumByRound(round, privkey.X)
+	return indices, randomVs, randThisRound, nil
 }
 
-// Prove generate a proof by challenge
+// Prove generate a proof by challenge material
 // sigma = v1*sigma1 + ... + vc*sigmac
-// mu = (v1*m1 + ... + vc*mc) * g1
+// mu = (v1*SHA(m1||r_j) + ... + vc*SHA256(mc||r_j)) * g1
 // proof = {sigma, mu}
 func Prove(param ProofParams) (*bls12_381_ecc.G1Affine, *bls12_381_ecc.G1Affine, error) {
 	if len(param.Indices) != len(param.RandomVs) || len(param.Content) != len(param.Indices) || len(param.Indices) == 0 {
@@ -56,12 +59,13 @@ func Prove(param ProofParams) (*bls12_381_ecc.G1Affine, *bls12_381_ecc.G1Affine,
 			sigma = new(bls12_381_ecc.G1Affine).Add(sigma, vs)
 		}
 
-		// convert file content to int
-		miInt := new(big.Int).SetBytes(param.Content[i])
-		miInt = new(big.Int).Mod(miInt, order)
+		// 2. SHA256(mi||r_j)
+		hashMi := hash.HashUsingSha256(append(param.Content[i], param.RandThisRound...))
+		hashMiInt := new(big.Int).SetBytes(hashMi)
+		hashMiInt = hashMiInt.Mod(hashMiInt, order)
 
-		// 2. vi*mi
-		vmi := new(big.Int).Mul(param.RandomVs[i], miInt)
+		// 3. vi*SHA256(mi||r_j)
+		vmi := new(big.Int).Mul(param.RandomVs[i], hashMiInt)
 		vmi = new(big.Int).Mod(vmi, order)
 		vm = new(big.Int).Add(vm, vmi)
 		vm = new(big.Int).Mod(vm, order)

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pdp
+package pairing
 
 import (
 	"math/big"
@@ -25,12 +25,12 @@ var (
 	order *big.Int
 )
 
-// PrivateKey PDP private key
+// PrivateKey pairing based challenge private key
 type PrivateKey struct {
 	X *big.Int
 }
 
-// PublicKey PDP public key
+// PublicKey pairing based challenge public key
 type PublicKey struct {
 	P *bls12_381_ecc.G2Affine
 }
@@ -42,14 +42,16 @@ type CalculateSigmaIParams struct {
 	RandomV *big.Int    // a random V
 	RandomU *big.Int    // a random U
 	Privkey *PrivateKey // client private key
+	Round   int64       // challenge round
 }
 
 // ProofParams parameters required to generate proof
 type ProofParams struct {
-	Content  [][]byte                  // file contents
-	Indices  []*big.Int                // {i} index list
-	RandomVs []*big.Int                // {v_i} random challenge number list
-	Sigmas   []*bls12_381_ecc.G1Affine // {sigma_i} list in storage
+	Content       [][]byte                  // file contents
+	Indices       []*big.Int                // {i} index list
+	RandomVs      []*big.Int                // {v_i} random challenge number list
+	Sigmas        []*bls12_381_ecc.G1Affine // {sigma_i} list in storage
+	RandThisRound []byte                    // random number for this challenge round
 }
 
 // VerifyParams parameters required to verify a proof
@@ -63,12 +65,12 @@ type VerifyParams struct {
 	Pubkey   *PublicKey              // client public key
 }
 
-// PrivateKeyToByte convert PDP private key to byes
+// PrivateKeyToByte convert private key to byes
 func PrivateKeyToByte(privkey *PrivateKey) []byte {
 	return privkey.X.Bytes()
 }
 
-// PrivateKeyFromByte retrieve PDP private key from byes
+// PrivateKeyFromByte retrieve private key from byes
 func PrivateKeyFromByte(privkey []byte) *PrivateKey {
 	x := new(big.Int).SetBytes(privkey)
 	return &PrivateKey{
@@ -76,12 +78,12 @@ func PrivateKeyFromByte(privkey []byte) *PrivateKey {
 	}
 }
 
-// PublicKeyToByte convert PDP public key to byes
+// PublicKeyToByte convert public key to byes
 func PublicKeyToByte(pubkey *PublicKey) []byte {
 	return pubkey.P.Marshal()
 }
 
-// PublicKeyFromByte retrieve PDP public key from byes
+// PublicKeyFromByte retrieve public key from byes
 func PublicKeyFromByte(pubkey []byte) (*PublicKey, error) {
 	pub := new(bls12_381_ecc.G2Affine)
 	if err := pub.Unmarshal(pubkey); err != nil {
@@ -93,13 +95,14 @@ func PublicKeyFromByte(pubkey []byte) (*PublicKey, error) {
 }
 
 // CalculateSigmaIParamsFromBytes retrieve CalculateSigmaIParams from bytes
-func CalculateSigmaIParamsFromBytes(content, index, randomV, randomU, privkey []byte) CalculateSigmaIParams {
+func CalculateSigmaIParamsFromBytes(content, index, randomV, randomU, privkey []byte, round int64) CalculateSigmaIParams {
 	return CalculateSigmaIParams{
 		Content: content,
 		Index:   new(big.Int).SetBytes(index),
 		RandomV: new(big.Int).SetBytes(randomV),
 		RandomU: new(big.Int).SetBytes(randomU),
 		Privkey: PrivateKeyFromByte(privkey),
+		Round:   round,
 	}
 }
 
@@ -149,16 +152,17 @@ func IntListFromBytes(intList [][]byte) []*big.Int {
 }
 
 // ProofParamsFromBytes retrieve ProofParams from bytes
-func ProofParamsFromBytes(content, indices, randVs, sigmas [][]byte) (ProofParams, error) {
+func ProofParamsFromBytes(content, indices, randVs, sigmas [][]byte, rand []byte) (ProofParams, error) {
 	s, err := G1sFromBytes(sigmas)
 	if err != nil {
 		return ProofParams{}, err
 	}
 	return ProofParams{
-		Content:  content,
-		Indices:  IntListFromBytes(indices),
-		RandomVs: IntListFromBytes(randVs),
-		Sigmas:   s,
+		Content:       content,
+		Indices:       IntListFromBytes(indices),
+		RandomVs:      IntListFromBytes(randVs),
+		Sigmas:        s,
+		RandThisRound: rand,
 	}, nil
 }
 

@@ -40,7 +40,7 @@ publicAddress = "10.144.94.17:8122"
 
     # The configuration of how to invoke contracts using fabric. It is necessary when type is 'fabric'.
     [storage.blockchain.fabric]
-        configFile = "./config/fabric/config.yaml"
+        configFile = "./conf/fabric/config.yaml"
         channelId = "mychannel"
         chaincode = "mycc"
         userName = "Admin"
