@@ -351,7 +351,7 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 	* registry.baidubce.com/paddledtx/xdb-storage:1.0
 	* registry.baidubce.com/paddledtx/xdb-dataowner:1.0
 	实际上他们是使用不同镜像名的同一个镜像，可以通过修改 *build_image.sh* 脚本来修改镜像名和版本号。
-	
+
 2. 制作 Distributed AI 镜像
 	```
 	$ cd PaddleDTX/dai
