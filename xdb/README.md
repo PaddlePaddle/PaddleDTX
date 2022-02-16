@@ -36,8 +36,8 @@ The DataOwner node encrypts, slices, replicates, and randomly groups the private
 The mechanism to resist storage cheating can be briefly described as: the DataOwner node issues a challenge to the blockchain network, the Storage node involved submits a proof to the blockchain network to answer the challenge, and the smart contract automatically verifies the response information. If it passes, the Storage node can be proved that it holds the data slice.
 
 [PoRH](./engine/challenger/README_cn.md)(Proof of Replication Holding) is the core of the mechanism. XuperDB implements two kinds of PoRH:
-- [Pairing-based PoRH](../crypto/core/pdp/prove.go)
-- [MerkleTree-based PoRH](./pkgs/merkle/merkle.go) 
+- [Pairing-based PoRH](../crypto/core/pdp/pairing)
+- [MerkleTree-based PoRH](../crypto/core/pdp/merkle)
 
 ## Installation
 XuperDB contains:

@@ -124,7 +124,7 @@ type RawLocalGradientPart struct {
 // }
 //
 // 第i个特征的Grad(i):
-// for j:=0; j++; i<m
+// for j:=0; j++; j<m
 // {
 //	Grad(i) += (predictValue(j) - realValue(j))*trainSet[j][i]
 // }

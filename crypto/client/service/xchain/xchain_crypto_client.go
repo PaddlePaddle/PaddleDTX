@@ -28,7 +28,8 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/machine_learning/logic_regression"
 	logic_vertical "github.com/PaddlePaddle/PaddleDTX/crypto/core/machine_learning/logic_regression/mpc_vertical"
 
-	"github.com/PaddlePaddle/PaddleDTX/crypto/core/pdp"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/pdp/merkle"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/pdp/pairing"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/secret_share/complex_secret_share"
 )
 
@@ -76,64 +77,72 @@ func (xcc *XchainCryptoClient) SecretRetrieve(shares map[int]*big.Int) ([]byte, 
 
 // --- PDP 副本保持证明相关 start ---
 
-// GenPDPRandomKeyPair 随机生成副本保持证明公私钥对
-func (xcc *XchainCryptoClient) GenPDPRandomKeyPair() ([]byte, []byte, error) {
-	privkey, pubkey, err := pdp.GenRandomKeyPair()
+// GetMerkleRoot 计算梅克尔树根
+func (xcc *XchainCryptoClient) GetMerkleRoot(objects [][]byte) []byte {
+	return merkle.GetMerkleRoot(objects)
+}
+
+// GenPairingKeyPair 随机生成基于双线性映射副本保持证明的公私钥对
+func (xcc *XchainCryptoClient) GenPairingKeyPair() ([]byte, []byte, error) {
+	privkey, pubkey, err := pairing.GenKeyPair()
 	if err != nil {
 		return nil, nil, err
 	}
-	return pdp.PrivateKeyToByte(privkey), pdp.PublicKeyToByte(pubkey), nil
+	return pairing.PrivateKeyToByte(privkey), pairing.PublicKeyToByte(pubkey), nil
 }
 
-// RandomPDPWithinOrder 生成小于椭圆曲线阶order的随机数
-func (xcc *XchainCryptoClient) RandomPDPWithinOrder() ([]byte, error) {
-	rand, err := pdp.RandomWithinOrder()
+// RandomWithinPairingOrder 生成小于椭圆曲线order的随机数
+func (xcc *XchainCryptoClient) RandomWithinPairingOrder() ([]byte, error) {
+	rand, err := pairing.RandomWithinOrder()
 	if err != nil {
 		return nil, err
 	}
 	return rand.Bytes(), nil
 }
 
-// CalculatePDPSigmaI 为指定数据块生成证明辅助信息
+// CalculateSigmaI 为指定数据块生成证明辅助信息
 // - content 该数据块的内容
 // - index 数据块对于原始数据的的索引
 // - randomV 小于椭圆曲线阶order的随机数
 // - randomU 小于椭圆曲线阶order的随机数
 // - privkey 副本保持证明私钥
-func (xcc *XchainCryptoClient) CalculatePDPSigmaI(content, index, randomV, randomU, privkey []byte) ([]byte, error) {
-	param := pdp.CalculateSigmaIParamsFromBytes(content, index, randomV, randomU, privkey)
-	sigma, err := pdp.CalculateSigmaI(param)
+func (xcc *XchainCryptoClient) CalculateSigmaI(content, index, randomV, randomU, privkey []byte, round int64) ([]byte, error) {
+	param := pairing.CalculateSigmaIParamsFromBytes(content, index, randomV, randomU, privkey, round)
+	sigma, err := pairing.CalculateSigmaI(param)
 	if err != nil {
 		return nil, err
 	}
-	return pdp.G1ToByte(sigma), nil
+	return pairing.G1ToByte(sigma), nil
 }
 
-// GeneratePDPChallenge 随机生成副本保持证明挑战信息
+// GenPairingChallenge 随机生成副本保持证明挑战信息
 // - indexList 为要验证的索引列表
-func (xcc *XchainCryptoClient) GeneratePDPChallenge(indexList []int) ([][]byte, [][]byte, error) {
-	idx, vs, err := pdp.GenerateChallenge(indexList)
+// - round 为挑战轮数
+// - privkey 为副本保持证明私钥
+func (xcc *XchainCryptoClient) GenPairingChallenge(indexList []int, round int64, privkey []byte) ([][]byte, [][]byte, []byte, error) {
+	sk := pairing.PrivateKeyFromByte(privkey)
+	idx, vs, randNum, err := pairing.GenerateChallenge(indexList, round, sk)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return pdp.IntListToBytes(idx), pdp.IntListToBytes(vs), nil
+	return pairing.IntListToBytes(idx), pairing.IntListToBytes(vs), randNum, nil
 }
 
-// ProvePDP 生成挑战的应答信息
+// ProvePairingChallenge 生成挑战的应答信息
 // - content 要验证的数据块内容列表
 // - indices 要验证的索引列表
 // - randVs 调整生成的随机数列表
 // - sigmas 要验证的数据块对应的辅助证明信息列表
-func (xcc *XchainCryptoClient) ProvePDP(content, indices, randVs, sigmas [][]byte) ([]byte, []byte, error) {
-	param, err := pdp.ProofParamsFromBytes(content, indices, randVs, sigmas)
+func (xcc *XchainCryptoClient) ProvePairingChallenge(content, indices, randVs, sigmas [][]byte, rand []byte) ([]byte, []byte, error) {
+	param, err := pairing.ProofParamsFromBytes(content, indices, randVs, sigmas, rand)
 	if err != nil {
 		return nil, nil, err
 	}
-	sigma, mu, err := pdp.Prove(param)
-	return pdp.G1ToByte(sigma), pdp.G1ToByte(mu), err
+	sigma, mu, err := pairing.Prove(param)
+	return pairing.G1ToByte(sigma), pairing.G1ToByte(mu), err
 }
 
-// VerifyPDP 挑战验证信息
+// VerifyPairingProof 挑战验证信息
 // - sigma 证明生成的应答信息
 // - mu 证明生成的应答信息
 // - randV 验证者生成的随机数
@@ -141,12 +150,12 @@ func (xcc *XchainCryptoClient) ProvePDP(content, indices, randVs, sigmas [][]byt
 // - pubkey 验证者的副本保持证明公钥
 // - indices 要验证的索引列表
 // - randVs 调整生成的随机数列表
-func (xcc *XchainCryptoClient) VerifyPDP(sigma, mu, randV, randU, pubkey []byte, indices, randVs [][]byte) (bool, error) {
-	param, err := pdp.VerifyParamsFromBytes(sigma, mu, randV, randU, pubkey, indices, randVs)
+func (xcc *XchainCryptoClient) VerifyPairingProof(sigma, mu, randV, randU, pubkey []byte, indices, randVs [][]byte) (bool, error) {
+	param, err := pairing.VerifyParamsFromBytes(sigma, mu, randV, randU, pubkey, indices, randVs)
 	if err != nil {
 		return false, err
 	}
-	return pdp.Verify(param)
+	return pairing.Verify(param)
 }
 
 // --- PDP 副本保持证明相关 end ---
