@@ -33,25 +33,32 @@ import (
 func (e *Engine) Push(opt types.PushOptions, r io.Reader) (
 	types.PushResponse, error) {
 
-	exist, err := e.storage.Exist(opt.SliceID)
-	if err != nil {
-		return types.PushResponse{}, errorx.Wrap(err, "failed to tell existence of slice")
-	}
-	// Do not execute write to keep idempotency
-	if exist {
-		return types.PushResponse{}, nil
-	}
-
-	if err := e.storage.Save(opt.SliceID, r); err != nil {
-		logger.WithError(err).Errorf("push %s", opt.SliceID)
-		return types.PushResponse{}, errorx.Wrap(err, "failed to save slice")
+	// for content not a slice, save or update content
+	if opt.NotASlice {
+		if err := e.storage.SaveAndUpdate(opt.SliceID, r); err != nil {
+			logger.WithError(err).Errorf("push %s", opt.SliceID)
+			return types.PushResponse{}, errorx.Wrap(err, "failed to save slice")
+		}
+	} else {
+		// check existence for pushed slice
+		exist, err := e.storage.Exist(opt.SliceID)
+		if err != nil {
+			return types.PushResponse{}, errorx.Wrap(err, "failed to tell existence of slice")
+		}
+		// Do not execute write to keep idempotency
+		if exist {
+			return types.PushResponse{}, nil
+		}
+		if err := e.storage.Save(opt.SliceID, r); err != nil {
+			logger.WithError(err).Errorf("push %s", opt.SliceID)
+			return types.PushResponse{}, errorx.Wrap(err, "failed to save slice")
+		}
 	}
 
 	logger.WithFields(logrus.Fields{
 		"slice_id": opt.SliceID,
 		"from":     opt.SourceID,
 	}).Debug("slice received")
-
 	return types.PushResponse{}, nil
 }
 

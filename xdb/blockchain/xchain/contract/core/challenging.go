@@ -27,8 +27,8 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/monitor/challenging"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/merkle"
 )
 
 var xchainClient = new(fl_crypto.XchainCryptoClient)
@@ -56,7 +56,7 @@ func (x *Xdata) ListChallengeRequests(ctx code.Context) code.Response {
 
 	var cs []blockchain.Challenge
 	for iter.Next() {
-		if opt.Limit > 0 && uint64(len(cs)) >= opt.Limit {
+		if opt.Limit > 0 && int64(len(cs)) >= opt.Limit {
 			break
 		}
 		index := packChallengeIndex(string(iter.Value()))
@@ -119,16 +119,17 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 		ChallengeAlgorithm: opt.ChallengeAlgorithm,
 	}
 
-	if opt.ChallengeAlgorithm == "PDP" {
-		if err := x.pdpOptCheck(opt); err != nil {
+	if opt.ChallengeAlgorithm == types.PairingChallengeAlgorithm {
+		if err := x.pairingOptCheck(opt); err != nil {
 			return code.Error(err)
 		}
 		c.SliceIDs = opt.SliceIDs
 		c.Indices = opt.Indices
-		c.Sigmas = opt.Sigmas
+		c.Round = opt.Round
+		c.RandThisRound = opt.RandThisRound
 		c.Vs = opt.Vs
 
-	} else if opt.ChallengeAlgorithm == "Merkle" {
+	} else if opt.ChallengeAlgorithm == types.MerkleChallengeAlgorithm {
 		if err := x.merkleOptCheck(opt); err != nil {
 			return code.Error(err)
 		}
@@ -212,19 +213,19 @@ func (x *Xdata) ChallengeAnswer(ctx code.Context) code.Response {
 
 	// sig verification
 	var verifyErr error
-	if c.ChallengeAlgorithm == "PDP" {
-		if err := x.pdpAnswerOptCheck(opt, c); err != nil {
+	if c.ChallengeAlgorithm == types.PairingChallengeAlgorithm {
+		if err := x.pairingAnswerOptCheck(opt, c); err != nil {
 			return code.Error(err)
 		}
-		// verify pdp challenge
-		v, err := xchainClient.VerifyPDP(opt.Sigma, opt.Mu, file.RandV, file.RandU, file.PdpPubkey, c.Indices, c.Vs)
+		// verify pairing based challenge
+		v, err := xchainClient.VerifyPairingProof(opt.Sigma, opt.Mu, file.RandV, file.RandU, file.PdpPubkey, c.Indices, c.Vs)
 		if err != nil || !v {
-			ctx.Logf("bad proof, pdp challenge answer wrong, err:%v", err)
-			e := fmt.Errorf("VerifyPDP failed: %v", err)
+			ctx.Logf("bad proof, pairing challenge answer wrong, err:%v", err)
+			e := fmt.Errorf("verify pairing based challenge proof failed: %v", err)
 			verifyErr = errorx.NewCode(e, errorx.ErrCodeCrypto, "verification failed")
 			c.Status = blockchain.ChallengeFailed
 		}
-	} else if c.ChallengeAlgorithm == "Merkle" {
+	} else if c.ChallengeAlgorithm == types.MerkleChallengeAlgorithm {
 		if err := x.merkleAnswerOptCheck(opt, c); err != nil {
 			return code.Error(err)
 		}
@@ -232,7 +233,7 @@ func (x *Xdata) ChallengeAnswer(ctx code.Context) code.Response {
 		if err = json.Unmarshal(opt.Proof, &aopt); err != nil {
 			return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to unmarshal Challenge"))
 		}
-		eh := merkle.GetMerkleRoot(aopt.RangeHashes)
+		eh := xchainClient.GetMerkleRoot(aopt.RangeHashes)
 		cOpt := ctype.CalculateOptions{
 			RangeHash: eh,
 			Timestamp: aopt.Timestamp,
@@ -331,7 +332,7 @@ func (x *Xdata) GetChallengeNum(ctx code.Context) code.Response {
 	return code.OK([]byte(strconv.FormatUint(total, 10)))
 }
 
-func (x *Xdata) pdpOptCheck(opt blockchain.ChallengeRequestOptions) error {
+func (x *Xdata) pairingOptCheck(opt blockchain.ChallengeRequestOptions) error {
 	// sig verification
 	challengeOpt := blockchain.ChallengeRequestOptions{
 		ChallengeID:        opt.ChallengeID,
@@ -342,7 +343,8 @@ func (x *Xdata) pdpOptCheck(opt blockchain.ChallengeRequestOptions) error {
 		ChallengeTime:      opt.ChallengeTime,
 		Indices:            opt.Indices,
 		Vs:                 opt.Vs,
-		Sigmas:             opt.Sigmas,
+		Round:              opt.Round,
+		RandThisRound:      opt.RandThisRound,
 		ChallengeAlgorithm: opt.ChallengeAlgorithm,
 	}
 	content, err := json.Marshal(challengeOpt)
@@ -393,24 +395,24 @@ func (x *Xdata) merkleOptCheck(opt blockchain.ChallengeRequestOptions) error {
 	return nil
 }
 
-func (x *Xdata) pdpAnswerOptCheck(opt blockchain.ChallengeAnswerOptions, c blockchain.Challenge) error {
+func (x *Xdata) pairingAnswerOptCheck(opt blockchain.ChallengeAnswerOptions, c blockchain.Challenge) error {
 	digest := []byte(c.ID)
 	digest = append(digest, opt.Sigma...)
 	digest = append(digest, opt.Mu...)
 	digest = xchainClient.HashUsingSha256(digest)
 	targetNode, err := hex.DecodeString(string(c.TargetNode))
 	if err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeParam, "pdp wrong target node")
+		return errorx.NewCode(err, errorx.ErrCodeParam, "pairing challenge wrong target node")
 	}
 	if len(targetNode) != ecdsa.PublicKeyLength || len(opt.Sig) != ecdsa.SignatureLength {
-		return errorx.New(errorx.ErrCodeParam, "pdp bad proof")
+		return errorx.New(errorx.ErrCodeParam, "pairing challenge bad proof")
 	}
 	var pubkey [ecdsa.PublicKeyLength]byte
 	var sig [ecdsa.SignatureLength]byte
 	copy(pubkey[:], targetNode[:])
 	copy(sig[:], opt.Sig[:])
 	if err := ecdsa.Verify(pubkey, digest, sig); err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "pdp signature verification failed")
+		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "pairing challenge signature verification failed")
 	}
 	return nil
 }

@@ -18,11 +18,9 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"io"
 	"io/ioutil"
-	"math/big"
+	"time"
 
-	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/sirupsen/logrus"
 
@@ -33,27 +31,8 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
-// MigrateChain defines several contract/chaincode methods related to file migration
-type MigrateChain interface {
-	UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions) error
-}
-
-// MigrateCopier defines slice copier when migrating a file
-type MigrateCopier interface {
-	Push(ctx context.Context, id, sourceId string, r io.Reader, node *blockchain.Node) error
-	Pull(ctx context.Context, id, fileId string, node *blockchain.Node) (io.ReadCloser, error)
-	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc MigrateEncryptor, ca, sourceId, fileId string) (
-		[]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
-}
-
-// MigrateEncryptor defines encryptor for file encryption and decryption when migrating a file
-type MigrateEncryptor interface {
-	Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (encryptor.EncryptedSlice, error)
-	Recover(r io.Reader, opt *encryptor.RecoverOptions) ([]byte, error)
-}
-
 // PullAndDec pull a slice from healthy node and decrypt
-func PullAndDec(ctx context.Context, copier MigrateCopier, encrypt MigrateEncryptor,
+func PullAndDec(ctx context.Context, copier CommonCopier, encrypt CommonEncryptor,
 	slice blockchain.PublicSliceMeta, node *blockchain.Node, fileId string) ([]byte, error) {
 
 	r, err := copier.Pull(ctx, slice.ID, fileId, node)
@@ -88,7 +67,7 @@ func PullAndDec(ctx context.Context, copier MigrateCopier, encrypt MigrateEncryp
 }
 
 // EncAndPush encrypt a slice and push to specified storage node
-func EncAndPush(ctx context.Context, copier MigrateCopier, encrypt MigrateEncryptor,
+func EncAndPush(ctx context.Context, copier CommonCopier, encrypt CommonEncryptor,
 	plaintext []byte, sliceID, sourceID, fileID string, node *blockchain.Node) (encryptor.EncryptedSlice, error) {
 
 	encOpt := encryptor.EncryptOptions{
@@ -103,30 +82,25 @@ func EncAndPush(ctx context.Context, copier MigrateCopier, encrypt MigrateEncryp
 	return es, copier.Push(ctx, es.SliceID, sourceID, bytes.NewReader(es.CipherText), node)
 }
 
-// GetSigmaISliceIdx get random challenge material for a slice
-func GetSigmaISliceIdx(ciphertext []byte, sliceIdx int, pdp types.PDP) (sigmaI []byte, err error) {
-	idx := big.NewInt(int64(sliceIdx))
-	xchainClient := new(fl_crypto.XchainCryptoClient)
-	sigmaI, err = xchainClient.CalculatePDPSigmaI(ciphertext, idx.Bytes(), pdp.RandV, pdp.RandU, pdp.PdpPrivkey)
-	if err != nil {
-		return sigmaI, errorx.Wrap(err, "CalculatePDPSigmaI failed")
-	}
-	return sigmaI, nil
-}
-
 // ExpandFileSlices expand each slice to specific replica
-func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp MigrateCopier, enc MigrateEncryptor, chain MigrateChain,
-	challenger MerkleChallenger, file blockchain.File, nodesMap map[string]blockchain.Node, replica int,
+// 1. find new storage node for the slice
+// 2. pull slice from other node and re-encrypt for new node
+// 3. push slice to new storage node
+// 4. generate challenge material for new storage node
+func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp CommonCopier, enc CommonEncryptor, chain CommonChain,
+	challenger CommonChallenger, file blockchain.File, nodesMap map[string]blockchain.Node, replica int,
 	healthNodes blockchain.NodeHs, interval int64, l *logrus.Entry) error {
 
 	slices := file.Slices
-	ca, pdp := challenger.GetChallengeConf()
+	ca, pairingConf := challenger.GetChallengeConf()
 	oldSliceLen := len(slices)
-	slice := GetSliceNodes(slices, nodesMap)
+	sliceNodesMap := GetSliceNodes(slices, nodesMap)
+
+	// record new slices
 	var expandSlices []encryptor.EncryptedSlice
 	// do capacity expansion for one slice
 	// remark: slice cannot concurrent expand, because sindex can be covered
-	for sid, snode := range slice {
+	for sid, snode := range sliceNodesMap {
 		if len(snode) >= replica {
 			continue
 		}
@@ -138,8 +112,8 @@ func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp MigrateC
 			PrivateKey:    privkey[:],
 			SliceMetas:    slices,
 		}
-		if ca == types.PDPChallengeAlgorithm {
-			opt.PDP = pdp
+		if ca == types.PairingChallengeAlgorithm {
+			opt.PairingConf = pairingConf
 		}
 		nss, ess, err := cp.ReplicaExpansion(ctx, opt, enc, ca, hex.EncodeToString(file.Owner), file.ID)
 		if err != nil {
@@ -153,11 +127,10 @@ func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp MigrateC
 				continue
 			}
 		}
-		if ca == types.MerkleChallengeAlgorithm {
-			expandSlices = append(expandSlices, ess...)
-		}
+		expandSlices = append(expandSlices, ess...)
 		slices = append(slices, nss...)
 	}
+
 	// if all expansion failed, return err
 	if len(slices) == oldSliceLen {
 		l.WithFields(logrus.Fields{
@@ -165,6 +138,32 @@ func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp MigrateC
 			"old_slice_len": oldSliceLen,
 		}).Debug("expand slices all failed")
 		return errorx.New(errorx.ErrCodeInternal, "expand slices all failed")
+	}
+
+	newSlicesJson, _ := json.Marshal(slices)
+	file.Slices = slices
+	// save merkle challenge material for new slice nodes
+	if ca == types.MerkleChallengeAlgorithm {
+		if err := AddSlicesNewMerkleChallenge(challenger, file, expandSlices, interval, l); err != nil {
+			l.WithFields(logrus.Fields{
+				"file_id":       file.ID,
+				"new_replica":   replica,
+				"expand_slices": newSlicesJson,
+			}).WithError(err).Error("failed to add slices merkle challenge material")
+			return err
+		}
+	}
+	// generate and push pairing based challenge material for new slice nodes
+	if ca == types.PairingChallengeAlgorithm {
+		if err := AddSlicesNewPairingChallenge(ctx, pairingConf, cp, expandSlices, file, chain, hex.EncodeToString(file.Owner),
+			interval, time.Now().UnixNano(), file.ExpireTime, nil, l); err != nil {
+			l.WithFields(logrus.Fields{
+				"file_id":       file.ID,
+				"new_replica":   replica,
+				"expand_slices": newSlicesJson,
+			}).WithError(err).Error("failed to add slices pairing based challenge material")
+			return err
+		}
 	}
 
 	// sign slice info
@@ -176,17 +175,7 @@ func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp MigrateC
 	if err != nil {
 		return errorx.Wrap(err, "failed to marshal slices")
 	}
-	// save merkle expand slice
-	if ca == types.MerkleChallengeAlgorithm {
-		if err := AddSlicesNewMerkleChallenge(challenger, cp, file, expandSlices, interval, l); err != nil {
-			l.WithFields(logrus.Fields{
-				"file_id":       file.ID,
-				"new_replica":   replica,
-				"expand_slices": slices,
-			}).WithError(err).Error("failed to add slices merkle challenge")
-			return err
-		}
-	}
+	// update file slices on blockchain
 	opt := blockchain.UpdateFilePSMOptions{
 		FileID:    file.ID,
 		Owner:     file.Owner,

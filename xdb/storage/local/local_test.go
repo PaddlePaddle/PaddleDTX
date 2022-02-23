@@ -69,7 +69,8 @@ func TestDelete(t *testing.T) {
 }
 
 func TestSaveAndUpdate(t *testing.T) {
-	err := storage.SaveAndUpdate("18f168b6-2ef2-491e-8b26-4aa6df18378a", "1244")
+	reader := bytes.NewReader([]byte("1244"))
+	err := storage.SaveAndUpdate("18f168b6-2ef2-491e-8b26-4aa6df18378a", reader)
 	require.NoError(t, err)
 	f, err := storage.Load("18f168b6-2ef2-491e-8b26-4aa6df18378a")
 	require.NoError(t, err)

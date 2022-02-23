@@ -46,7 +46,7 @@ func ToNodeHsMap(nodes blockchain.NodeHs) map[string]blockchain.Node {
 }
 
 // GetHeartbeatNum get heart beat number of a storage node from blockchain
-func GetHeartbeatNum(chain HealthChain, id []byte, ts []int64) (int, error) {
+func GetHeartbeatNum(chain CommonChain, id []byte, ts []int64) (int, error) {
 	hearBeatTotal := 0
 	wg := sync.WaitGroup{}
 	wg.Add(len(ts))
@@ -97,7 +97,7 @@ func GetHeartBeatStats(now, regTime int64) (int64, int64) {
 }
 
 // GetHeartBeatTotalNumByTime get total heart beat number of a storage node during given time period
-func GetHeartBeatTotalNumByTime(chain HealthChain, id []byte, start, end int64) (int, error) {
+func GetHeartBeatTotalNumByTime(chain CommonChain, id []byte, start, end int64) (int, error) {
 	t := start
 
 	var ts []int64

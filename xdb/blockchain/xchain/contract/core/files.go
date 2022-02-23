@@ -75,10 +75,6 @@ func (x *Xdata) PublishFile(ctx code.Context) code.Response {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"failed to unmarshal namespace"))
 	}
-	if (ns.FilesStructSize + len(s)) >= blockchain.ContractMessageMaxSize {
-		return code.Error(errorx.New(errorx.ErrCodeParam,
-			"files struct size of ns larger than max, please upload file using new ns"))
-	}
 
 	// judge if filenameIndex exists
 	filenameIndex := packFileNameIndex(f.Owner, f.Namespace, f.Name)
@@ -110,7 +106,6 @@ func (x *Xdata) PublishFile(ctx code.Context) code.Response {
 	// update file num of fileNsIndex
 	ns.FileTotalNum += 1
 	ns.UpdateTime = f.PublishTime
-	ns.FilesStructSize += len(s)
 	nsf, err := json.Marshal(ns)
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal File namespace"))
@@ -405,42 +400,6 @@ func (x *Xdata) UpdateFileExpireTime(ctx code.Context) code.Response {
 	return code.OK(nf)
 }
 
-// UpdateNsFilesCap updates ns files struct size
-func (x *Xdata) UpdateNsFilesCap(ctx code.Context) code.Response {
-	// get UpdateNsFilesCapOptions
-	s, ok := ctx.Args()["opt"]
-	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:opt"))
-	}
-	// unmarshal opt
-	var opt blockchain.UpdateNsFilesCapOptions
-	if err := json.Unmarshal(s, &opt); err != nil {
-		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
-			"failed to unmarshal UpdateNsFilesCapOptions"))
-	}
-	// verify sig
-	mes := fmt.Sprintf("%s,%d", opt.Name, opt.CurrentTime)
-	err := x.checkSign(opt.Signature, opt.Owner, []byte(mes))
-	if err != nil {
-		return code.Error(err)
-	}
-	// get file ns
-	fileNsIndex := packFileNsIndex(opt.Owner, opt.Name)
-	nsr, err := ctx.GetObject([]byte(fileNsIndex))
-	if err != nil {
-		return code.Error(errorx.NewCode(err, errorx.ErrCodeNotFound, "file namespace not found"))
-	}
-	newNs, err := x.getNsNewStructSize(ctx, nsr, opt.CurrentTime)
-	if err != nil {
-		return code.Error(err)
-	}
-	// update ns files-struct-size on chain
-	if err := ctx.PutObject([]byte(fileNsIndex), newNs); err != nil {
-		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain, "failed to update ns files struct size"))
-	}
-	return code.OK(newNs)
-}
-
 // SliceMigrateRecord is used by node to slice migration record
 func (x *Xdata) SliceMigrateRecord(ctx code.Context) code.Response {
 	// get id
@@ -518,7 +477,7 @@ func (x *Xdata) ListFiles(ctx code.Context) code.Response {
 	// iterate iter
 	var fs []blockchain.File
 	for iter.Next() {
-		if opt.Limit > 0 && uint64(len(fs)) >= opt.Limit {
+		if opt.Limit > 0 && int64(len(fs)) >= opt.Limit {
 			break
 		}
 		f, err := x.getFileById(ctx, iter.Value())
@@ -562,7 +521,7 @@ func (x *Xdata) ListExpiredFiles(ctx code.Context) code.Response {
 	// iterate iter
 	var fs []blockchain.File
 	for iter.Next() {
-		if opt.Limit > 0 && uint64(len(fs)) >= opt.Limit {
+		if opt.Limit > 0 && int64(len(fs)) >= opt.Limit {
 			break
 		}
 		f, err := x.getFileById(ctx, iter.Value())
@@ -609,7 +568,7 @@ func (x *Xdata) ListFileNs(ctx code.Context) code.Response {
 	// iterate iter
 	var nss []blockchain.Namespace
 	for iter.Next() {
-		if opt.Limit > 0 && uint64(len(nss)) >= opt.Limit {
+		if opt.Limit > 0 && int64(len(nss)) >= opt.Limit {
 			break
 		}
 		var ns blockchain.Namespace
@@ -690,49 +649,4 @@ func (x *Xdata) checkSign(sign, owner, mes []byte) (err error) {
 		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "failed to verify signature")
 	}
 	return nil
-}
-
-func (x *Xdata) getNsNewStructSize(ctx code.Context, nsr []byte, ctime int64) (s []byte, err error) {
-	var bns blockchain.Namespace
-	if err = json.Unmarshal(nsr, &bns); err != nil {
-		return nil, errorx.NewCode(err, errorx.ErrCodeInternal,
-			"failed to unmarshal namespace")
-	}
-
-	// pack prefix
-	prefix := packFileNameFilter(bns.Owner, bns.Name)
-
-	// get iter by prefix
-	iter := ctx.NewIterator(code.PrefixRange([]byte(prefix)))
-	defer iter.Close()
-
-	// iterate iter
-	nsFileStructSize := 0
-	for iter.Next() {
-		f, err := x.getFileById(ctx, iter.Value())
-		if err != nil {
-			return nil, err
-		}
-		if f.ExpireTime+blockchain.FileRetainPeriod.Nanoseconds() > ctime {
-			fs, err := json.Marshal(f)
-			if err != nil {
-				return nil, errorx.NewCode(err, errorx.ErrCodeInternal,
-					"failed to marshal file of get ns-struct-size")
-			}
-			nsFileStructSize += len(fs)
-		}
-	}
-	if bns.FilesStructSize == nsFileStructSize {
-		return nil, errorx.New(errorx.ErrCodeAlreadyUpdate,
-			"ns-struct-size is already updated, not need to modify again")
-	}
-	bns.FilesStructSize = nsFileStructSize
-	bns.UpdateTime = ctime
-
-	s, err = json.Marshal(bns)
-	if err != nil {
-		return nil, errorx.NewCode(err, errorx.ErrCodeInternal,
-			"failed to marshal namespaces")
-	}
-	return s, nil
 }

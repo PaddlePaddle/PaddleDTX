@@ -34,12 +34,12 @@ publicAddress = "10.144.94.17:8121"
 
 # The generator of the challenge requests, to check if the file exists on the storage node.
 [dataOwner.challenger]
-    # Generator's type, can be 'pdp' or 'merkle'.
-    type = "pdp"
+    # Generator's type, can be 'pairing' or 'merkle'.
+    type = "pairing"
 
     # Proof of data Possession based on Bilinear Pairing.
-    [dataOwner.challenger.pdp]
-        # Max file slices number when generating pdp challenge
+    [dataOwner.challenger.pairing]
+        # Max file slices number when generating pairing based challenge
         maxIndexNum = 5
         sk = "Fudm9gDXNlEdCkieMid1WHIHd9K/M/CctBPlF/4y+AU="
         pk = "B60Vdoq4SVUpVRZf1FM7ImRXo/22q0ZjYMHlaB4HgUXMSsu+2iCrNkk3gROXOUDvB8zWMcBGCnBCAnb6N9WOaBPbKkYWnp/iodp0+GFWvW1DCnAYNV2+vdaFkHaezsqeDqRDsdqV2uG47PTE2xdkljSblWNgKhsHYp7LgCcbBWiMO3TcrzUdq+ETxfIu1Bi7AzSHHAj8oc7toGT0anrO9LPSDcde8rCdsptX5CLH7WvRF0AXrqhX4Mr7i+547qI3"
@@ -83,7 +83,7 @@ publicAddress = "10.144.94.17:8121"
     # Whether to monitor the challenge answer of the storage node.
     challengingSwitch = "on"
 
-    # Whether to monitor the file migration and the change of the namespaces's capacity.
+    # Whether to monitor the file migration.
     filemaintainerSwitch = "on"
     # unit: hour
     filemigrateInterval = 6

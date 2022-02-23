@@ -119,7 +119,7 @@ function printHelp() {
   echo "  ./xdb_test.sh -h (print this message), e.g.:"
   echo
   echo "  ./xdb_test.sh create_namespace -n mynamespace"
-  echo "  ./xdb_test.sh upload_file -n mynamespace -i ./README.md -d 'readme of xdb_test.sh'"
+  echo "  ./xdb_test.sh upload_file -n mynamespace -i ./README.md -d 'readme of xdb test'"
   echo "  ./xdb_test.sh filelist -n mynamespace"
   echo "  ./xdb_test.sh getfilebyid -f bfba4b3a-5b60-43e2-af79-b3be7ae6ef3b"
   echo "  ./xdb_test.sh download_file -f bfba4b3a-5b60-43e2-af79-b3be7ae6ef3b"

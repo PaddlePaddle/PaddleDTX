@@ -355,7 +355,7 @@ func (x *Xdata) ListNodesExpireSlice(stub shim.ChaincodeStubInterface, args []st
 		}
 
 		expireTime := getNodeSliceFileId([]byte(queryResponse.Key))
-		if (opt.Limit > 0 && uint64(len(sl)) >= opt.Limit) || expireTime == 0 {
+		if (opt.Limit > 0 && int64(len(sl)) >= opt.Limit) || expireTime == 0 {
 			break
 		}
 		if expireTime < opt.StartTime || expireTime > opt.EndTime {
@@ -412,7 +412,7 @@ func (x *Xdata) GetSliceMigrateRecords(stub shim.ChaincodeStubInterface, args []
 		}
 
 		mTime := getNodeSliceMigrateTime([]byte(queryResponse.Key))
-		if (opt.Limit > 0 && uint64(len(sl)) >= opt.Limit) || mTime == 0 {
+		if (opt.Limit > 0 && int64(len(sl)) >= opt.Limit) || mTime == 0 {
 			break
 		}
 		if mTime < opt.StartTime || mTime > opt.EndTime {

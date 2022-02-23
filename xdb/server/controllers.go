@@ -16,12 +16,14 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/kataras/iris/v12"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	etype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/server/types"
@@ -91,6 +93,11 @@ func (s *Server) push(ictx iris.Context) {
 	opt := etype.PushOptions{
 		SliceID:  ictx.URLParam("slice_id"),
 		SourceID: ictx.URLParam("source_id"),
+	}
+	// if sliceID has suffix, like 'sigmas', the pushed content is not a slice
+	// currently, pairing based challenge material sigmas is supported
+	if strings.TrimSuffix(opt.SliceID, common.ChallengeFileSuffix) != opt.SliceID {
+		opt.NotASlice = true
 	}
 	if _, err := s.handler.Push(opt, ictx.Request().Body); err != nil {
 		responseError(ictx, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to push slice"))
@@ -186,7 +193,7 @@ func (s *Server) getMRecord(ictx iris.Context) {
 		Target:    []byte(ictx.URLParam("id")),
 		StartTime: ictx.URLParamInt64Default("start", 0),
 		EndTime:   ictx.URLParamInt64Default("end", time.Now().UnixNano()),
-		Limit:     ictx.URLParamUint64("limit"),
+		Limit:     ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
 	}
 
 	resp, err := s.handler.GetSliceMigrateRecords(opt)
@@ -228,7 +235,7 @@ func (s *Server) listFiles(ictx iris.Context) {
 		TimeStart:   ictx.URLParamInt64Default("start", 0),
 		TimeEnd:     ictx.URLParamInt64Default("end", time.Now().UnixNano()),
 		CurrentTime: ictx.URLParamInt64Default("ctime", time.Now().UnixNano()),
-		Limit:       ictx.URLParamUint64("limit"),
+		Limit:       ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
 	}
 
 	if err := req.Valid(); err != nil {
@@ -253,7 +260,7 @@ func (s *Server) listExpiredFiles(ictx iris.Context) {
 		TimeStart:   ictx.URLParamInt64Default("start", 0),
 		TimeEnd:     ictx.URLParamInt64Default("end", time.Now().UnixNano()),
 		CurrentTime: ictx.URLParamInt64Default("ctime", time.Now().UnixNano()),
-		Limit:       ictx.URLParamUint64("limit"),
+		Limit:       ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
 	}
 
 	if err := req.Valid(); err != nil {
@@ -377,7 +384,7 @@ func (s *Server) listFileNs(ictx iris.Context) {
 		Owner:     ictx.URLParam("owner"),
 		TimeStart: ictx.URLParamInt64Default("start", 0),
 		TimeEnd:   ictx.URLParamInt64Default("end", time.Now().UnixNano()),
-		Limit:     ictx.URLParamUint64("limit"),
+		Limit:     ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
 	}
 
 	resp, err := s.handler.ListFileNs(req)
@@ -430,10 +437,6 @@ func (s *Server) listFileAuths(ictx iris.Context) {
 		TimeStart:  ictx.URLParamInt64Default("start", 0),
 		TimeEnd:    ictx.URLParamInt64Default("end", time.Now().UnixNano()),
 		Limit:      ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
-	}
-	if req.Limit > blockchain.ListMaxNumber {
-		responseError(ictx, errorx.New(errorx.ErrCodeParam, "invalid limit, the value must less than %v \n", blockchain.ListMaxNumber))
-		return
 	}
 
 	resp, err := s.handler.ListFileAuths(req)
@@ -512,7 +515,7 @@ func (s *Server) getToProveChallenges(ictx iris.Context) {
 		Status:     blockchain.ChallengeToProve,
 		TimeStart:  ictx.URLParamInt64Default("start", 0),
 		TimeEnd:    ictx.URLParamInt64Default("end", time.Now().UnixNano()),
-		Limit:      ictx.URLParamUint64("limit"),
+		Limit:      ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
 	}
 
 	resp, err := s.handler.GetChallenges(opt)
@@ -542,7 +545,7 @@ func (s *Server) getProvedChallenges(ictx iris.Context) {
 		Status:     blockchain.ChallengeProved,
 		TimeStart:  ictx.URLParamInt64Default("start", 0),
 		TimeEnd:    ictx.URLParamInt64Default("end", time.Now().UnixNano()),
-		Limit:      ictx.URLParamUint64("limit"),
+		Limit:      ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
 	}
 
 	resp, err := s.handler.GetChallenges(opt)
@@ -572,7 +575,7 @@ func (s *Server) getFailedChallenges(ictx iris.Context) {
 		Status:     blockchain.ChallengeFailed,
 		TimeStart:  ictx.URLParamInt64Default("start", 0),
 		TimeEnd:    ictx.URLParamInt64Default("end", time.Now().UnixNano()),
-		Limit:      ictx.URLParamUint64("limit"),
+		Limit:      ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
 	}
 
 	resp, err := s.handler.GetChallenges(opt)

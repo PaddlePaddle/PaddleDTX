@@ -349,7 +349,7 @@ func (x *Xdata) ListNodesExpireSlice(ctx code.Context) code.Response {
 	var sl []string
 	for iter.Next() {
 		_, expireTime := getNodeSliceFileId(iter.Key())
-		if (opt.Limit > 0 && uint64(len(sl)) >= opt.Limit) || expireTime == 0 {
+		if (opt.Limit > 0 && int64(len(sl)) >= opt.Limit) || expireTime == 0 {
 			break
 		}
 		if expireTime < opt.StartTime || expireTime > opt.EndTime {
@@ -398,7 +398,7 @@ func (x *Xdata) GetSliceMigrateRecords(ctx code.Context) code.Response {
 	var sl []map[string]interface{}
 	for iter.Next() {
 		mTime := getNodeSliceMigrateTime(iter.Key())
-		if (opt.Limit > 0 && uint64(len(sl)) >= opt.Limit) || mTime == 0 {
+		if (opt.Limit > 0 && int64(len(sl)) >= opt.Limit) || mTime == 0 {
 			break
 		}
 		if mTime < opt.StartTime || mTime > opt.EndTime {

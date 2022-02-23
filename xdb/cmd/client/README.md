@@ -16,7 +16,7 @@ The subcommand `xdb-cli key` used to generate the node private/public key pair o
 | :----------: |   :-----------:   | 
 | genkey       | generate a pair of key |  
 | addukey      | used for the dataOwner node to add client's public key into the whitelist | 
-| genpdpkeys   | generate pdp keys |
+| genpdpkeys   | generate pairing based challenge parameters |
 
 ### genkey
 `xdb-cli key genkey` used for node or node's client to generate a pair of key

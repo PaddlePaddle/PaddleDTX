@@ -9,7 +9,7 @@
 | :----------: |   :-----------:   | 
 | genkey       | generate a pair of key |  
 | addukey      | used for the dataOwner node to add client's public key into the whitelist | 
-| genpdpkeys   | generate pdp keys |
+| genpdpkeys   | generate pairing based challenge parameters |
 
 ### 为数据持有节点或存储节点生成公私钥
 ```shell

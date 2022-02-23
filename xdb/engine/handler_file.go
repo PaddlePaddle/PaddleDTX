@@ -204,16 +204,21 @@ func (e *Engine) UpdateFileExpireTime(ctx context.Context, opt types.UpdateFileE
 		}).Info("updated file expire time")
 	}
 
-	// if challenge type is "merkle", add new challenge material
+	// add new challenge material
 	startTime := file.ExpireTime
-	if startTime == 0 {
+	if startTime <= opt.CurrentTime {
 		startTime = opt.CurrentTime
 	}
-	challengeAlgorithm, _ := e.challenger.GetChallengeConf()
+	challengeAlgorithm, pairingConf := e.challenger.GetChallengeConf()
+	interval := e.monitor.challengingMonitor.RequestInterval.Nanoseconds()
 	if challengeAlgorithm == types.MerkleChallengeAlgorithm {
-		ti := e.monitor.challengingMonitor.RequestInterval.Nanoseconds()
-		if err := common.AddFileNewMerkleChallenge(ctx, e.challenger, e.chain, e.copier, e.encryptor, newFile, startTime, ti, logger); err != nil {
-			return errorx.Wrap(err, "failed to add merkle challenges")
+		if err := common.AddFileNewMerkleChallenge(ctx, e.challenger, e.chain, e.copier, e.encryptor, newFile, startTime, interval, logger); err != nil {
+			return errorx.Wrap(err, "failed to add merkle challenge material")
+		}
+	}
+	if challengeAlgorithm == types.PairingChallengeAlgorithm {
+		if err := common.AddFilePairingChallenges(ctx, pairingConf, e.chain, e.copier, newFile, opt.User, startTime, interval, logger); err != nil {
+			return errorx.Wrap(err, "failed to add pairing based challenge material")
 		}
 	}
 	return nil
@@ -275,7 +280,7 @@ func (e *Engine) UpdateNsReplica(ctx context.Context, opt types.UpdateNsOptions)
 		return err
 	}
 
-	// sign use local key
+	// sign using local key
 	localPrv := e.monitor.challengingMonitor.PrivateKey
 	localPub := ecdsa.PublicKeyFromPrivateKey(localPrv)
 	sig, err := ecdsa.Sign(localPrv, hash.HashUsingSha256([]byte(m)))
@@ -314,14 +319,7 @@ func (e *Engine) UpdateNsReplica(ctx context.Context, opt types.UpdateNsOptions)
 		return errorx.Wrap(err, "failed to get file list on  blockchain")
 	}
 
-	nsMaxFilesStructSize := 0
-	for _, v := range files {
-		nsMaxFilesStructSize += calculateFileMaxStructSize(len(v.Slices)/ns.Replica, opt.Replica)
-	}
-	if nsMaxFilesStructSize >= blockchain.ContractMessageMaxSize {
-		return errorx.Wrap(err, "files total struct size of ns more than maximum, expand slices failed")
-	}
-
+	// update ns replica on blockchain
 	sopt := &blockchain.UpdateNsReplicaOptions{
 		Owner:       localPub[:],
 		Name:        opt.Namespace,
@@ -333,8 +331,10 @@ func (e *Engine) UpdateNsReplica(ctx context.Context, opt types.UpdateNsOptions)
 	if err != nil {
 		return errorx.Wrap(err, "failed to update file ns replica on blockchain")
 	}
+
+	// expand slices and challenge material
 	if err := e.nsReplicaExpansion(ctx, files, healthNodes, opt.Replica, localPrv); err != nil {
-		return errorx.Wrap(err, "expand failed, files total struct size of ns more than maximum")
+		return errorx.Wrap(err, "expand file slices failed")
 	}
 	return nil
 }
@@ -590,10 +590,10 @@ func (e *Engine) GetChallenges(opt blockchain.ListChallengeOptions) (challenges 
 	return challenges, nil
 }
 
-// nsReplicaExpansion expand file replicas under the namespace
+// nsReplicaExpansion expand file replica under the namespace
 // After each slice under the file is restored,
 // the replica is copied and pushed to the new storage node
-// If the challenge algorithm is Merkel, challenges will be generated for new storage node's slices
+// challenges will be generated for new storage node's slices
 func (e *Engine) nsReplicaExpansion(ctx context.Context, files []blockchain.File, healthNodes blockchain.NodeHs,
 	replica int, pri ecdsa.PrivateKey) error {
 
@@ -610,7 +610,7 @@ func (e *Engine) nsReplicaExpansion(ctx context.Context, files []blockchain.File
 			if err != nil {
 				logger.WithField("file_id", f.ID).WithError(err).Error("failed to expand file")
 			} else {
-				logger.WithField("file_id", f.ID).Info("success file expanded")
+				logger.WithField("file_id", f.ID).Info("successfully expanded file")
 			}
 		}(f)
 	}

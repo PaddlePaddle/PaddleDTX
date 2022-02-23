@@ -64,7 +64,7 @@ func (se *SoftEncryptor) Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (
 	plaintext, err := ioutil.ReadAll(r)
 	if err != nil {
 		return encryptor.EncryptedSlice{},
-			errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read")
+			errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read plaintext during Encrypt")
 	}
 	aesKey := se.GetKey(opt.FileID, opt.SliceID, opt.NodeID)
 	ciphertext, err := aes.EncryptUsingAESGCM(aesKey, plaintext, nil)
@@ -91,7 +91,7 @@ func (se *SoftEncryptor) Recover(r io.Reader, opt *encryptor.RecoverOptions) (
 	[]byte, error) {
 	ciphertext, err := ioutil.ReadAll(r)
 	if err != nil {
-		return nil, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read")
+		return nil, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read ciphertext during Recover")
 	}
 	aesKey := se.GetKey(opt.FileID, opt.SliceID, opt.NodeID)
 	plaintext, err := aes.DecryptUsingAESGCM(aesKey, ciphertext, nil)

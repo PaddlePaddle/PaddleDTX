@@ -53,31 +53,31 @@ var genKeyCmd = &cobra.Command{
 	},
 }
 
-// genPDPKeyCmd randomly generates pdp keys
+// genPDPKeyCmd randomly generates pairing based challenge parameters
 var genPDPKeyCmd = &cobra.Command{
 	Use:   "genpdpkeys",
-	Short: "generate pdp keys",
+	Short: "generate pairing based challenge parameters",
 	Run: func(cmd *cobra.Command, args []string) {
-		pdpPriv, pdpPub, err := xchainClient.GenPDPRandomKeyPair()
+		priv, pub, err := xchainClient.GenPairingKeyPair()
 		if err != nil {
-			fmt.Printf("failed to generate PDP key pair, err: %v\n", err)
+			fmt.Printf("failed to generate pairing based challenge parameters,, err: %v\n", err)
 			return
 		}
-		randu, err := xchainClient.RandomPDPWithinOrder()
+		randu, err := xchainClient.RandomWithinPairingOrder()
 		if err != nil {
 			fmt.Printf("failed to generate randomU, err: %v\n", err)
 			return
 		}
-		randv, err := xchainClient.RandomPDPWithinOrder()
+		randv, err := xchainClient.RandomWithinPairingOrder()
 		if err != nil {
 			fmt.Printf("failed to generate randomV, err: %v\n", err)
 			return
 		}
 
-		fmt.Println("pdp-sk:", base64.StdEncoding.EncodeToString(pdpPriv))
-		fmt.Println("pdp-pk:", base64.StdEncoding.EncodeToString(pdpPub))
-		fmt.Println("pdp-randu:", base64.StdEncoding.EncodeToString(randu))
-		fmt.Println("pdp-randv:", base64.StdEncoding.EncodeToString(randv))
+		fmt.Println("privkey:", base64.StdEncoding.EncodeToString(priv))
+		fmt.Println("pubkey:", base64.StdEncoding.EncodeToString(pub))
+		fmt.Println("randu:", base64.StdEncoding.EncodeToString(randu))
+		fmt.Println("randv:", base64.StdEncoding.EncodeToString(randv))
 	},
 }
 
