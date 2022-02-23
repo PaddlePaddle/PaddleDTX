@@ -41,5 +41,5 @@ type ReplicaExpOptions struct {
 	NewReplica    int                          // new replica number
 	NodesList     blockchain.NodeHs            // all node lists
 	SliceMetas    []blockchain.PublicSliceMeta // slice metas
-	PDP           types.PDP
+	PairingConf   types.PairingChallengeConf   // pairing based challenge config
 }

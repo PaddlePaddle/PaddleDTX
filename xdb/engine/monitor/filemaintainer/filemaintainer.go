@@ -31,8 +31,8 @@ import (
 )
 
 const (
-	defaultFileMigrateInterval      = time.Hour * 1
-	defaultNsFilesCapUpdateInterval = time.Minute * 53
+	// Defines the default interval for files migration
+	defaultFileMigrateInterval = time.Hour * 1
 )
 
 var (
@@ -42,7 +42,7 @@ var (
 type Copier interface {
 	Push(ctx context.Context, id, sourceId string, r io.Reader, node *blockchain.Node) error
 	Pull(ctx context.Context, id, fileId string, node *blockchain.Node) (io.ReadCloser, error)
-	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc common.MigrateEncryptor,
+	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc common.CommonEncryptor,
 		challengeAlgorithm, sourceId, fileId string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
 }
 
@@ -55,7 +55,6 @@ type Blockchain interface {
 	PublishFile(file *blockchain.PublishFileOptions) error
 	ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)
 	GetFileByID(id string) (blockchain.File, error)
-	UpdateNsFilesCap(opt *blockchain.UpdateNsFilesCapOptions) (blockchain.Namespace, error)
 	ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
 	UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions) error
 	SliceMigrateRecord(nodeID, sig []byte, fileID, sliceID string, ctime int64) error
@@ -69,11 +68,10 @@ type Blockchain interface {
 type Challenger interface {
 	// merkle Challenge
 	Setup(sliceData []byte, rangeAmount int) ([]ctype.RangeHash, error)
-	NewSetup(sliceData []byte, rangeAmount int, merkleMaterialQueue chan<- ctype.Material, cm ctype.Material) error
 	Save(cms []ctype.Material) error
 	Take(fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
 
-	GetChallengeConf() (string, types.PDP)
+	GetChallengeConf() (string, types.PairingChallengeConf)
 	Close()
 }
 
@@ -87,7 +85,6 @@ type NewFileMaintainerOptions struct {
 
 // FileMaintainer runs if local node is dataOwner-node, and its main work is to check storage-nodes health conditions
 //  and migrate slices from bad nodes to healthy nodes.
-//  The other part of its main work is to update files capacity of namespaces on blockchain
 type FileMaintainer struct {
 	localNode  peer.Local
 	blockchain Blockchain
@@ -97,11 +94,9 @@ type FileMaintainer struct {
 
 	challengerInterval int64
 
-	fileMigrateInterval  time.Duration
-	nsFilesCapUpInterval time.Duration
+	fileMigrateInterval time.Duration
 
-	doneMigrateC       chan struct{} //doneMigrateC will be closed when loop breaks
-	doneUpdNsFilesCapC chan struct{} //doneUpdNsFilesCapC will be closed when loop breaks
+	doneMigrateC chan struct{} //doneMigrateC will be closed when loop breaks
 }
 
 func New(conf *config.MonitorConf, opt *NewFileMaintainerOptions, interval int64) (*FileMaintainer, error) {
@@ -112,19 +107,17 @@ func New(conf *config.MonitorConf, opt *NewFileMaintainerOptions, interval int64
 	}
 
 	logger.WithFields(logrus.Fields{
-		"filemigrate-interval":  fileMigrateInterval,
-		"nsfilescapup-interval": defaultNsFilesCapUpdateInterval,
+		"filemigrate-interval": fileMigrateInterval,
 	}).Info("monitor initialize...")
 
 	return &FileMaintainer{
-		localNode:            opt.LocalNode,
-		blockchain:           opt.Blockchain,
-		copier:               opt.Copier,
-		encryptor:            opt.Encryptor,
-		challenger:           opt.Challenger,
-		challengerInterval:   interval,
-		fileMigrateInterval:  fileMigrateInterval,
-		nsFilesCapUpInterval: defaultNsFilesCapUpdateInterval,
+		localNode:           opt.LocalNode,
+		blockchain:          opt.Blockchain,
+		copier:              opt.Copier,
+		encryptor:           opt.Encryptor,
+		challenger:          opt.Challenger,
+		challengerInterval:  interval,
+		fileMigrateInterval: fileMigrateInterval,
 	}, nil
 }
 
@@ -148,26 +141,4 @@ func (m *FileMaintainer) StopMigrate() {
 	}
 
 	<-m.doneMigrateC
-}
-
-// UpdateNsFilesCap starts task to update files'cap
-func (m *FileMaintainer) UpdateNsFilesCap(ctx context.Context) {
-	go m.updateNsFilesCap(ctx)
-}
-
-// StopUpdateNsFilesCap stops task updating files'cap
-func (m *FileMaintainer) StopUpdateNsFilesCap() {
-	if m.doneUpdNsFilesCapC == nil {
-		return
-	}
-
-	logger.Info("stops task updating files'cap ...")
-
-	select {
-	case <-m.doneUpdNsFilesCapC:
-		return
-	default:
-	}
-
-	<-m.doneUpdNsFilesCapC
 }

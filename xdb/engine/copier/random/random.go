@@ -147,19 +147,20 @@ func (m *RandomCopier) Pull(ctx context.Context, id, fileId string, node *blockc
 //  pull slices from original nodes and decrypt and re-encrypt those slices,
 //  then push them onto new Storage Nodes.
 func (m *RandomCopier) ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions,
-	enc common.MigrateEncryptor, challengeAlgorithm, sourceId, fileId string) (
+	enc common.CommonEncryptor, challengeAlgorithm, sourceId, fileId string) (
 	nSlice []blockchain.PublicSliceMeta, eSlices []encryptor.EncryptedSlice, err error) {
 	// 1 get more proper storage nodes
 	nNodes, err := getOptionalNode(opt.SelectedNodes, opt.NodesList)
 	if err != nil {
 		return nSlice, eSlices, errorx.NewCode(err, errorx.ErrCodeInternal, "no optional node to expand replica")
 	}
+
 	// 2 pull slices from original nodes and decrypt those slices
 	plainText := m.pullSlice(ctx, opt.SelectedNodes, opt.SliceMetas, opt.SliceId, fileId, enc)
-
 	if len(plainText) == 0 {
 		return nSlice, eSlices, errorx.New(errorx.ErrCodeInternal, "slice pull from all healthy nodes error")
 	}
+
 	// 3 re-encrypt those slices and push them onto new storage nodes
 	sliceExpandNum := opt.NewReplica - len(opt.SelectedNodes)
 	for i := 0; i < sliceExpandNum; i++ {
@@ -180,20 +181,10 @@ func (m *RandomCopier) ReplicaExpansion(ctx context.Context, opt *copier.Replica
 				Length:     es.Length,
 				NodeID:     es.NodeID,
 			}
-			if challengeAlgorithm == types.PDPChallengeAlgorithm {
+			if challengeAlgorithm == types.PairingChallengeAlgorithm {
 				// 4 gets SliceIdx
 				sindex := getNodeSliceIdx(opt.SliceMetas, string(es.NodeID))
-				// 5 generates messages about PDP(Proof of Data Possession) challenge
-				sigmaI, err := common.GetSigmaISliceIdx(es.CipherText, sindex, opt.PDP)
-				if err != nil {
-					logger.WithFields(logrus.Fields{
-						"slice_id":    es.SliceID,
-						"target_node": string(n.ID),
-					}).Debug("replica slice failed to re-pushed")
-					continue
-				}
 				newSp.SliceIdx = sindex
-				newSp.SigmaI = sigmaI
 			}
 
 			nSlice = append(nSlice, newSp)
@@ -227,7 +218,7 @@ func getOptionalNode(selectedNodes blockchain.Nodes, allNodes blockchain.NodeHs)
 
 // pullSlice pull slices from selected Storage Nodes
 func (m *RandomCopier) pullSlice(ctx context.Context, selectedNodes blockchain.Nodes,
-	sliceMetas []blockchain.PublicSliceMeta, sliceId, fileID string, enc common.MigrateEncryptor) (plainText []byte) {
+	sliceMetas []blockchain.PublicSliceMeta, sliceId, fileID string, enc common.CommonEncryptor) (plainText []byte) {
 	for _, n := range selectedNodes {
 		sm := getSliceMetaById(sliceMetas, sliceId, string(n.ID))
 		plainText, err := common.PullAndDec(ctx, m, enc, sm, &n, fileID)
@@ -253,7 +244,7 @@ func getSliceMetaById(sliceMetas []blockchain.PublicSliceMeta, sliceId, nodeId s
 func getNodeSliceIdx(sliceMetas []blockchain.PublicSliceMeta, nodeId string) int {
 	sliceIdxMap := make(map[string]int)
 	for _, s := range sliceMetas {
-		// denote slice index for each node (for pdp challenge)
+		// denote slice index for each node (for pairing based challenge)
 		if string(s.NodeID) == nodeId {
 			_, ok := sliceIdxMap[nodeId]
 			if !ok || (ok && s.SliceIdx > sliceIdxMap[nodeId]) {

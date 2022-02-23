@@ -87,22 +87,6 @@ func (f *Fabric) UpdateFileExpireTime(opt *blockchain.UpdateExptimeOptions) (blo
 	return file, nil
 }
 
-// UpdateNsFilesCap updates namespace files struct size
-func (f *Fabric) UpdateNsFilesCap(opt *blockchain.UpdateNsFilesCapOptions) (ns blockchain.Namespace, err error) {
-	s, err := json.Marshal(*opt)
-	if err != nil {
-		return ns, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal UpdateNsFilesCapOptions")
-	}
-	resp, err := f.InvokeContract([][]byte{s}, "UpdateNsFilesCap")
-	if err != nil {
-		return ns, err
-	}
-	if err = json.Unmarshal(resp, &ns); err != nil {
-		return ns, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to unmarshal File")
-	}
-	return ns, nil
-}
-
 // AddFileNs adds file namespace
 func (f *Fabric) AddFileNs(opt *blockchain.AddNsOptions) error {
 	s, err := json.Marshal(*opt)

@@ -22,13 +22,10 @@ import (
 	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
-	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/slicer"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/merkle"
 )
 
 // packChainFile rearranges the encrypted slices and calculates the digest that will be sent onto blockchain later
@@ -37,7 +34,7 @@ import (
 // slices meta, used to pull slices from storage nodes
 // slices structure, ensure the file can be recovered in a correct slice order
 func (e *Engine) packChainFile(fileID, challengeAlgorithm string, opt types.WriteOptions, originalSlices slicer.SliceMetas,
-	originalLen int, encryptedSlices []encryptor.EncryptedSlice, pdp types.PDP) (blockchain.File, error) {
+	originalLen int, encryptedSlices []encryptor.EncryptedSlice, pairingConf types.PairingChallengeConf) (blockchain.File, error) {
 
 	sliceIdxMap := make(map[string]int)
 	chainSlices := make([]blockchain.PublicSliceMeta, 0, len(originalSlices))
@@ -51,21 +48,15 @@ func (e *Engine) packChainFile(fileID, challengeAlgorithm string, opt types.Writ
 			NodeID:     s.NodeID,
 			CipherHash: s.CipherHash,
 		}
-		if challengeAlgorithm == types.PDPChallengeAlgorithm {
-			// denote slice index for each node (for pdp challenge)
+		if challengeAlgorithm == types.PairingChallengeAlgorithm {
+			// denote slice index for each node (for pairing based challenge)
 			nodeStr := base64.StdEncoding.EncodeToString(s.NodeID)
 			if _, ok := sliceIdxMap[nodeStr]; !ok {
 				sliceIdxMap[nodeStr] = 1
 			} else {
 				sliceIdxMap[nodeStr] += 1
 			}
-			idx := big.NewInt(int64(sliceIdxMap[nodeStr]))
-			sigmaI, err := xchainClient.CalculatePDPSigmaI(s.CipherText, idx.Bytes(), pdp.RandV, pdp.RandU, pdp.PdpPrivkey)
-			if err != nil {
-				return blockchain.File{}, errorx.Wrap(err, "CalculatePDPSigmaI failed")
-			}
 			sps.SliceIdx = sliceIdxMap[nodeStr]
-			sps.SigmaI = sigmaI
 		}
 		chainSlices = append(chainSlices, sps)
 	}
@@ -91,10 +82,10 @@ func (e *Engine) packChainFile(fileID, challengeAlgorithm string, opt types.Writ
 		ExpireTime:  opt.ExpireTime,
 		Ext:         []byte(opt.Extra),
 	}
-	if challengeAlgorithm == types.PDPChallengeAlgorithm {
-		chainFile.PdpPubkey = pdp.PdpPubkey
-		chainFile.RandU = pdp.RandU
-		chainFile.RandV = pdp.RandV
+	if challengeAlgorithm == types.PairingChallengeAlgorithm {
+		chainFile.PdpPubkey = pairingConf.Pubkey
+		chainFile.RandU = pairingConf.RandU
+		chainFile.RandV = pairingConf.RandV
 	}
 
 	return chainFile, nil
@@ -141,34 +132,13 @@ func (e *Engine) recoverChainFileStructure(bs []byte, fileID string) (blockchain
 	return fs, nil
 }
 
-// getMerkleChallengerRange get merkle challenge material for challenge request later
-func (e *Engine) getMerkleChallengerRange(fileID string, es encryptor.EncryptedSlice,
-	expireTime int64, merkleMaterialQueue chan<- ctype.Material) (err error) {
-	// get challenging materials
-	ti := e.monitor.challengingMonitor.RequestInterval.Nanoseconds()
-	return common.GetAddFileMCRange(e.challenger, fileID, es, expireTime, time.Now().UnixNano(), ti, merkleMaterialQueue)
-}
-
 func calculateMerkleRoot(slices slicer.SliceMetas) []byte {
 	hashes := make([][]byte, 0, len(slices))
 	for _, s := range slices {
 		hashes = append(hashes, s.Hash)
 	}
 
-	return merkle.GetMerkleRoot(hashes)
-}
-
-// calculateFileMaxStructSize calculate a file's max structure size that will be saved on blockchain
-func calculateFileMaxStructSize(slicesNum, replica int) int {
-	// every slice size < 400
-	slicesSize := slicesNum * replica * 400
-	// every file struct size < 200
-	structSize := slicesNum * 200
-	// base file size, not incule silces and structure < 1000
-	fileBaseSize := 1000
-	// file json marshal
-	fileConvertSize := 1000
-	return fileBaseSize + structSize + slicesSize + fileConvertSize
+	return xchainClient.GetMerkleRoot(hashes)
 }
 
 // rearrangeEncSlices arrange encrypted slices in random order

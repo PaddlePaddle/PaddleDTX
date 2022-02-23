@@ -47,7 +47,7 @@ type SliceStorage interface {
 	Exist(key string) (bool, error)
 
 	LoadStr(key string) (string, error)
-	SaveAndUpdate(key, value string) error
+	SaveAndUpdate(key string, value io.Reader) error
 }
 
 type NewNodeMaintainerOptions struct {

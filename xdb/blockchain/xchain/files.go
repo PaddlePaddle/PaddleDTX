@@ -104,26 +104,6 @@ func (x *XChain) UpdateFileExpireTime(opt *blockchain.UpdateExptimeOptions) (blo
 	return file, nil
 }
 
-// UpdateNsFilesCap updates ns files struct size
-func (x *XChain) UpdateNsFilesCap(opt *blockchain.UpdateNsFilesCapOptions) (ns blockchain.Namespace, err error) {
-	s, err := json.Marshal(*opt)
-	if err != nil {
-		return ns, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal UpdateNsFilesCapOptions")
-	}
-	args := map[string]string{
-		"opt": string(s),
-	}
-	mName := "UpdateNsFilesCap"
-	resp, err := x.InvokeContract(args, mName)
-	if err != nil {
-		return ns, err
-	}
-	if err = json.Unmarshal(resp, &ns); err != nil {
-		return ns, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to unmarshal File")
-	}
-	return ns, nil
-}
-
 // AddFileNs adds file namespace
 func (x *XChain) AddFileNs(opt *blockchain.AddNsOptions) error {
 	s, err := json.Marshal(*opt)

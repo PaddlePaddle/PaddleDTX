@@ -18,10 +18,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
@@ -139,16 +141,19 @@ func (s *Storage) Delete(key string) (bool, error) {
 	return true, nil
 }
 
-// SaveAndUpdate update a traget in local
-func (s *Storage) SaveAndUpdate(key, value string) error {
+// SaveAndUpdate update a target in local
+func (s *Storage) SaveAndUpdate(key string, value io.Reader) error {
+	if !isValidKey(key) {
+		return errorx.New(errorx.ErrCodeParam, "invalid key: %s", key)
+	}
+
 	filePath := filepath.Join(s.RootPath, key)
 	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to open file")
 	}
 	defer f.Close()
-	_, err = f.WriteString(value)
-	if err != nil {
+	if _, err := io.Copy(f, value); err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to write")
 	}
 
@@ -179,6 +184,8 @@ func (s *Storage) LoadStr(key string) (string, error) {
 
 func isValidKey(key string) bool {
 	// we know the key(slice id) is a uuid, use uuid.Parse to defend path attacking
-	_, err := uuid.Parse(key)
+	// for pairing based challenge, key might be like 'uuid_sigmas'
+	prefix := strings.TrimSuffix(key, common.ChallengeFileSuffix)
+	_, err := uuid.Parse(prefix)
 	return err == nil
 }

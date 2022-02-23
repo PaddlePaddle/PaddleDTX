@@ -95,8 +95,9 @@ func (r *ReadOptions) Valid() error {
 
 // PushOptions options for pushing slice to storage node
 type PushOptions struct {
-	SliceID  string
-	SourceID string // dataOwner node id
+	SliceID   string
+	SourceID  string // dataOwner node id
+	NotASlice bool   // denote if pushed content is not a slice, current pairing based challenge sigmas is supported
 }
 
 // PullOptions options for pulling slice from storage node
@@ -129,8 +130,8 @@ type ListFileOptions struct {
 
 	TimeStart   int64 // time period
 	TimeEnd     int64
-	CurrentTime int64  // current time
-	Limit       uint64 // file limit
+	CurrentTime int64 // current time
+	Limit       int64 // file limit
 }
 
 // Valid checks if ListFileOptions is valid

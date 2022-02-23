@@ -238,7 +238,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 	// decrypt recovered file
 	plain, err := e.encryptor.Recover(reader, &encryptor.RecoverOptions{FileID: opt.FileID})
 	if err != nil {
-		return nil, errorx.NewCode(err, errorx.ErrCodeCrypto, "file decryption failed")
+		return nil, errorx.NewCode(err, errorx.ErrCodeCrypto, "failed to recover original file")
 	}
 	return ioutil.NopCloser(bytes.NewReader(plain)), nil
 }

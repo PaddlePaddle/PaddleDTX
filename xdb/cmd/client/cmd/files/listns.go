@@ -20,6 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
 )
 
@@ -45,6 +46,10 @@ var nsListCmd = &cobra.Command{
 		endTime, err := time.ParseInLocation(timeTemplate, end, time.Local)
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
+			return
+		}
+		if limit > blockchain.ListMaxNumber {
+			fmt.Printf("invalid limit, the value must smaller than %v \n", blockchain.ListMaxNumber)
 			return
 		}
 
@@ -79,6 +84,6 @@ func init() {
 	nsListCmd.Flags().StringVarP(&owner, "owner", "o", "", "owner for file")
 	nsListCmd.Flags().StringVarP(&start, "start", "s", "", "ns create after startTime, example '2021-06-10 12:00:00'")
 	nsListCmd.Flags().StringVarP(&end, "end", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate), "ns create before endTime, example '2021-06-10 12:00:00'")
-	nsListCmd.Flags().Int64VarP(&limit, "limit", "l", 0, "limit for list ns")
+	nsListCmd.Flags().Int64VarP(&limit, "limit", "l", blockchain.ListMaxNumber, "limit for list ns")
 
 }

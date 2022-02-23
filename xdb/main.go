@@ -34,7 +34,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine"
 	merklechallenger "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle"
-	pdpchallenger "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/pdp"
+	pairingchallenger "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/pairing"
 	randomcopier "github.com/PaddlePaddle/PaddleDTX/xdb/engine/copier/random"
 	softencryptor "github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor/soft"
 	simpleslicer "github.com/PaddlePaddle/PaddleDTX/xdb/engine/slicer/simple"
@@ -185,8 +185,8 @@ func mustGetChallenger(conf *config.DataOwnerChallenger, signer ecdsa.PrivateKey
 	var err error
 	var c engine.Challenger
 	switch conf.Type {
-	case "pdp":
-		c, err = pdpchallenger.New(conf.Pdp, signer)
+	case "pairing":
+		c, err = pairingchallenger.New(conf.Pairing, signer)
 	case "merkle":
 		c, err = merklechallenger.New(conf.Merkle, signer)
 	default:

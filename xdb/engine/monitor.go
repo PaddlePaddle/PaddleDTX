@@ -30,7 +30,6 @@ import (
 //     and to send heartbeats regularly in order to claim it's alive
 //  FileMaintainer runs if local node is dataOwner-node, and its main work is to check storage-nodes health conditions
 //     and migrate slices from bad nodes to healthy nodes.
-//     The other part of its main work is to update files capacity of namespaces on blockchain
 type Monitor struct {
 	challengingMonitor *challenging.ChallengingMonitor
 	nodeMaintainer     *nodemaintainer.NodeMaintainer
@@ -142,7 +141,6 @@ func (m *Monitor) Start(ctx context.Context) error {
 		case config.NodeTypeDataOwner:
 			m.challengingMonitor.StartChallengeRequest(ctx)
 			m.fileMaintainer.Migrate(ctx)
-			m.fileMaintainer.UpdateNsFilesCap(ctx)
 		case config.NodeTypeStorage:
 			if err := m.nodeMaintainer.NodeAutoRegister(); err != nil {
 				return err
@@ -166,7 +164,6 @@ func (m *Monitor) Close() {
 
 	if m.fileMaintainer != nil {
 		m.fileMaintainer.StopMigrate()
-		m.fileMaintainer.StopUpdateNsFilesCap()
 	}
 
 	if m.nodeMaintainer != nil {

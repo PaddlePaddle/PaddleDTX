@@ -66,8 +66,6 @@ func (x *Xdata) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return x.GetFileByID(stub, args)
 	case "UpdateFileExpireTime":
 		return x.UpdateFileExpireTime(stub, args)
-	case "UpdateNsFilesCap":
-		return x.UpdateNsFilesCap(stub, args)
 	case "SliceMigrateRecord":
 		return x.SliceMigrateRecord(stub, args)
 	case "ListFiles":

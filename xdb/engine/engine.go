@@ -57,16 +57,15 @@ type Encryptor interface {
 //  Pairing-based and MerkleTree-based are both supported
 //  see more from engine.challenger
 type Challenger interface {
-	// pdp Challenge
-	GenerateChallenge(maxIdx int) ([][]byte, [][]byte, error)
+	// pairing based Challenge
+	GenerateChallenge(sliceIdxList []int, interval int64) ([][]byte, [][]byte, int64, []byte, error)
 
 	// merkle Challenge
 	Setup(sliceData []byte, rangeAmount int) ([]ctype.RangeHash, error)
-	NewSetup(sliceData []byte, rangeAmount int, merkleMaterialQueue chan<- ctype.Material, cm ctype.Material) error
 	Save(cms []ctype.Material) error
 	Take(fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
 
-	GetChallengeConf() (string, types.PDP)
+	GetChallengeConf() (string, types.PairingChallengeConf)
 	Close()
 }
 
@@ -79,7 +78,7 @@ type Copier interface {
 	Select(slice slicer.Slice, nodes blockchain.NodeHs, opt *copier.SelectOptions) (copier.LocatedSlice, error)
 	Push(ctx context.Context, id, sourceId string, r io.Reader, node *blockchain.Node) error
 	Pull(ctx context.Context, id, fileId string, node *blockchain.Node) (io.ReadCloser, error)
-	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc common.MigrateEncryptor,
+	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc common.CommonEncryptor,
 		challengeAlgorithm, sourceId, fileId string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
 }
 
@@ -106,7 +105,6 @@ type Blockchain interface {
 	GetFileByID(id string) (blockchain.File, error)
 	UpdateFileExpireTime(opt *blockchain.UpdateExptimeOptions) (blockchain.File, error)
 	AddFileNs(opt *blockchain.AddNsOptions) error
-	UpdateNsFilesCap(opt *blockchain.UpdateNsFilesCapOptions) (blockchain.Namespace, error)
 	UpdateNsReplica(opt *blockchain.UpdateNsReplicaOptions) error
 	UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions) error
 	SliceMigrateRecord(id, sig []byte, fid, sid string, ctime int64) error
@@ -133,7 +131,7 @@ type Storage interface {
 	Delete(key string) (bool, error)
 	Exist(key string) (bool, error)
 	LoadStr(key string) (string, error)
-	SaveAndUpdate(key, value string) error
+	SaveAndUpdate(key string, value io.Reader) error
 }
 
 type Engine struct {

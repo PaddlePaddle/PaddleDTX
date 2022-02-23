@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"sync"
 	"time"
 
@@ -124,16 +123,6 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	r = bytes.NewReader(cipher.CipherText)
 	originalLen := len(cipher.CipherText) - 16
 
-	slicesNum := math.Ceil(float64(len(cipher.CipherText)) / float64(e.slicer.GetBlockSize()))
-	fileStrucSize := calculateFileMaxStructSize(int(slicesNum), ns.Replica)
-	if (ns.FilesStructSize + fileStrucSize) >= blockchain.ContractMessageMaxSize {
-		logger.WithFields(logrus.Fields{
-			"file_id":        fileID.String(),
-			"ns_files_size":  ns.FilesStructSize,
-			"file_strc_size": fileStrucSize,
-		}).Warnf("files total struct size of ns more than maximum")
-		return resp, errorx.New(errorx.ErrCodeParam, "files total struct size of ns more than maximum")
-	}
 	// Slice. sliceQueue will be closed when slicer get EOF
 	sliceOpts := slicer.SliceOptions{}
 	sliceQueue := e.slicer.Slice(ctx, r, &sliceOpts, func(err error) {
@@ -165,8 +154,8 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 		cancel()
 	})
 
-	// get chanller
-	ca, pdp := e.challenger.GetChallengeConf()
+	// get challenge config
+	ca, pairingConf := e.challenger.GetChallengeConf()
 
 	// Setup challenging materials && Distribute
 	// both finishedQueue and failedQueue will be closed when encryptedSliceQueue is closed
@@ -209,6 +198,8 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 
 	// all pushed slice info
 	finishedEncSlices = append(finishedEncSlices, finishedQueue3...)
+
+	// generate and save merkle challenge material for each slice and storage node
 	if ca == types.MerkleChallengeAlgorithm {
 		if err := e.generateAndSaveMerkle(ctx, finishedEncSlices, fileID.String(), opt.ExpireTime); err != nil {
 			return resp, err
@@ -216,9 +207,18 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	}
 
 	// Write meta info to blockchain
-	chainFile, err := e.packChainFile(fileID.String(), ca, opt, sliceMetas, originalLen, finishedEncSlices, pdp)
+	chainFile, err := e.packChainFile(fileID.String(), ca, opt, sliceMetas, originalLen, finishedEncSlices, pairingConf)
 	if err != nil {
 		return resp, errorx.Wrap(err, "failed to pack chain file")
+	}
+
+	// generate and push pairing based challenge material for each slice and storage node
+	// slice index is required in calculation, which is obtained after packChainFile
+	if ca == types.PairingChallengeAlgorithm {
+		if err := common.AddSlicesNewPairingChallenge(ctx, pairingConf, e.copier, finishedEncSlices, chainFile, e.chain, opt.User,
+			e.monitor.challengingMonitor.RequestInterval.Nanoseconds(), time.Now().UnixNano(), opt.ExpireTime, nil, logger); err != nil {
+			return resp, err
+		}
 	}
 
 	// sign file info
@@ -547,47 +547,26 @@ func (e *Engine) generateAndSaveMerkle(ctx context.Context, finishedEncSlices []
 	fileID string, expireTime int64) error {
 	var isSaveErr error
 	wg := sync.WaitGroup{}
+	timeInterval := e.monitor.challengingMonitor.RequestInterval.Nanoseconds()
 	for _, es := range finishedEncSlices {
 		wg.Add(1)
-		merkleMaterialQueue := make(chan ctype.Material, 5)
 		go func(wg *sync.WaitGroup, es encryptor.EncryptedSlice) {
 			defer wg.Done()
-			e.getMerkleChallengerRange(fileID, es, expireTime, merkleMaterialQueue)
-		}(&wg, es)
-		wg.Add(1)
-		go func(wg *sync.WaitGroup) {
-			defer wg.Done()
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				default:
-				}
-				cm, ok := <-merkleMaterialQueue
-				if !ok {
-					return
-				}
-				sliceMaterial := ctype.Material{
-					NodeID:  cm.NodeID,
-					FileID:  cm.FileID,
-					SliceID: cm.SliceID,
-					Ranges:  cm.Ranges,
-				}
-				if len(sliceMaterial.Ranges) == 0 {
-					logger.WithFields(logrus.Fields{
-						"file_id":     sliceMaterial.FileID,
-						"slice_id":    sliceMaterial.SliceID,
-						"target_node": sliceMaterial.NodeID,
-					}).Warnf("empty hashes")
-					isSaveErr = errorx.New(errorx.ErrCodeInternal, "failed get challenging merkle materials, ranges empty")
-					return
-				}
-				csMaterial := []ctype.Material{sliceMaterial}
-				if err := common.SaveMerkleChallenger(e.challenger, csMaterial); err != nil {
-					isSaveErr = errorx.Wrap(err, "failed save challenging merkle materials")
-				}
+			sliceMaterial, _ := common.GetMCRange(e.challenger, fileID, es, expireTime, time.Now().UnixNano(), timeInterval)
+			if len(sliceMaterial.Ranges) == 0 {
+				logger.WithFields(logrus.Fields{
+					"file_id":     sliceMaterial.FileID,
+					"slice_id":    sliceMaterial.SliceID,
+					"target_node": sliceMaterial.NodeID,
+				}).Warnf("empty hashes")
+				isSaveErr = errorx.New(errorx.ErrCodeInternal, "failed get challenging merkle materials, ranges empty")
+				return
 			}
-		}(&wg)
+			csMaterial := []ctype.Material{sliceMaterial}
+			if err := common.SaveMerkleChallenger(e.challenger, csMaterial); err != nil {
+				isSaveErr = errorx.Wrap(err, "failed save challenging merkle materials")
+			}
+		}(&wg, es)
 	}
 	wg.Wait()
 	if isSaveErr != nil {

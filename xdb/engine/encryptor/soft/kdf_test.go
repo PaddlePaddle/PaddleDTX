@@ -25,17 +25,18 @@ func TestKDF(t *testing.T) {
 		password: "hello world",
 	}
 
+	fileID := "26bf4ded-5b36-44fa-9488-259de30a3c37"
 	sliceID := "a80809b9-d8de-4c43-b680-ad3466c33b9d"
-	key0, _ := hex.DecodeString("b66ba2a42e96f93beb07f194026d3b3e7ed363e99c098089fc611747d845c9b1")
+	key0, _ := hex.DecodeString("7a81d8031e60dac244baa03f4567522d048623c751824153337c573f6e25e1ab")
 
 	nodeID, _ := hex.DecodeString("363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6")
-	key1 := se.getKey(sliceID, nodeID)
+	key1 := se.getKey(fileID, sliceID, nodeID)
 
 	require.Equal(t, key0, key1)
 
-	key2 := se.getKey(sliceID+"xx", nodeID)
+	key2 := se.getKey(fileID, sliceID+"xx", nodeID)
 	require.NotEqual(t, key0, key2)
 
-	key3 := se.getKey(sliceID, append(nodeID, 1))
+	key3 := se.getKey(fileID, sliceID, append(nodeID, 1))
 	require.NotEqual(t, key0, key3)
 }
