@@ -187,8 +187,8 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		        password = "abcdefg"
 
 		[dataOwner.challenger]
-		    type = "pdp"
-		    [dataOwner.challenger.pdp]
+		    type = "merkle"
+		    [dataOwner.challenger.pairing]
 		        maxIndexNum = 5
 		        sk = "Fudm9gDXNlEdCkieMid1WHIHd9K/M/CctBPlF/4y+AU="
 		        pk = "B60Vdoq4SVUpVRZf1FM7ImRXo/22q0ZjYMHlaB4HgUXMSsu+2iCrNkk3gROXOUDvB8zWMcBGCnBCAnb6N9WOaBPbKkYWnp/iodp0+GFWvW1DCnAYNV2+vdaFkHaezsqeDqRDsdqV2uG47PTE2xdkljSblWNgKhsHYp7LgCcbBWiMO3TcrzUdq+ETxfIu1Bi7AzSHHAj8oc7toGT0anrO9LPSDcde8rCdsptX5CLH7WvRF0AXrqhX4Mr7i+547qI3"
