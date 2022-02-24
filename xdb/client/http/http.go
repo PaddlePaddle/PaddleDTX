@@ -15,7 +15,6 @@ package http
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
@@ -411,22 +410,11 @@ func (c *Client) AddFileNs(ctx context.Context, owner, priKey, ns, des string, r
 	pubkey := ecdsa.PublicKeyFromPrivateKey(private)
 
 	ctime := time.Now().UnixNano()
-	namespace := blockchain.Namespace{
-		Name:         ns,
-		Description:  des,
-		CreateTime:   ctime,
-		UpdateTime:   ctime,
-		Replica:      replica,
-		FileTotalNum: 0,
-	}
-	s, err := json.Marshal(namespace)
-	if err != nil {
-		return errorx.Wrap(err, "failed to marshal namespace")
-	}
+	m := fmt.Sprintf("%s,%s,%d,%d", ns, des, ctime, replica)
 	// sign ns info
-	sig, err := ecdsa.Sign(private, hash.HashUsingSha256(s))
+	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(m)))
 	if err != nil {
-		return errorx.Wrap(err, "failed to sign file expire time")
+		return errorx.Wrap(err, "failed to sign file namespace")
 	}
 
 	url := c.baseAddr

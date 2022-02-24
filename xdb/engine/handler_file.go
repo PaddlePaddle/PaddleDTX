@@ -229,25 +229,25 @@ func (e *Engine) AddFileNs(opt types.AddNsOptions) (err error) {
 	if err := e.verifyUserID(opt.User); err != nil {
 		return err
 	}
+
+	m := fmt.Sprintf("%s,%s,%d,%d", opt.Namespace, opt.Description, opt.CreateTime, opt.Replica)
+	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(m))); err != nil {
+		return err
+	}
+
+	// sign with the private key of the dataOwner node
+	pubkey := ecdsa.PublicKeyFromPrivateKey(e.monitor.challengingMonitor.PrivateKey)
 	namespace := blockchain.Namespace{
 		Name:         opt.Namespace,
 		Description:  opt.Description,
+		Owner:        pubkey[:],
 		CreateTime:   opt.CreateTime,
 		UpdateTime:   opt.CreateTime,
 		Replica:      opt.Replica,
 		FileTotalNum: 0,
 	}
+
 	s, err := json.Marshal(namespace)
-	if err != nil {
-		return errorx.Wrap(err, "failed to marshal namespace")
-	}
-	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256(s)); err != nil {
-		return err
-	}
-	// sign with the private key of the dataOwner node
-	pubkey := ecdsa.PublicKeyFromPrivateKey(e.monitor.challengingMonitor.PrivateKey)
-	namespace.Owner = pubkey[:]
-	s, err = json.Marshal(namespace)
 	if err != nil {
 		return errorx.Wrap(err, "failed to marshal namespace")
 	}
