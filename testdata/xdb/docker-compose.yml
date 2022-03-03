@@ -2,7 +2,7 @@ version: '3'
 
 services:
   dataowner1:
-    image: registry.baidubce.com/paddledtx/xdb-dataowner:1.0
+    image: registry.baidubce.com/paddledtx/xdb-dataowner:1.1
     container_name: dataowner1.node.com
     networks:
       - blockchain_xchain_network
@@ -14,10 +14,11 @@ services:
         - ./data1/ukeys:/home/ukeys
         - ./data1/authkeys:/home/authkeys
         - ./data1/logs:/home/logs
+        - ./data1/challenger:/home/data/challenger
         - ../../dai/mpc/testdata/vl:/home/mpc-data
 
   dataowner2:
-    image: registry.baidubce.com/paddledtx/xdb-dataowner:1.0
+    image: registry.baidubce.com/paddledtx/xdb-dataowner:1.1
     container_name: dataowner2.node.com
     networks:
       - blockchain_xchain_network
@@ -29,10 +30,11 @@ services:
       - ./data2/ukeys:/home/ukeys
       - ./data2/authkeys:/home/authkeys
       - ./data2/logs:/home/logs
+      - ./data2/challenger:/home/data/challenger
       - ../../dai/mpc/testdata/vl:/home/mpc-data
 
   storage1:
-    image: registry.baidubce.com/paddledtx/xdb-storage:1.0
+    image: registry.baidubce.com/paddledtx/xdb-storage:1.1
     container_name: storage1.node.com
     networks:
       - blockchain_xchain_network
@@ -44,7 +46,7 @@ services:
         - ./storage1/logs:/home/logs
 
   storage2:
-    image: registry.baidubce.com/paddledtx/xdb-storage:1.0
+    image: registry.baidubce.com/paddledtx/xdb-storage:1.1
     container_name: storage2.node.com
     depends_on:
       - storage1
@@ -58,7 +60,7 @@ services:
         - ./storage2/logs:/home/logs
 
   storage3:
-    image: registry.baidubce.com/paddledtx/xdb-storage:1.0
+    image: registry.baidubce.com/paddledtx/xdb-storage:1.1
     container_name: storage3.node.com
     depends_on:
       - storage2

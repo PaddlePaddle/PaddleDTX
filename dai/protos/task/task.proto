@@ -35,7 +35,7 @@ message ListTaskRequest {
     string status = 2;
     int64 timeStart = 3;
     int64 timeEnd = 4;
-    uint64 limit = 5;
+    int64 limit = 5;
 }
 
 // DataForTask is a message received from Executor

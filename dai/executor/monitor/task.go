@@ -28,7 +28,9 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
+	"github.com/PaddlePaddle/PaddleDTX/dai/executor/handler"
 	pbCom "github.com/PaddlePaddle/PaddleDTX/dai/protos/common"
+	pbTask "github.com/PaddlePaddle/PaddleDTX/dai/protos/task"
 )
 
 // loopRequest checks blockchain every some seconds to find tasks ready to execute,
@@ -90,50 +92,67 @@ func (t *TaskMonitor) getUnconfirmedTaskAndConfirm() error {
 		logger.WithField("amount", len(taskList)).Debug("no Confirming task found")
 		return nil
 	}
-	// 2. query the list of file authorization applications
-	// applier is the executor's public key, authorizer is the file owner's public key
+	// 2. confirm tasks by the executor node's ExecutionType
 	for _, task := range taskList {
 		for _, ds := range task.DataSets {
 			if bytes.Equal(ds.Executor, t.PublicKey[:]) {
-
-				currentTime := time.Now().UnixNano()
-				fileAuths, err := t.Blockchain.ListFileAuthApplications(&xdbchain.ListFileAuthOptions{
-					Applier:    t.PublicKey[:],
-					Authorizer: ds.Owner,
-					FileID:     ds.DataID,
-					TimeStart:  0,
-					TimeEnd:    currentTime,
-					Limit:      1,
-				})
-				if err != nil {
-					return errorx.Wrap(err,
-						"failed to find the file authorization application, fileID: %s, Applier: %x, Authorizer: %x", ds.DataID, t.PublicKey[:], ds.Owner)
+				if err := t.confirmTaskByExecutionType(task.ID, ds); err != nil {
+					return err
 				}
+			}
+		}
+	}
+	return nil
+}
 
-				// 3. if the authorization application has not been published or the authorization application has expired,
-				// then publish the file authorization application
-				if len(fileAuths) == 0 || (fileAuths[0].Status == xdbchain.FileAuthApproved &&
-					fileAuths[0].ExpireTime <= currentTime) {
-					if err := t.publishFileAuthApplication(ds.DataID, task.ID, ds.Owner); err != nil {
-						return err
-					}
-				} else {
-					// 4. if the authorization application is rejected, rejected the task
-					if fileAuths[0].Status == xdbchain.FileAuthRejected {
-						rejectReason := fmt.Sprintf("File authorization application is refused, authID: %s, reason: %s",
-							fileAuths[0].ID, fileAuths[0].RejectReason)
-						if err := t.confirmTask(task.ID, rejectReason, false); err != nil {
-							return errorx.Wrap(err, "reject task failed, taskID: %s, Executor: %x", task.ID, t.PublicKey[:])
-						}
-					} else if fileAuths[0].Status == xdbchain.FileAuthApproved && fileAuths[0].ExpireTime > currentTime {
-						// if the authorization application has been passed and has not expired, then confirm the task
-						if err := t.confirmTask(task.ID, "", true); err != nil {
-							return errorx.Wrap(err, "confirm task failed, taskID: %s, Executor: %x", task.ID, t.PublicKey[:])
-						}
-					} else {
-						logger.Infof("the file authorization application is Unapproved, fileAuthID: %s, taskID: %s", fileAuths[0].ID, task.ID)
-					}
+// confirmTaskByExecutionType confrims tasks by ExecutionType.
+// If t.ExecutionType is "Self", means the dataOwner node has authorized sample files to the executor
+// node, the executor node can directly confirm tasks. if t.ExecutionType is "Proxy",
+// the executor node confirms or rejects tasks by the file authorization application.
+func (t *TaskMonitor) confirmTaskByExecutionType(taskID string, ds *pbTask.DataForTask) error {
+	if t.ExecutionType == handler.SelfExecutionMode {
+		if err := t.confirmTaskOnChain(taskID, "", true); err != nil {
+			return errorx.Wrap(err, "confirm task failed, taskID: %s, ExecutionType: %s, Executor: %x",
+				taskID, t.ExecutionType, t.PublicKey[:])
+		}
+	} else {
+		// 1. query the list of file authorization applications
+		// applier is the executor's public key, authorizer is the file owner's public key
+		currentTime := time.Now().UnixNano()
+		fileAuths, err := t.Blockchain.ListFileAuthApplications(&xdbchain.ListFileAuthOptions{
+			Applier:    t.PublicKey[:],
+			Authorizer: ds.Owner,
+			FileID:     ds.DataID,
+			TimeStart:  0,
+			TimeEnd:    currentTime,
+			Limit:      1,
+		})
+		if err != nil {
+			return errorx.Wrap(err, "failed to find the file authorization application, fileID: %s, Applier: %x, Authorizer: %x",
+				ds.DataID, t.PublicKey[:], ds.Owner)
+		}
+		// 2. if the authorization application has not been published or the authorization application has expired,
+		// then publish the file authorization application
+		if len(fileAuths) == 0 || (fileAuths[0].Status == xdbchain.FileAuthApproved &&
+			fileAuths[0].ExpireTime <= currentTime) {
+			if err := t.publishFileAuthApplication(ds.DataID, taskID, ds.Owner); err != nil {
+				return err
+			}
+		} else {
+			// 3. if the authorization application is rejected, rejected the task
+			if fileAuths[0].Status == xdbchain.FileAuthRejected {
+				rejectReason := fmt.Sprintf("File authorization application is refused, authID: %s, reason: %s",
+					fileAuths[0].ID, fileAuths[0].RejectReason)
+				if err := t.confirmTaskOnChain(taskID, rejectReason, false); err != nil {
+					return errorx.Wrap(err, "reject task failed, taskID: %s, Executor: %x", taskID, t.PublicKey[:])
 				}
+			} else if fileAuths[0].Status == xdbchain.FileAuthApproved && fileAuths[0].ExpireTime > currentTime {
+				// if the authorization application has been passed and has not expired, then confirm the task
+				if err := t.confirmTaskOnChain(taskID, "", true); err != nil {
+					return errorx.Wrap(err, "confirm task failed, taskID: %s, Executor: %x", taskID, t.PublicKey[:])
+				}
+			} else {
+				logger.Infof("the file authorization application is Unapproved, fileAuthID: %s, taskID: %s", fileAuths[0].ID, taskID)
 			}
 		}
 	}
@@ -142,7 +161,7 @@ func (t *TaskMonitor) getUnconfirmedTaskAndConfirm() error {
 
 // confirmTask after the file owner confirms or rejects the executor's file authorization application
 // then the executor node confirms or rejects the task
-func (t *TaskMonitor) confirmTask(taskID, rejectReason string, isConfirm bool) error {
+func (t *TaskMonitor) confirmTaskOnChain(taskID, rejectReason string, isConfirm bool) error {
 	currentTime := time.Now().UnixNano()
 	confirmOptions := &blockchain.FLTaskConfirmOptions{
 		Pubkey:       t.PublicKey[:],

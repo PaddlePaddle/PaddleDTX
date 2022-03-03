@@ -23,6 +23,19 @@ publicAddress = "10.144.94.17:8184"
 # privateKey = "858843291fe4ed4bd2afc1120efd7315f3cae2d3f79e582f7df843ac6eb0543b"
 keyPath = "./keys"
 
+# The mode defines how executor nodes download the sample file during the task execution.
+# The sample file download type also represents the task execution type, such as proxy-execution or self-execution.
+[executor.mode]
+    # Supports 'Proxy' and 'Self', default 'Proxy'.
+    # 'Proxy' is used by the dataOwner node to authorize the sample file to the executor node for proxy execution.
+    # "Self" is suitable for the executor node and the dataOwner node are the same organization and execute by themselves.
+    type = 'Proxy'
+    [executor.mode.Self]
+        # The dataOwner node's host, used to download sample files.
+        host = "http://10.144.94.17:8121"
+        # privateKey = "14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21"
+        keyPath = "./ukeys"
+
 # [mpc] defines the features of the mpc process.
 [executor.mpc]
     # trainTaskLimit limits the max number of executing training tasks concurrently

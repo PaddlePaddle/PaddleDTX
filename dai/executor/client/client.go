@@ -79,7 +79,7 @@ func (c *Client) ListTask(ctx context.Context, pubkeyStr, status string, start, 
 		TimeStart: start,
 		TimeEnd:   end,
 		Status:    status,
-		Limit:     uint64(limit),
+		Limit:     limit,
 	}
 
 	ts, err = c.executorClient.ListTask(ctx, in)

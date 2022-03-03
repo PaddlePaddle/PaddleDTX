@@ -59,7 +59,7 @@ var listTasksCmd = &cobra.Command{
 		}
 
 		if limit > blockchain.TaskListMaxNum {
-			fmt.Printf("invalid limit, the value must less than %v \n", blockchain.TaskListMaxNum)
+			fmt.Printf("invalid limit, the value must smaller than %v \n", blockchain.TaskListMaxNum)
 			return
 		}
 		if pubkey == "" {
@@ -93,7 +93,7 @@ func init() {
 	listTasksCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./keys", "key path")
 	listTasksCmd.Flags().StringVarP(&start, "st", "s", "", "start of time range during which tasks were published, example '2021-06-10 12:00:00'")
 	listTasksCmd.Flags().StringVarP(&end, "et", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate), "end of time range during which tasks were published, example '2021-06-10 12:00:00'")
-	listTasksCmd.Flags().Int64VarP(&limit, "limit", "l", 100, "maximum of tasks can be queried")
+	listTasksCmd.Flags().Int64VarP(&limit, "limit", "l", blockchain.TaskListMaxNum, "maximum of tasks can be queried")
 	listTasksCmd.Flags().StringVar(&status, "status", "", "status of task, such as Confirming, Ready, ToProcess, Processing, Finished, Failed, default for all types of status")
 
 }

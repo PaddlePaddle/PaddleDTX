@@ -4,6 +4,13 @@ listenAddress = ":80"
 publicAddress = "executor1.node.com:80"
 keyPath = "./keys"
 
+[executor.mode]
+    # Define the task execution type, supports 'Proxy' and 'Self', default 'Proxy.
+    type = 'Proxy'
+    [executor.mode.Self]
+        host = "http://dataowner1.node.com:80"
+        keyPath = "./ukeys"
+
 [executor.mpc]
     trainTaskLimit = 100
     predictTaskLimit = 100

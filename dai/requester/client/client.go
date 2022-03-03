@@ -247,7 +247,7 @@ func (c *Client) ListTask(pubkeyStr, status string, start, end,
 		TimeStart: start,
 		TimeEnd:   end,
 		Status:    status,
-		Limit:     uint64(limit),
+		Limit:     limit,
 	})
 	return
 }
