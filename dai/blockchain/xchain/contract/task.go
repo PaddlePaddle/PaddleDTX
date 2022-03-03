@@ -110,7 +110,7 @@ func (x *Xdata) ListTask(ctx code.Context) code.Response {
 	defer iter.Close()
 
 	for iter.Next() {
-		if opt.Limit > 0 && uint64(len(tasks)) >= opt.Limit {
+		if opt.Limit > 0 && int64(len(tasks)) >= opt.Limit {
 			break
 		}
 		t, err := x.getTaskById(ctx, string(iter.Value()))

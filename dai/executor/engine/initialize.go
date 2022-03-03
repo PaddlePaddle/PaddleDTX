@@ -57,17 +57,22 @@ func initEngine(conf *config.ExecutorConf) (e *Engine, err error) {
 		return e, err
 	}
 	// get storage instance to save model or prediction result
-	storage, err := newStorage(conf.Storage, node.PrivateKey)
+	storage, err := newStorage(conf.Storage)
+	if err != nil {
+		return e, err
+	}
+	// get download instance to download sample files
+	download, err := newExecutionMode(conf.Mode, node.PrivateKey)
 	if err != nil {
 		return e, err
 	}
 	// get MPC instance to handle tasks
-	mpcHandler, err := newMpc(conf.Mpc, node, storage, chain)
+	mpcHandler, err := newMpc(conf.Mpc, node, storage, download, chain)
 	if err != nil {
 		return e, err
 	}
 	// get Monitor to handle loop request
-	taskMonitor, err := newMonitor(node.PrivateKey, chain, mpcHandler)
+	taskMonitor, err := newMonitor(download.Type, node.PrivateKey, chain, mpcHandler)
 	if err != nil {
 		return e, err
 	}
@@ -114,7 +119,7 @@ func newNode(conf *config.ExecutorConf) (node handler.Node, err error) {
 }
 
 // newStorage initiates local storage, contains train-model and prediction-result storage
-func newStorage(conf *config.ExecutorStorageConf, privateKey ecdsa.PrivateKey) (fileStroage handler.FileStorage, err error) {
+func newStorage(conf *config.ExecutorStorageConf) (fileStroage handler.FileStorage, err error) {
 	// train-model storage only supports local path mode
 	mStorage, err := local.New(conf.LocalModelStoragePath)
 	if err != nil {
@@ -126,7 +131,6 @@ func newStorage(conf *config.ExecutorStorageConf, privateKey ecdsa.PrivateKey) (
 		return fileStroage, err
 	}
 	fileStroage = handler.FileStorage{
-		PrivateKey:     privateKey,
 		ModelStorage:   mStorage,
 		PredictStorage: pStroage,
 	}
@@ -163,9 +167,45 @@ func newPredictStorage(conf *config.ExecutorStorageConf) (s handler.Storage, err
 	return s, nil
 }
 
+// newExecutionMode initiates sample file download client.
+// The sample file download client also represents the task execution type, such as proxy-execution or self-execution.
+// If type is 'Proxy', during the task execution, the executor node publishes a file authorization application
+// to the dataOwner node, only the sample file authorized to the executor node can be used for task training.
+// If type is 'Self', it means that the executor node already has permission to use the sample file.
+func newExecutionMode(conf *config.ExecutorModeConf, nodePrivateKey ecdsa.PrivateKey) (fileDownload handler.FileDownload, err error) {
+	switch conf.Type {
+	case handler.ProxyExecutionMode:
+		fileDownload.Type = conf.Type
+	case handler.SelfExecutionMode:
+		// if conf.Self.PrivateKey is empty, get the dataOwner client privateKey from conf.Self.KeyPath
+		if conf.Self.PrivateKey == "" {
+			privateKeyBytes, err := file.ReadFile(conf.Self.KeyPath, file.PrivateKeyFileName)
+			if err == nil && len(privateKeyBytes) != 0 {
+				conf.Self.PrivateKey = strings.TrimSpace(string(privateKeyBytes))
+			} else {
+				return fileDownload, errorx.New(errorx.ErrCodeConfig, "invalid dataOwner privateKey-path of executor mode：%s", err)
+			}
+		}
+		fileDownload.PrivateKey, err = ecdsa.DecodePrivateKeyFromString(conf.Self.PrivateKey)
+		if err != nil {
+			return fileDownload, errorx.Wrap(err, "failed to decode dataOwner private key of executor mode")
+		}
+		// if executer mode type is DataOwner, the dataOwner node's Host can not be empty
+		if conf.Self.Host == "" {
+			return fileDownload, errorx.Wrap(err, "invalid dataOwner conf of executor mode, host can not be empty")
+		}
+		fileDownload.Type = conf.Type
+		fileDownload.Host = conf.Self.Host
+	default:
+		return fileDownload, errorx.New(errorx.ErrCodeConfig, "invalid executor mode type: %s", conf.Type)
+	}
+	fileDownload.NodePrivateKey = nodePrivateKey
+	return fileDownload, nil
+}
+
 // newMpc starts MPC handler to do MPC-Training and MPC-Prediction tasks
 func newMpc(conf *config.ExecutorMpcConf, node handler.Node, fstorage handler.FileStorage,
-	chain handler.Blockchain) (handler.MpcHandler, error) {
+	fdownload handler.FileDownload, chain handler.Blockchain) (handler.MpcHandler, error) {
 
 	rpcTimeout := time.Duration(conf.RpcTimeout)
 	if rpcTimeout == 0 {
@@ -183,6 +223,7 @@ func newMpc(conf *config.ExecutorMpcConf, node handler.Node, fstorage handler.Fi
 			RpcTimeout:       rpcTimeout,
 		},
 		Storage:            fstorage,
+		Download:           fdownload,
 		Node:               node,
 		Chain:              chain,
 		MpcTaskMaxExecTime: taskLimitTime,
@@ -199,10 +240,11 @@ func newMpc(conf *config.ExecutorMpcConf, node handler.Node, fstorage handler.Fi
 
 // newMonitor returns Monitor whose works are mainly monitoring status of tasks
 // and starting Mpc-Training and Mpc-Prediction tasks
-func newMonitor(privateKey ecdsa.PrivateKey, chain handler.Blockchain,
+func newMonitor(fileDownloadType string, privateKey ecdsa.PrivateKey, chain handler.Blockchain,
 	mpcHandler handler.MpcHandler) (*monitor.TaskMonitor, error) {
 	pubkey := ecdsa.PublicKeyFromPrivateKey(privateKey)
 	return &monitor.TaskMonitor{
+		ExecutionType:   fileDownloadType,
 		PrivateKey:      privateKey,
 		PublicKey:       pubkey,
 		RequestInterval: DefaultRequestInterval,

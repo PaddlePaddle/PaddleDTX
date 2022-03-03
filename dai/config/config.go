@@ -33,9 +33,15 @@ type ExecutorConf struct {
 	PublicAddress string
 	PrivateKey    string
 	KeyPath       string
+	Mode          *ExecutorModeConf
 	Mpc           *ExecutorMpcConf
 	Storage       *ExecutorStorageConf
 	Blockchain    *ExecutorBlockchainConf
+}
+
+type ExecutorModeConf struct {
+	Type string
+	Self *XuperDBConf
 }
 
 type ExecutorMpcConf struct {

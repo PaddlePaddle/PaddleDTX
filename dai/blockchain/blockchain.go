@@ -80,7 +80,7 @@ var RegModeListValue = map[pbCom.RegMode]string{
 type FLInfo struct {
 	FileType  string // file type, only supports "csv"
 	Features  string // feature list
-	TotalRows uint64 // total number of samples
+	TotalRows int64 // total number of samples
 }
 
 // ExecutorNode has access to samples with which to train models or to predict,
@@ -112,7 +112,7 @@ type ListFLTaskOptions struct {
 	Status    string // task status
 	TimeStart int64  // task publish time period, only task published after TimeStart and before TimeEnd will be listed
 	TimeEnd   int64
-	Limit     uint64 // limit number of tasks in list request, default 'all'
+	Limit     int64 // limit number of tasks in list request, default 'all'
 }
 
 // FLTaskConfirmOptions contains parameters for confirming task

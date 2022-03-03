@@ -57,6 +57,7 @@ type MpcHandler interface {
 
 // TaskMonitor
 type TaskMonitor struct {
+	ExecutionType   string // mode for downloading sample files during tasks execution
 	PrivateKey      ecdsa.PrivateKey
 	PublicKey       ecdsa.PublicKey
 	RequestInterval time.Duration // task loop interval

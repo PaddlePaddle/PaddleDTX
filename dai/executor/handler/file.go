@@ -16,6 +16,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecies"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
+	"github.com/PaddlePaddle/PaddleDTX/dai/executor/storage/xuperdb"
 	xdbchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
@@ -24,6 +25,12 @@ import (
 
 var defaultConcurrency uint64 = 10
 
+// Define the ExecutionType of the executor, used to download sample files during task training
+const (
+	ProxyExecutionMode = "Proxy"
+	SelfExecutionMode  = "Self"
+)
+
 // Storage stores files locally or xuperdb
 type Storage interface {
 	Write(value io.Reader, key string) (string, error)
@@ -31,60 +38,77 @@ type Storage interface {
 }
 
 // FileStorage contains model storage and prediction result storage.
-// PrivateKey of the executor node is used to generate the signature when downloads sample files from xuperdb
 type FileStorage struct {
-	PrivateKey     ecdsa.PrivateKey
 	ModelStorage   Storage
 	PredictStorage Storage
 }
 
-// GetSampleFile download slices from storage nodes and recover the sample file.
-// The key required to decrypt the sample file and slices can be obtained through the file authorization application ID.
-// Only after the file owner has confirmed the executor's file authorization application, the executor can get the sample file.
-func (f *FileStorage) GetSampleFile(fileID string, chain Blockchain) (io.ReadCloser, error) {
-	// 1. get the sample file info from chain
-	file, err := chain.GetFileByID(fileID)
-	if err != nil {
-		return nil, errorx.New(errorx.ErrCodeInternal, "failed to get file")
+// FileDownload mode for download the sample file during the task execution.
+type FileDownload struct {
+	Type           string           // value is 'Proxy' or 'Self'
+	NodePrivateKey ecdsa.PrivateKey // the executor node's privatekey
+
+	PrivateKey ecdsa.PrivateKey // used when the Type is 'Self'
+	Host       string
+}
+
+// GetSampleFile download sample files, if f.Type is 'Self', download files from dataOwner nodes.
+// If f.Type is 'Proxy', download slices from storage nodes and recover the sample file, the key
+// required to decrypt the sample file and slices can be obtained through the file authorization application ID. only
+// after the file owner has confirmed the executor's file authorization application, the executor node can get the sample file.
+func (f *FileDownload) GetSampleFile(fileID string, chain Blockchain) (io.ReadCloser, error) {
+	if f.Type == SelfExecutionMode {
+		xuperdbClient := xuperdb.New(0, "", f.Host, f.PrivateKey)
+		plainText, err := xuperdbClient.Read(fileID)
+		if err != nil {
+			return nil, errorx.Wrap(err, "failed to download the sample file from the dataOwner node, fileID: %s", fileID)
+		}
+		return plainText, nil
+	} else {
+		// 1. get the sample file info from chain
+		file, err := chain.GetFileByID(fileID)
+		if err != nil {
+			return nil, errorx.New(errorx.ErrCodeInternal, "failed to get the sample file from contract, fileID: %s", fileID)
+		}
+		// 2. get the authorization ID, use the authKey to decrypt the sample file
+		pubkey := ecdsa.PublicKeyFromPrivateKey(f.NodePrivateKey)
+		fileAuths, err := chain.ListFileAuthApplications(&xdbchain.ListFileAuthOptions{
+			Applier:    pubkey[:],
+			Authorizer: file.Owner,
+			Status:     xdbchain.FileAuthApproved,
+			FileID:     fileID,
+			TimeStart:  0,
+			TimeEnd:    time.Now().UnixNano(),
+			Limit:      1,
+		})
+		if err != nil {
+			return nil, errorx.Wrap(err,
+				"get the file authorization application failed, fileID: %s, Applier: %x, Authorizer: %x", fileID, pubkey[:], file.Owner)
+		}
+		if len(fileAuths) == 0 {
+			return nil, errorx.New(errorx.ErrCodeInternal,
+				"the file authorization application is empty, fileID: %s, Applier: %x, Authorizer: %x", fileID, pubkey[:], file.Owner)
+		}
+		// 3. obtain the derived key needed to decrypt the file through the AuthKey
+		firstKey, secKey, err := f.getDecryptAuthKey(fileAuths[0].AuthKey)
+		if err != nil {
+			return nil, err
+		}
+		// 4. download slices and decrypt
+		plainText, err := f.recoverFile(context.Background(), chain, file, firstKey, secKey)
+		if err != nil {
+			return nil, err
+		}
+		return plainText, nil
 	}
-	// 2. get the authorization ID, use the authKey to decrypt the sample file
-	pubkey := ecdsa.PublicKeyFromPrivateKey(f.PrivateKey)
-	fileAuths, err := chain.ListFileAuthApplications(&xdbchain.ListFileAuthOptions{
-		Applier:    pubkey[:],
-		Authorizer: file.Owner,
-		Status:     xdbchain.FileAuthApproved,
-		FileID:     fileID,
-		TimeStart:  0,
-		TimeEnd:    time.Now().UnixNano(),
-		Limit:      1,
-	})
-	if err != nil {
-		return nil, errorx.Wrap(err,
-			"get the file authorization application failed, fileID: %s, Applier: %x, Authorizer: %x", fileID, pubkey[:], file.Owner)
-	}
-	if len(fileAuths) == 0 {
-		return nil, errorx.New(errorx.ErrCodeInternal,
-			"the file authorization application is empty, fileID: %s, Applier: %x, Authorizer: %x", fileID, pubkey[:], file.Owner)
-	}
-	// 3. obtain the derived key needed to decrypt the file through the AuthKey
-	firstKey, secKey, err := f.getDecryptAuthKey(fileAuths[0].AuthKey)
-	if err != nil {
-		return nil, err
-	}
-	// 4. download slices and decrypt
-	plainText, err := f.recoverFile(context.Background(), chain, file, firstKey, secKey)
-	if err != nil {
-		return nil, err
-	}
-	return plainText, nil
 }
 
 // getDecryptAuthKey get the authorization key for file decryption, return firKey and secKey.
 // firKey used to decrypt the file and file's Structure
 // secKey used to decrypt slices, different slices of different stroage nodes use different AES Keys
-func (f *FileStorage) getDecryptAuthKey(authKey []byte) (firKey aes.AESKey, secKey map[string]map[string]aes.AESKey, err error) {
+func (f *FileDownload) getDecryptAuthKey(authKey []byte) (firKey aes.AESKey, secKey map[string]map[string]aes.AESKey, err error) {
 	// 1 parse ecdsa.PrivateKey to EC PrivateKey key
-	applierPrivateKey := ecdsa.ParsePrivateKey(f.PrivateKey)
+	applierPrivateKey := ecdsa.ParsePrivateKey(f.NodePrivateKey)
 	// applier's EC private key decrypt the authKey
 	decryptAuthKey, err := ecies.Decrypt(&applierPrivateKey, authKey)
 	if err != nil {
@@ -125,7 +149,7 @@ func (f *FileStorage) getDecryptAuthKey(authKey []byte) (firKey aes.AESKey, secK
 // 4. download slices from the storage node, if request fails, pull slices from other storage nodes
 // 5. slices decryption and combination
 // 6. decrypt the combined slices to get the original file
-func (f *FileStorage) recoverFile(ctx context.Context, chain Blockchain, file xdbchain.File,
+func (f *FileDownload) recoverFile(ctx context.Context, chain Blockchain, file xdbchain.File,
 	firstKey aes.AESKey, secKey map[string]map[string]aes.AESKey) (io.ReadCloser, error) {
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -277,16 +301,16 @@ func (f *FileStorage) recoverFile(ctx context.Context, chain Blockchain, file xd
 }
 
 // pull used pull slices from storage nodes
-func (f *FileStorage) pull(ctx context.Context, id, fileId, nodeAddress string) (io.ReadCloser, error) {
+func (f *FileDownload) pull(ctx context.Context, id, fileId, nodeAddress string) (io.ReadCloser, error) {
 	// Add signature
 	timestamp := time.Now().UnixNano()
 	msg := fmt.Sprintf("%s,%s,%d", id, fileId, timestamp)
-	sig, err := ecdsa.Sign(f.PrivateKey, hash.HashUsingSha256([]byte(msg)))
+	sig, err := ecdsa.Sign(f.NodePrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to sign slice pull")
 	}
 
-	pubkey := ecdsa.PublicKeyFromPrivateKey(f.PrivateKey)
+	pubkey := ecdsa.PublicKeyFromPrivateKey(f.NodePrivateKey)
 	url := fmt.Sprintf("http://%s/v1/slice/pull?slice_id=%s&file_id=%s&timestamp=%d&pubkey=%s&signature=%s",
 		nodeAddress, id, fileId, timestamp, pubkey.String(), sig.String())
 
@@ -299,7 +323,7 @@ func (f *FileStorage) pull(ctx context.Context, id, fileId, nodeAddress string) 
 
 // recoverChainFileStructure get file structure from blockchain and decrypt it,
 // FileStructure used to get the correct file slices order
-func (f *FileStorage) recoverChainFileStructure(aesKey aes.AESKey, structure []byte) (xdbchain.FileStructure, error) {
+func (f *FileDownload) recoverChainFileStructure(aesKey aes.AESKey, structure []byte) (xdbchain.FileStructure, error) {
 	// decrypt structure
 	decStruct, err := aes.DecryptUsingAESGCM(aesKey, structure, nil)
 	if err != nil {
@@ -314,7 +338,7 @@ func (f *FileStorage) recoverChainFileStructure(aesKey aes.AESKey, structure []b
 }
 
 // recover decrypt the ciphertext using AES-GCM
-func (f *FileStorage) recover(aesKey aes.AESKey, ciphertext []byte) ([]byte, error) {
+func (f *FileDownload) recover(aesKey aes.AESKey, ciphertext []byte) ([]byte, error) {
 	plaintext, err := aes.DecryptUsingAESGCM(aesKey, ciphertext, nil)
 	if err != nil {
 		return nil, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to decrypt file or slices")

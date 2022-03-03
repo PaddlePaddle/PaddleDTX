@@ -3,8 +3,8 @@ module github.com/PaddlePaddle/PaddleDTX/dai
 go 1.16
 
 require (
-	github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20220105065128-fc00cae449fa
-	github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20220119113024-2de612cb5784
+	github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20220216090232-3a7c4dd2aaa0
+	github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20220223095046-e3863884a945
 	github.com/cjqpker/slidewindow v1.0.2
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/golang/protobuf v1.5.2

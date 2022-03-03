@@ -117,7 +117,7 @@ func getListAuthOptions() (*xdbchain.ListFileAuthOptions, error) {
 	// Limit cannot exceed the maximum limit of 100
 	if opt.Limit > xdbchain.ListMaxNumber {
 		fmt.Printf("invalid limit, the value must less than %v \n", xdbchain.ListMaxNumber)
-		return nil, errorx.New(errorx.ErrCodeParam, "invalid limit, the value must less than %v", xdbchain.ListMaxNumber)
+		return nil, errorx.New(errorx.ErrCodeParam, "invalid limit, the value must smaller than %v", xdbchain.ListMaxNumber)
 	}
 	return &opt, nil
 }
@@ -132,5 +132,5 @@ func init() {
 	fileAuthsListCmd.Flags().StringVarP(&start, "start", "s", "", "authorization applications publish after startTime, example '2022-06-10 12:00:00'")
 	fileAuthsListCmd.Flags().StringVarP(&end, "end", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate),
 		"authorization applications publish before endTime, example '2022-07-10 12:00:00'")
-	fileAuthsListCmd.Flags().Int64VarP(&limit, "limit", "l", 0, "limit for list file authorization applications")
+	fileAuthsListCmd.Flags().Int64VarP(&limit, "limit", "l", xdbchain.ListMaxNumber, "limit for list file authorization applications")
 }

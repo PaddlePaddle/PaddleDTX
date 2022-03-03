@@ -89,6 +89,7 @@ type MpcModelHandler struct {
 	Config             mpc.Config
 	Node               Node
 	Storage            FileStorage
+	Download           FileDownload
 	Chain              Blockchain
 	MpcTaskMaxExecTime time.Duration
 	Mpc                mpc.Mpc
@@ -450,7 +451,7 @@ func (m *MpcModelHandler) getTaskParticipantParam(task blockchain.FLTask) (partP
 			if err != nil {
 				return partParam, err
 			}
-			reader, err := m.Storage.GetSampleFile(dataset.DataID, m.Chain)
+			reader, err := m.Download.GetSampleFile(dataset.DataID, m.Chain)
 			if err != nil {
 				logger.Debugf("get sample file error, taskId: %s, err: %v", task.ID, err)
 				return partParam, err
