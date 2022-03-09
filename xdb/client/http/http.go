@@ -73,7 +73,7 @@ func (c *Client) Write(ctx context.Context, r io.Reader, opt WriteOptions) (
 	pubkey := ecdsa.PublicKeyFromPrivateKey(privkey)
 	owner := pubkey.String()
 
-	msg := fmt.Sprintf("%s:%s:%s", owner, opt.Namespace, opt.FileName)
+	msg := fmt.Sprintf("%s,%s,%s", owner, opt.Namespace, opt.FileName)
 	h := hash.HashUsingSha256([]byte(msg))
 
 	sig, err := ecdsa.Sign(privkey, h)
@@ -123,9 +123,9 @@ func (c *Client) Read(ctx context.Context, opt ReadOptions) (io.ReadCloser, erro
 
 	var msg string
 	if len(opt.FileID) > 0 {
-		msg = fmt.Sprintf("%s:%s", opt.FileID, tm)
+		msg = fmt.Sprintf("%s,%s", opt.FileID, tm)
 	} else {
-		msg = fmt.Sprintf("%s:%s:%s:%s", pubkey.String(), opt.Namespace, opt.FileName, tm)
+		msg = fmt.Sprintf("%s,%s,%s,%s", pubkey.String(), opt.Namespace, opt.FileName, tm)
 	}
 	h := hash.HashUsingSha256([]byte(msg))
 
@@ -411,12 +411,12 @@ func (c *Client) AddFileNs(ctx context.Context, owner, priKey, ns, des string, r
 
 	ctime := time.Now().UnixNano()
 	m := fmt.Sprintf("%s,%s,%d,%d", ns, des, ctime, replica)
+
 	// sign ns info
 	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(m)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign file namespace")
 	}
-
 	url := c.baseAddr
 	joinPath(&url, "file", "addns")
 	q := url.Query()

@@ -46,9 +46,9 @@ func verifyReadToken(opt types.ReadOptions) error {
 	// verify token
 	var msg string
 	if len(opt.FileID) > 0 {
-		msg = fmt.Sprintf("%s:%d", opt.FileID, opt.Timestamp)
+		msg = fmt.Sprintf("%s,%d", opt.FileID, opt.Timestamp)
 	} else {
-		msg = fmt.Sprintf("%s:%s:%s:%d", opt.User, opt.Namespace, opt.FileName, opt.Timestamp)
+		msg = fmt.Sprintf("%s,%s,%s,%d", opt.User, opt.Namespace, opt.FileName, opt.Timestamp)
 	}
 	msgDigest := hash.HashUsingSha256([]byte(msg))
 	if err := verifyUserToken(opt.User, opt.Token, msgDigest); err != nil {
@@ -243,6 +243,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 	return ioutil.NopCloser(bytes.NewReader(plain)), nil
 }
 
+// getBlockchainFile4Read query file details by fileID or fileName from blockchain
 func getBlockchainFile4Read(chain Blockchain, opt *types.ReadOptions) (
 	blockchain.File, error) {
 	var err error
@@ -260,6 +261,8 @@ func getBlockchainFile4Read(chain Blockchain, opt *types.ReadOptions) (
 	return f, nil
 }
 
+// makeSlicesPool4Read get the list of storage nodes of slices by blockchain.PublicSliceMeta.
+// return map, key is sliceID, value is storage nodeID lists
 func makeSlicesPool4Read(srs []blockchain.PublicSliceMeta) map[string][]blockchain.PublicSliceMeta {
 	slicesPool := make(map[string][]blockchain.PublicSliceMeta)
 	for _, s := range srs {

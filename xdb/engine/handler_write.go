@@ -75,7 +75,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 		return resp, err
 	}
 	// verify token
-	msg := fmt.Sprintf("%s:%s:%s", opt.User, opt.Namespace, opt.FileName)
+	msg := fmt.Sprintf("%s,%s,%s", opt.User, opt.Namespace, opt.FileName)
 	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(msg))); err != nil {
 		return resp, errorx.Wrap(err, "failed to verify token")
 	}
@@ -244,7 +244,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	return resp, nil
 }
 
-// locateRoutine block current routine
+// locateRoutine block current routine, used to select storage nodes for slices
 func (e *Engine) locateRoutine(ctx context.Context, replica int, nodes blockchain.NodeHs, sliceQueue <-chan slicer.Slice,
 	locatedQueue chan<- copier.LocatedSlice, metaQueue chan<- slicer.SliceMeta, onErr func(err error)) {
 	wg := sync.WaitGroup{}
@@ -298,6 +298,7 @@ func (e *Engine) locateRoutine(ctx context.Context, replica int, nodes blockchai
 	close(locatedQueue)
 }
 
+// encryptRoutine Secondary encryption of slice copies
 func (e *Engine) encryptRoutine(ctx context.Context, fileID string, locatedQueue <-chan copier.LocatedSlice,
 	encryptedQueue chan<- encryptor.EncryptedSlice, onErr func(err error)) {
 	wg := sync.WaitGroup{}
