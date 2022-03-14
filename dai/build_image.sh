@@ -1,4 +1,4 @@
-ll#!/bin/sh
+#!/bin/sh
 VERSION=1.1
 mirrorAddr=registry.baidubce.com/paddledtx
 
