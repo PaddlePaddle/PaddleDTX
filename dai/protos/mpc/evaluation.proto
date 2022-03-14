@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+import "common/common.proto";
+
+package mpc;
+option go_package = "github.com/PaddlePaddle/PaddleDTX/dai/protos/mpc";
+
+// Evaluator defines types of evaluator
+enum Evaluator {
+    NORMAL  = 0;      // evaluator  
+    LIVE    = 1;      // live evaluator
+}
+
+// ValidateRequest is a message sent when start validation on validation set during evaluation(and live evaluation) process.
+message ValidateRequest {
+    string                      taskID  = 2;          // source taskId that relates to Evaluator
+    Evaluator                   from    = 3;
+    int32                       foldIdx = 4;          // index of fold used as validation set
+    common.PredictTaskResult    predictResult = 5;
+}
+
+
+// TriggerMsgType defines the type of `LiveEvaluationTriggerMsg`
+enum TriggerMsgType {
+    MsgSetAndRun                = 0; // to set the learner for evaluation with training set and start it.
+    MsgGoOn                     = 1; // to drive the learner to continue training until it reaches pause round.
+}
+
+// LiveEvaluationTriggerMsg is a message sent when trigger live evaluation
+message LiveEvaluationTriggerMsg {
+    TriggerMsgType                              type        = 1;
+    uint64                                      pauseRound  = 2;
+    // trainSet is training set after Sample Alignment, and will be split at the beginning of evaluation 
+    repeated common.TrainTaskResult.FileRow     trainSet    = 3;
+    // callbackPayload is message sent back to local learner that triggered evaluation
+    bytes                                       callbackPayload = 4;
+    // payload is message sent to local learner that is used to evaluation
+    bytes                                       payload = 5;
+}

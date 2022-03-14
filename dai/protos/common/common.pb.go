@@ -101,6 +101,65 @@ func (RegMode) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_8f954d82c0b891f6, []int{2}
 }
 
+// EvaluationRule defines the ways of evaluation
+type EvaluationRule int32
+
+const (
+	// to divide the dataset randomly by percentage,
+	// which represents the subset as validation set, and the rest is training set.
+	EvaluationRule_ErRandomSplit EvaluationRule = 0
+	// Cross Validation
+	EvaluationRule_ErCrossVal EvaluationRule = 1
+	// Leave One Out and is suitable for small datasets
+	EvaluationRule_ErLOO EvaluationRule = 2
+)
+
+var EvaluationRule_name = map[int32]string{
+	0: "ErRandomSplit",
+	1: "ErCrossVal",
+	2: "ErLOO",
+}
+
+var EvaluationRule_value = map[string]int32{
+	"ErRandomSplit": 0,
+	"ErCrossVal":    1,
+	"ErLOO":         2,
+}
+
+func (x EvaluationRule) String() string {
+	return proto.EnumName(EvaluationRule_name, int32(x))
+}
+
+func (EvaluationRule) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{3}
+}
+
+// CaseType defines the types of problems
+type CaseType int32
+
+const (
+	CaseType_Regression  CaseType = 0
+	CaseType_BinaryClass CaseType = 1
+)
+
+var CaseType_name = map[int32]string{
+	0: "Regression",
+	1: "BinaryClass",
+}
+
+var CaseType_value = map[string]int32{
+	"Regression":  0,
+	"BinaryClass": 1,
+}
+
+func (x CaseType) String() string {
+	return proto.EnumName(CaseType_name, int32(x))
+}
+
+func (CaseType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{4}
+}
+
 // TrainParams lists all the parameters for training
 type TrainParams struct {
 	Label                string   `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
@@ -295,14 +354,16 @@ func (m *TrainModels) GetIdName() string {
 
 // TaskParams lists all the parameters in a task
 type TaskParams struct {
-	Algo                 Algorithm    `protobuf:"varint,1,opt,name=algo,proto3,enum=common.Algorithm" json:"algo,omitempty"`
-	TaskType             TaskType     `protobuf:"varint,2,opt,name=taskType,proto3,enum=common.TaskType" json:"taskType,omitempty"`
-	TrainParams          *TrainParams `protobuf:"bytes,3,opt,name=trainParams,proto3" json:"trainParams,omitempty"`
-	ModelTaskID          string       `protobuf:"bytes,4,opt,name=modelTaskID,proto3" json:"modelTaskID,omitempty"`
-	ModelParams          *TrainModels `protobuf:"bytes,5,opt,name=modelParams,proto3" json:"modelParams,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
-	XXX_unrecognized     []byte       `json:"-"`
-	XXX_sizecache        int32        `json:"-"`
+	Algo                 Algorithm             `protobuf:"varint,1,opt,name=algo,proto3,enum=common.Algorithm" json:"algo,omitempty"`
+	TaskType             TaskType              `protobuf:"varint,2,opt,name=taskType,proto3,enum=common.TaskType" json:"taskType,omitempty"`
+	TrainParams          *TrainParams          `protobuf:"bytes,3,opt,name=trainParams,proto3" json:"trainParams,omitempty"`
+	ModelTaskID          string                `protobuf:"bytes,4,opt,name=modelTaskID,proto3" json:"modelTaskID,omitempty"`
+	ModelParams          *TrainModels          `protobuf:"bytes,5,opt,name=modelParams,proto3" json:"modelParams,omitempty"`
+	EvalParams           *EvaluationParams     `protobuf:"bytes,6,opt,name=evalParams,proto3" json:"evalParams,omitempty"`
+	LivalParams          *LiveEvaluationParams `protobuf:"bytes,7,opt,name=livalParams,proto3" json:"livalParams,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
 func (m *TaskParams) Reset()         { *m = TaskParams{} }
@@ -365,22 +426,612 @@ func (m *TaskParams) GetModelParams() *TrainModels {
 	return nil
 }
 
-// TrainTaskResult defines final result of training
-type TrainTaskResult struct {
-	TaskID               string   `protobuf:"bytes,1,opt,name=taskID,proto3" json:"taskID,omitempty"`
-	Success              bool     `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
-	Model                []byte   `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
-	ErrMsg               string   `protobuf:"bytes,4,opt,name=errMsg,proto3" json:"errMsg,omitempty"`
+func (m *TaskParams) GetEvalParams() *EvaluationParams {
+	if m != nil {
+		return m.EvalParams
+	}
+	return nil
+}
+
+func (m *TaskParams) GetLivalParams() *LiveEvaluationParams {
+	if m != nil {
+		return m.LivalParams
+	}
+	return nil
+}
+
+// EvaluationParams lists all the parameters for model evaluation
+type EvaluationParams struct {
+	Enable               bool           `protobuf:"varint,1,opt,name=enable,proto3" json:"enable,omitempty"`
+	EvalRule             EvaluationRule `protobuf:"varint,2,opt,name=evalRule,proto3,enum=common.EvaluationRule" json:"evalRule,omitempty"`
+	RandomSplit          *RandomSplit   `protobuf:"bytes,3,opt,name=randomSplit,proto3" json:"randomSplit,omitempty"`
+	Cv                   *CrossVal      `protobuf:"bytes,4,opt,name=cv,proto3" json:"cv,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
+}
+
+func (m *EvaluationParams) Reset()         { *m = EvaluationParams{} }
+func (m *EvaluationParams) String() string { return proto.CompactTextString(m) }
+func (*EvaluationParams) ProtoMessage()    {}
+func (*EvaluationParams) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{3}
+}
+
+func (m *EvaluationParams) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EvaluationParams.Unmarshal(m, b)
+}
+func (m *EvaluationParams) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EvaluationParams.Marshal(b, m, deterministic)
+}
+func (m *EvaluationParams) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EvaluationParams.Merge(m, src)
+}
+func (m *EvaluationParams) XXX_Size() int {
+	return xxx_messageInfo_EvaluationParams.Size(m)
+}
+func (m *EvaluationParams) XXX_DiscardUnknown() {
+	xxx_messageInfo_EvaluationParams.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EvaluationParams proto.InternalMessageInfo
+
+func (m *EvaluationParams) GetEnable() bool {
+	if m != nil {
+		return m.Enable
+	}
+	return false
+}
+
+func (m *EvaluationParams) GetEvalRule() EvaluationRule {
+	if m != nil {
+		return m.EvalRule
+	}
+	return EvaluationRule_ErRandomSplit
+}
+
+func (m *EvaluationParams) GetRandomSplit() *RandomSplit {
+	if m != nil {
+		return m.RandomSplit
+	}
+	return nil
+}
+
+func (m *EvaluationParams) GetCv() *CrossVal {
+	if m != nil {
+		return m.Cv
+	}
+	return nil
+}
+
+// LiveEvaluationParams lists all the parameters for live model evaluation
+type LiveEvaluationParams struct {
+	Enable               bool         `protobuf:"varint,1,opt,name=enable,proto3" json:"enable,omitempty"`
+	RandomSplit          *RandomSplit `protobuf:"bytes,2,opt,name=randomSplit,proto3" json:"randomSplit,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
+}
+
+func (m *LiveEvaluationParams) Reset()         { *m = LiveEvaluationParams{} }
+func (m *LiveEvaluationParams) String() string { return proto.CompactTextString(m) }
+func (*LiveEvaluationParams) ProtoMessage()    {}
+func (*LiveEvaluationParams) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{4}
+}
+
+func (m *LiveEvaluationParams) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LiveEvaluationParams.Unmarshal(m, b)
+}
+func (m *LiveEvaluationParams) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LiveEvaluationParams.Marshal(b, m, deterministic)
+}
+func (m *LiveEvaluationParams) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LiveEvaluationParams.Merge(m, src)
+}
+func (m *LiveEvaluationParams) XXX_Size() int {
+	return xxx_messageInfo_LiveEvaluationParams.Size(m)
+}
+func (m *LiveEvaluationParams) XXX_DiscardUnknown() {
+	xxx_messageInfo_LiveEvaluationParams.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LiveEvaluationParams proto.InternalMessageInfo
+
+func (m *LiveEvaluationParams) GetEnable() bool {
+	if m != nil {
+		return m.Enable
+	}
+	return false
+}
+
+func (m *LiveEvaluationParams) GetRandomSplit() *RandomSplit {
+	if m != nil {
+		return m.RandomSplit
+	}
+	return nil
+}
+
+// RandomSplit defines the way to divide the dataset randomly by percentage
+type RandomSplit struct {
+	PercentLO            int32    `protobuf:"varint,1,opt,name=percentLO,proto3" json:"percentLO,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RandomSplit) Reset()         { *m = RandomSplit{} }
+func (m *RandomSplit) String() string { return proto.CompactTextString(m) }
+func (*RandomSplit) ProtoMessage()    {}
+func (*RandomSplit) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{5}
+}
+
+func (m *RandomSplit) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RandomSplit.Unmarshal(m, b)
+}
+func (m *RandomSplit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RandomSplit.Marshal(b, m, deterministic)
+}
+func (m *RandomSplit) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RandomSplit.Merge(m, src)
+}
+func (m *RandomSplit) XXX_Size() int {
+	return xxx_messageInfo_RandomSplit.Size(m)
+}
+func (m *RandomSplit) XXX_DiscardUnknown() {
+	xxx_messageInfo_RandomSplit.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RandomSplit proto.InternalMessageInfo
+
+func (m *RandomSplit) GetPercentLO() int32 {
+	if m != nil {
+		return m.PercentLO
+	}
+	return 0
+}
+
+// CrossVal lists all parameters required in Cross Validation
+type CrossVal struct {
+	Folds                int32    `protobuf:"varint,1,opt,name=folds,proto3" json:"folds,omitempty"`
+	Shuffle              bool     `protobuf:"varint,2,opt,name=shuffle,proto3" json:"shuffle,omitempty"`
+	Repeated             bool     `protobuf:"varint,3,opt,name=repeated,proto3" json:"repeated,omitempty"`
+	RepeatTimes          int32    `protobuf:"varint,4,opt,name=repeatTimes,proto3" json:"repeatTimes,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CrossVal) Reset()         { *m = CrossVal{} }
+func (m *CrossVal) String() string { return proto.CompactTextString(m) }
+func (*CrossVal) ProtoMessage()    {}
+func (*CrossVal) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{6}
+}
+
+func (m *CrossVal) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CrossVal.Unmarshal(m, b)
+}
+func (m *CrossVal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CrossVal.Marshal(b, m, deterministic)
+}
+func (m *CrossVal) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CrossVal.Merge(m, src)
+}
+func (m *CrossVal) XXX_Size() int {
+	return xxx_messageInfo_CrossVal.Size(m)
+}
+func (m *CrossVal) XXX_DiscardUnknown() {
+	xxx_messageInfo_CrossVal.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CrossVal proto.InternalMessageInfo
+
+func (m *CrossVal) GetFolds() int32 {
+	if m != nil {
+		return m.Folds
+	}
+	return 0
+}
+
+func (m *CrossVal) GetShuffle() bool {
+	if m != nil {
+		return m.Shuffle
+	}
+	return false
+}
+
+func (m *CrossVal) GetRepeated() bool {
+	if m != nil {
+		return m.Repeated
+	}
+	return false
+}
+
+func (m *CrossVal) GetRepeatTimes() int32 {
+	if m != nil {
+		return m.RepeatTimes
+	}
+	return 0
+}
+
+// EvaluationMetricScores defines model evaluation results, covering all supported metrics
+type EvaluationMetricScores struct {
+	// Types that are valid to be assigned to Payload:
+	//	*EvaluationMetricScores_BinaryClassCaseMetricScores
+	//	*EvaluationMetricScores_RegressionCaseMetricScores
+	Payload              isEvaluationMetricScores_Payload `protobuf_oneof:"payload"`
+	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
+	XXX_unrecognized     []byte                           `json:"-"`
+	XXX_sizecache        int32                            `json:"-"`
+}
+
+func (m *EvaluationMetricScores) Reset()         { *m = EvaluationMetricScores{} }
+func (m *EvaluationMetricScores) String() string { return proto.CompactTextString(m) }
+func (*EvaluationMetricScores) ProtoMessage()    {}
+func (*EvaluationMetricScores) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{7}
+}
+
+func (m *EvaluationMetricScores) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EvaluationMetricScores.Unmarshal(m, b)
+}
+func (m *EvaluationMetricScores) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EvaluationMetricScores.Marshal(b, m, deterministic)
+}
+func (m *EvaluationMetricScores) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EvaluationMetricScores.Merge(m, src)
+}
+func (m *EvaluationMetricScores) XXX_Size() int {
+	return xxx_messageInfo_EvaluationMetricScores.Size(m)
+}
+func (m *EvaluationMetricScores) XXX_DiscardUnknown() {
+	xxx_messageInfo_EvaluationMetricScores.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EvaluationMetricScores proto.InternalMessageInfo
+
+type isEvaluationMetricScores_Payload interface {
+	isEvaluationMetricScores_Payload()
+}
+
+type EvaluationMetricScores_BinaryClassCaseMetricScores struct {
+	BinaryClassCaseMetricScores *BinaryClassCaseMetricScores `protobuf:"bytes,1,opt,name=binaryClassCaseMetricScores,proto3,oneof"`
+}
+
+type EvaluationMetricScores_RegressionCaseMetricScores struct {
+	RegressionCaseMetricScores *RegressionCaseMetricScores `protobuf:"bytes,2,opt,name=RegressionCaseMetricScores,proto3,oneof"`
+}
+
+func (*EvaluationMetricScores_BinaryClassCaseMetricScores) isEvaluationMetricScores_Payload() {}
+
+func (*EvaluationMetricScores_RegressionCaseMetricScores) isEvaluationMetricScores_Payload() {}
+
+func (m *EvaluationMetricScores) GetPayload() isEvaluationMetricScores_Payload {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *EvaluationMetricScores) GetBinaryClassCaseMetricScores() *BinaryClassCaseMetricScores {
+	if x, ok := m.GetPayload().(*EvaluationMetricScores_BinaryClassCaseMetricScores); ok {
+		return x.BinaryClassCaseMetricScores
+	}
+	return nil
+}
+
+func (m *EvaluationMetricScores) GetRegressionCaseMetricScores() *RegressionCaseMetricScores {
+	if x, ok := m.GetPayload().(*EvaluationMetricScores_RegressionCaseMetricScores); ok {
+		return x.RegressionCaseMetricScores
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*EvaluationMetricScores) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*EvaluationMetricScores_BinaryClassCaseMetricScores)(nil),
+		(*EvaluationMetricScores_RegressionCaseMetricScores)(nil),
+	}
+}
+
+// BinaryClassCaseMetricScores contains the metric scores of binary classfication
+type BinaryClassCaseMetricScores struct {
+	CaseType             CaseType                                              `protobuf:"varint,1,opt,name=caseType,proto3,enum=common.CaseType" json:"caseType,omitempty"`
+	AvgAccuracy          float64                                               `protobuf:"fixed64,2,opt,name=avgAccuracy,proto3" json:"avgAccuracy,omitempty"`
+	AvgPrecision         float64                                               `protobuf:"fixed64,3,opt,name=avgPrecision,proto3" json:"avgPrecision,omitempty"`
+	AvgRecall            float64                                               `protobuf:"fixed64,4,opt,name=avgRecall,proto3" json:"avgRecall,omitempty"`
+	AvgF1Score           float64                                               `protobuf:"fixed64,5,opt,name=avgF1Score,proto3" json:"avgF1Score,omitempty"`
+	AvgAUC               float64                                               `protobuf:"fixed64,6,opt,name=avgAUC,proto3" json:"avgAUC,omitempty"`
+	MetricsPerFold       map[int32]*BinaryClassCaseMetricScores_MetricsPerFold `protobuf:"bytes,7,rep,name=metricsPerFold,proto3" json:"metricsPerFold,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}                                              `json:"-"`
+	XXX_unrecognized     []byte                                                `json:"-"`
+	XXX_sizecache        int32                                                 `json:"-"`
+}
+
+func (m *BinaryClassCaseMetricScores) Reset()         { *m = BinaryClassCaseMetricScores{} }
+func (m *BinaryClassCaseMetricScores) String() string { return proto.CompactTextString(m) }
+func (*BinaryClassCaseMetricScores) ProtoMessage()    {}
+func (*BinaryClassCaseMetricScores) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{8}
+}
+
+func (m *BinaryClassCaseMetricScores) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BinaryClassCaseMetricScores.Unmarshal(m, b)
+}
+func (m *BinaryClassCaseMetricScores) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BinaryClassCaseMetricScores.Marshal(b, m, deterministic)
+}
+func (m *BinaryClassCaseMetricScores) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BinaryClassCaseMetricScores.Merge(m, src)
+}
+func (m *BinaryClassCaseMetricScores) XXX_Size() int {
+	return xxx_messageInfo_BinaryClassCaseMetricScores.Size(m)
+}
+func (m *BinaryClassCaseMetricScores) XXX_DiscardUnknown() {
+	xxx_messageInfo_BinaryClassCaseMetricScores.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BinaryClassCaseMetricScores proto.InternalMessageInfo
+
+func (m *BinaryClassCaseMetricScores) GetCaseType() CaseType {
+	if m != nil {
+		return m.CaseType
+	}
+	return CaseType_Regression
+}
+
+func (m *BinaryClassCaseMetricScores) GetAvgAccuracy() float64 {
+	if m != nil {
+		return m.AvgAccuracy
+	}
+	return 0
+}
+
+func (m *BinaryClassCaseMetricScores) GetAvgPrecision() float64 {
+	if m != nil {
+		return m.AvgPrecision
+	}
+	return 0
+}
+
+func (m *BinaryClassCaseMetricScores) GetAvgRecall() float64 {
+	if m != nil {
+		return m.AvgRecall
+	}
+	return 0
+}
+
+func (m *BinaryClassCaseMetricScores) GetAvgF1Score() float64 {
+	if m != nil {
+		return m.AvgF1Score
+	}
+	return 0
+}
+
+func (m *BinaryClassCaseMetricScores) GetAvgAUC() float64 {
+	if m != nil {
+		return m.AvgAUC
+	}
+	return 0
+}
+
+func (m *BinaryClassCaseMetricScores) GetMetricsPerFold() map[int32]*BinaryClassCaseMetricScores_MetricsPerFold {
+	if m != nil {
+		return m.MetricsPerFold
+	}
+	return nil
+}
+
+type BinaryClassCaseMetricScores_Point struct {
+	// A point on roc is represented by [3]float64, [FPR, TPR, threshold]([x,y,threshold])
+	P                    []float64 `protobuf:"fixed64,1,rep,packed,name=p,proto3" json:"p,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *BinaryClassCaseMetricScores_Point) Reset()         { *m = BinaryClassCaseMetricScores_Point{} }
+func (m *BinaryClassCaseMetricScores_Point) String() string { return proto.CompactTextString(m) }
+func (*BinaryClassCaseMetricScores_Point) ProtoMessage()    {}
+func (*BinaryClassCaseMetricScores_Point) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{8, 0}
+}
+
+func (m *BinaryClassCaseMetricScores_Point) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BinaryClassCaseMetricScores_Point.Unmarshal(m, b)
+}
+func (m *BinaryClassCaseMetricScores_Point) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BinaryClassCaseMetricScores_Point.Marshal(b, m, deterministic)
+}
+func (m *BinaryClassCaseMetricScores_Point) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BinaryClassCaseMetricScores_Point.Merge(m, src)
+}
+func (m *BinaryClassCaseMetricScores_Point) XXX_Size() int {
+	return xxx_messageInfo_BinaryClassCaseMetricScores_Point.Size(m)
+}
+func (m *BinaryClassCaseMetricScores_Point) XXX_DiscardUnknown() {
+	xxx_messageInfo_BinaryClassCaseMetricScores_Point.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BinaryClassCaseMetricScores_Point proto.InternalMessageInfo
+
+func (m *BinaryClassCaseMetricScores_Point) GetP() []float64 {
+	if m != nil {
+		return m.P
+	}
+	return nil
+}
+
+type BinaryClassCaseMetricScores_MetricsPerFold struct {
+	Accuracy             float64                              `protobuf:"fixed64,1,opt,name=accuracy,proto3" json:"accuracy,omitempty"`
+	Precision            float64                              `protobuf:"fixed64,2,opt,name=precision,proto3" json:"precision,omitempty"`
+	Recall               float64                              `protobuf:"fixed64,3,opt,name=recall,proto3" json:"recall,omitempty"`
+	F1Score              float64                              `protobuf:"fixed64,4,opt,name=F1Score,proto3" json:"F1Score,omitempty"`
+	AUC                  float64                              `protobuf:"fixed64,5,opt,name=AUC,proto3" json:"AUC,omitempty"`
+	ROC                  []*BinaryClassCaseMetricScores_Point `protobuf:"bytes,6,rep,name=ROC,proto3" json:"ROC,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                             `json:"-"`
+	XXX_unrecognized     []byte                               `json:"-"`
+	XXX_sizecache        int32                                `json:"-"`
+}
+
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) Reset() {
+	*m = BinaryClassCaseMetricScores_MetricsPerFold{}
+}
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) String() string {
+	return proto.CompactTextString(m)
+}
+func (*BinaryClassCaseMetricScores_MetricsPerFold) ProtoMessage() {}
+func (*BinaryClassCaseMetricScores_MetricsPerFold) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{8, 1}
+}
+
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BinaryClassCaseMetricScores_MetricsPerFold.Unmarshal(m, b)
+}
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BinaryClassCaseMetricScores_MetricsPerFold.Marshal(b, m, deterministic)
+}
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BinaryClassCaseMetricScores_MetricsPerFold.Merge(m, src)
+}
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) XXX_Size() int {
+	return xxx_messageInfo_BinaryClassCaseMetricScores_MetricsPerFold.Size(m)
+}
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) XXX_DiscardUnknown() {
+	xxx_messageInfo_BinaryClassCaseMetricScores_MetricsPerFold.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BinaryClassCaseMetricScores_MetricsPerFold proto.InternalMessageInfo
+
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) GetAccuracy() float64 {
+	if m != nil {
+		return m.Accuracy
+	}
+	return 0
+}
+
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) GetPrecision() float64 {
+	if m != nil {
+		return m.Precision
+	}
+	return 0
+}
+
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) GetRecall() float64 {
+	if m != nil {
+		return m.Recall
+	}
+	return 0
+}
+
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) GetF1Score() float64 {
+	if m != nil {
+		return m.F1Score
+	}
+	return 0
+}
+
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) GetAUC() float64 {
+	if m != nil {
+		return m.AUC
+	}
+	return 0
+}
+
+func (m *BinaryClassCaseMetricScores_MetricsPerFold) GetROC() []*BinaryClassCaseMetricScores_Point {
+	if m != nil {
+		return m.ROC
+	}
+	return nil
+}
+
+// BinaryClassCaseMetricScores contains the metric scores of regression
+type RegressionCaseMetricScores struct {
+	CaseType             CaseType          `protobuf:"varint,1,opt,name=caseType,proto3,enum=common.CaseType" json:"caseType,omitempty"`
+	RMSEs                map[int32]float64 `protobuf:"bytes,2,rep,name=RMSEs,proto3" json:"RMSEs,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"fixed64,2,opt,name=value,proto3"`
+	MeanRMSE             float64           `protobuf:"fixed64,3,opt,name=meanRMSE,proto3" json:"meanRMSE,omitempty"`
+	StdDevRMSE           float64           `protobuf:"fixed64,4,opt,name=stdDevRMSE,proto3" json:"stdDevRMSE,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
+}
+
+func (m *RegressionCaseMetricScores) Reset()         { *m = RegressionCaseMetricScores{} }
+func (m *RegressionCaseMetricScores) String() string { return proto.CompactTextString(m) }
+func (*RegressionCaseMetricScores) ProtoMessage()    {}
+func (*RegressionCaseMetricScores) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{9}
+}
+
+func (m *RegressionCaseMetricScores) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RegressionCaseMetricScores.Unmarshal(m, b)
+}
+func (m *RegressionCaseMetricScores) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RegressionCaseMetricScores.Marshal(b, m, deterministic)
+}
+func (m *RegressionCaseMetricScores) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegressionCaseMetricScores.Merge(m, src)
+}
+func (m *RegressionCaseMetricScores) XXX_Size() int {
+	return xxx_messageInfo_RegressionCaseMetricScores.Size(m)
+}
+func (m *RegressionCaseMetricScores) XXX_DiscardUnknown() {
+	xxx_messageInfo_RegressionCaseMetricScores.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RegressionCaseMetricScores proto.InternalMessageInfo
+
+func (m *RegressionCaseMetricScores) GetCaseType() CaseType {
+	if m != nil {
+		return m.CaseType
+	}
+	return CaseType_Regression
+}
+
+func (m *RegressionCaseMetricScores) GetRMSEs() map[int32]float64 {
+	if m != nil {
+		return m.RMSEs
+	}
+	return nil
+}
+
+func (m *RegressionCaseMetricScores) GetMeanRMSE() float64 {
+	if m != nil {
+		return m.MeanRMSE
+	}
+	return 0
+}
+
+func (m *RegressionCaseMetricScores) GetStdDevRMSE() float64 {
+	if m != nil {
+		return m.StdDevRMSE
+	}
+	return 0
+}
+
+// TrainTaskResult defines final result of training
+type TrainTaskResult struct {
+	TaskID           string                  `protobuf:"bytes,1,opt,name=taskID,proto3" json:"taskID,omitempty"`
+	Success          bool                    `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
+	Model            []byte                  `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
+	ErrMsg           string                  `protobuf:"bytes,4,opt,name=errMsg,proto3" json:"errMsg,omitempty"`
+	EvalMetricScores *EvaluationMetricScores `protobuf:"bytes,6,opt,name=evalMetricScores,proto3" json:"evalMetricScores,omitempty"`
+	// trainSet is training set after Sample Alignment, and will be used in evaluation,
+	// and it will be deleted from TrainTaskResult after evaluation
+	TrainSet             []*TrainTaskResult_FileRow `protobuf:"bytes,5,rep,name=trainSet,proto3" json:"trainSet,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
 }
 
 func (m *TrainTaskResult) Reset()         { *m = TrainTaskResult{} }
 func (m *TrainTaskResult) String() string { return proto.CompactTextString(m) }
 func (*TrainTaskResult) ProtoMessage()    {}
 func (*TrainTaskResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8f954d82c0b891f6, []int{3}
+	return fileDescriptor_8f954d82c0b891f6, []int{10}
 }
 
 func (m *TrainTaskResult) XXX_Unmarshal(b []byte) error {
@@ -429,6 +1080,59 @@ func (m *TrainTaskResult) GetErrMsg() string {
 	return ""
 }
 
+func (m *TrainTaskResult) GetEvalMetricScores() *EvaluationMetricScores {
+	if m != nil {
+		return m.EvalMetricScores
+	}
+	return nil
+}
+
+func (m *TrainTaskResult) GetTrainSet() []*TrainTaskResult_FileRow {
+	if m != nil {
+		return m.TrainSet
+	}
+	return nil
+}
+
+type TrainTaskResult_FileRow struct {
+	Row                  []string `protobuf:"bytes,1,rep,name=row,proto3" json:"row,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TrainTaskResult_FileRow) Reset()         { *m = TrainTaskResult_FileRow{} }
+func (m *TrainTaskResult_FileRow) String() string { return proto.CompactTextString(m) }
+func (*TrainTaskResult_FileRow) ProtoMessage()    {}
+func (*TrainTaskResult_FileRow) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8f954d82c0b891f6, []int{10, 0}
+}
+
+func (m *TrainTaskResult_FileRow) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TrainTaskResult_FileRow.Unmarshal(m, b)
+}
+func (m *TrainTaskResult_FileRow) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TrainTaskResult_FileRow.Marshal(b, m, deterministic)
+}
+func (m *TrainTaskResult_FileRow) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TrainTaskResult_FileRow.Merge(m, src)
+}
+func (m *TrainTaskResult_FileRow) XXX_Size() int {
+	return xxx_messageInfo_TrainTaskResult_FileRow.Size(m)
+}
+func (m *TrainTaskResult_FileRow) XXX_DiscardUnknown() {
+	xxx_messageInfo_TrainTaskResult_FileRow.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TrainTaskResult_FileRow proto.InternalMessageInfo
+
+func (m *TrainTaskResult_FileRow) GetRow() []string {
+	if m != nil {
+		return m.Row
+	}
+	return nil
+}
+
 // PredictTaskResult defines final result of prediction
 type PredictTaskResult struct {
 	TaskID               string   `protobuf:"bytes,1,opt,name=taskID,proto3" json:"taskID,omitempty"`
@@ -444,7 +1148,7 @@ func (m *PredictTaskResult) Reset()         { *m = PredictTaskResult{} }
 func (m *PredictTaskResult) String() string { return proto.CompactTextString(m) }
 func (*PredictTaskResult) ProtoMessage()    {}
 func (*PredictTaskResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8f954d82c0b891f6, []int{4}
+	return fileDescriptor_8f954d82c0b891f6, []int{11}
 }
 
 func (m *PredictTaskResult) XXX_Unmarshal(b []byte) error {
@@ -508,7 +1212,7 @@ func (m *StartTaskRequest) Reset()         { *m = StartTaskRequest{} }
 func (m *StartTaskRequest) String() string { return proto.CompactTextString(m) }
 func (*StartTaskRequest) ProtoMessage()    {}
 func (*StartTaskRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8f954d82c0b891f6, []int{5}
+	return fileDescriptor_8f954d82c0b891f6, []int{12}
 }
 
 func (m *StartTaskRequest) XXX_Unmarshal(b []byte) error {
@@ -570,7 +1274,7 @@ func (m *StopTaskRequest) Reset()         { *m = StopTaskRequest{} }
 func (m *StopTaskRequest) String() string { return proto.CompactTextString(m) }
 func (*StopTaskRequest) ProtoMessage()    {}
 func (*StopTaskRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8f954d82c0b891f6, []int{6}
+	return fileDescriptor_8f954d82c0b891f6, []int{13}
 }
 
 func (m *StopTaskRequest) XXX_Unmarshal(b []byte) error {
@@ -609,13 +1313,27 @@ func init() {
 	proto.RegisterEnum("common.Algorithm", Algorithm_name, Algorithm_value)
 	proto.RegisterEnum("common.TaskType", TaskType_name, TaskType_value)
 	proto.RegisterEnum("common.RegMode", RegMode_name, RegMode_value)
+	proto.RegisterEnum("common.EvaluationRule", EvaluationRule_name, EvaluationRule_value)
+	proto.RegisterEnum("common.CaseType", CaseType_name, CaseType_value)
 	proto.RegisterType((*TrainParams)(nil), "common.TrainParams")
 	proto.RegisterType((*TrainModels)(nil), "common.TrainModels")
 	proto.RegisterMapType((map[string]float64)(nil), "common.TrainModels.SigmasEntry")
 	proto.RegisterMapType((map[string]float64)(nil), "common.TrainModels.ThetasEntry")
 	proto.RegisterMapType((map[string]float64)(nil), "common.TrainModels.XbarsEntry")
 	proto.RegisterType((*TaskParams)(nil), "common.TaskParams")
+	proto.RegisterType((*EvaluationParams)(nil), "common.EvaluationParams")
+	proto.RegisterType((*LiveEvaluationParams)(nil), "common.LiveEvaluationParams")
+	proto.RegisterType((*RandomSplit)(nil), "common.RandomSplit")
+	proto.RegisterType((*CrossVal)(nil), "common.CrossVal")
+	proto.RegisterType((*EvaluationMetricScores)(nil), "common.EvaluationMetricScores")
+	proto.RegisterType((*BinaryClassCaseMetricScores)(nil), "common.BinaryClassCaseMetricScores")
+	proto.RegisterMapType((map[int32]*BinaryClassCaseMetricScores_MetricsPerFold)(nil), "common.BinaryClassCaseMetricScores.MetricsPerFoldEntry")
+	proto.RegisterType((*BinaryClassCaseMetricScores_Point)(nil), "common.BinaryClassCaseMetricScores.Point")
+	proto.RegisterType((*BinaryClassCaseMetricScores_MetricsPerFold)(nil), "common.BinaryClassCaseMetricScores.MetricsPerFold")
+	proto.RegisterType((*RegressionCaseMetricScores)(nil), "common.RegressionCaseMetricScores")
+	proto.RegisterMapType((map[int32]float64)(nil), "common.RegressionCaseMetricScores.RMSEsEntry")
 	proto.RegisterType((*TrainTaskResult)(nil), "common.TrainTaskResult")
+	proto.RegisterType((*TrainTaskResult_FileRow)(nil), "common.TrainTaskResult.FileRow")
 	proto.RegisterType((*PredictTaskResult)(nil), "common.PredictTaskResult")
 	proto.RegisterType((*StartTaskRequest)(nil), "common.StartTaskRequest")
 	proto.RegisterType((*StopTaskRequest)(nil), "common.StopTaskRequest")
@@ -624,52 +1342,95 @@ func init() {
 func init() { proto.RegisterFile("common/common.proto", fileDescriptor_8f954d82c0b891f6) }
 
 var fileDescriptor_8f954d82c0b891f6 = []byte{
-	// 750 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x55, 0xdb, 0x6a, 0xe3, 0x46,
-	0x18, 0x8e, 0x7c, 0x94, 0x7f, 0xa5, 0x89, 0x32, 0x09, 0xad, 0x30, 0xa5, 0x15, 0x86, 0x82, 0x6b,
-	0x4a, 0x0c, 0x4e, 0x43, 0x93, 0x5e, 0x14, 0x72, 0x30, 0xc1, 0xe0, 0x38, 0x66, 0xec, 0x96, 0xd0,
-	0x9b, 0x30, 0x96, 0x66, 0x65, 0x11, 0xc9, 0x72, 0x34, 0xa3, 0x65, 0xbd, 0x57, 0xfb, 0x40, 0x7b,
-	0xb3, 0x8f, 0xb6, 0x6f, 0xb0, 0xcc, 0xc1, 0x96, 0x12, 0x12, 0x76, 0xc3, 0xde, 0x24, 0xf3, 0xfd,
-	0x87, 0xef, 0x9b, 0xff, 0x30, 0x16, 0xec, 0x7b, 0x49, 0x1c, 0x27, 0x8b, 0xae, 0xfa, 0x77, 0xb8,
-	0x4c, 0x13, 0x9e, 0xa0, 0x9a, 0x42, 0xad, 0x8f, 0x25, 0xb0, 0xa6, 0x29, 0x09, 0x17, 0x63, 0x92,
-	0x92, 0x98, 0xa1, 0x03, 0xa8, 0x46, 0x64, 0x46, 0x23, 0xc7, 0x70, 0x8d, 0x76, 0x03, 0x2b, 0x80,
-	0x7e, 0x86, 0x86, 0x3c, 0x8c, 0x48, 0x4c, 0x9d, 0x92, 0xf4, 0xe4, 0x06, 0xf4, 0x3b, 0xd4, 0x53,
-	0x1a, 0x5c, 0x27, 0x3e, 0x75, 0xca, 0xae, 0xd1, 0xde, 0xe9, 0xed, 0x1e, 0x6a, 0x2d, 0xac, 0xcc,
-	0x78, 0xed, 0x47, 0x4d, 0x30, 0x53, 0x1a, 0x48, 0x2d, 0xa7, 0xe2, 0x1a, 0x6d, 0x03, 0x6f, 0xb0,
-	0x90, 0x26, 0xd1, 0x72, 0x4e, 0x9c, 0xaa, 0x74, 0x28, 0x20, 0xa4, 0x49, 0xbc, 0x8c, 0x42, 0x9e,
-	0xf9, 0xd4, 0xa9, 0x49, 0x4f, 0x6e, 0x10, 0x7c, 0xc4, 0xf3, 0xb2, 0x94, 0x78, 0x2b, 0xa7, 0xee,
-	0x1a, 0xed, 0x32, 0xde, 0x60, 0x91, 0x19, 0xb2, 0x29, 0x11, 0xec, 0xdc, 0x31, 0x5d, 0xa3, 0x6d,
-	0xe2, 0xdc, 0x80, 0x7e, 0x84, 0x5a, 0xe8, 0xcb, 0x7a, 0x1a, 0xb2, 0x1e, 0x8d, 0x44, 0xd6, 0x39,
-	0xe1, 0xde, 0x7c, 0x12, 0xbe, 0xa7, 0x0e, 0x48, 0xca, 0xdc, 0xd0, 0xfa, 0x54, 0xd6, 0xed, 0x12,
-	0xd5, 0x44, 0x0c, 0xfd, 0x05, 0x35, 0x3e, 0xa7, 0x9c, 0x30, 0xc7, 0x70, 0xcb, 0x6d, 0xab, 0xf7,
-	0xeb, 0xba, 0xf2, 0x42, 0xd0, 0xe1, 0x54, 0x46, 0xf4, 0x17, 0x3c, 0x5d, 0x61, 0x1d, 0x8e, 0xfe,
-	0x84, 0xea, 0xbb, 0x19, 0x49, 0x99, 0x53, 0x92, 0x79, 0xbf, 0x3c, 0x97, 0x77, 0x2b, 0x02, 0x54,
-	0x9a, 0x0a, 0x16, 0x72, 0x2c, 0x0c, 0x62, 0xc2, 0x9c, 0xf2, 0xcb, 0x72, 0x13, 0x19, 0xa1, 0xe5,
-	0x54, 0x78, 0x3e, 0xd6, 0xca, 0x93, 0xb1, 0xe6, 0x1d, 0xaa, 0xbe, 0xdc, 0xa1, 0x5a, 0xb1, 0x43,
-	0xcd, 0x53, 0xb0, 0x0a, 0x15, 0x21, 0x1b, 0xca, 0xf7, 0x74, 0xa5, 0xf7, 0x45, 0x1c, 0x85, 0xd8,
-	0x5b, 0x12, 0x65, 0x6a, 0x53, 0x0c, 0xac, 0xc0, 0xdf, 0xa5, 0x13, 0xa3, 0x79, 0x02, 0x90, 0x17,
-	0xf5, 0xaa, 0xcc, 0x53, 0xb0, 0x0a, 0x75, 0xbd, 0x26, 0xb5, 0xf5, 0xd9, 0x00, 0x98, 0x12, 0x76,
-	0xaf, 0x37, 0xfc, 0x37, 0xa8, 0x90, 0x28, 0x48, 0x64, 0xee, 0x4e, 0x6f, 0x6f, 0xdd, 0xc1, 0xb3,
-	0x28, 0x48, 0xd2, 0x90, 0xcf, 0x63, 0x2c, 0xdd, 0xe8, 0x0f, 0x30, 0x39, 0x61, 0xf7, 0xd3, 0xd5,
-	0x52, 0x51, 0xee, 0xf4, 0xec, 0x4d, 0xb3, 0xb5, 0x1d, 0x6f, 0x22, 0xd0, 0x31, 0x58, 0x3c, 0x7f,
-	0x45, 0xf2, 0x19, 0x58, 0xbd, 0xfd, 0x47, 0xd3, 0x51, 0x2e, 0x5c, 0x8c, 0x43, 0x2e, 0x58, 0xb1,
-	0x18, 0x9a, 0x60, 0x1c, 0x5c, 0xea, 0xe1, 0x14, 0x4d, 0x82, 0x58, 0x42, 0x4d, 0x5c, 0x7d, 0x86,
-	0x58, 0x8d, 0x1d, 0x17, 0xe3, 0x5a, 0x0f, 0xb0, 0x2b, 0x7d, 0x82, 0x05, 0x53, 0x96, 0x45, 0x72,
-	0x9c, 0x5c, 0xc9, 0xa8, 0xae, 0x69, 0x84, 0x1c, 0xa8, 0xb3, 0xcc, 0xf3, 0x28, 0x63, 0xb2, 0x4e,
-	0x13, 0xaf, 0xa1, 0x68, 0xa9, 0xe4, 0x94, 0xe5, 0x6c, 0x63, 0x05, 0x04, 0x0f, 0x4d, 0xd3, 0x6b,
-	0x16, 0xe8, 0xeb, 0x6a, 0xd4, 0x5a, 0xc1, 0xde, 0x38, 0xa5, 0x7e, 0xe8, 0xf1, 0xef, 0x12, 0x6d,
-	0x82, 0x99, 0x64, 0xdc, 0x4b, 0x62, 0xca, 0xb4, 0xee, 0x06, 0xbf, 0x28, 0xfd, 0xc1, 0x00, 0x7b,
-	0xc2, 0x49, 0xaa, 0x95, 0x1f, 0x32, 0xca, 0x8a, 0xd2, 0xa5, 0x47, 0xd2, 0x08, 0x2a, 0x6f, 0xc2,
-	0x88, 0x6a, 0x72, 0x79, 0x16, 0x95, 0xce, 0x13, 0xc6, 0x99, 0x53, 0x71, 0xcb, 0xe2, 0x79, 0x48,
-	0x80, 0x3a, 0x50, 0x5b, 0x16, 0xdb, 0x8e, 0x8a, 0x0b, 0xa0, 0xc7, 0xa9, 0x23, 0x5a, 0xff, 0xc2,
-	0xee, 0x84, 0x27, 0xcb, 0x6f, 0xb9, 0x40, 0x4e, 0x5b, 0xf9, 0x1a, 0x6d, 0xe7, 0x1f, 0x68, 0x6c,
-	0x16, 0x13, 0x39, 0x70, 0x30, 0x1c, 0x8c, 0xfa, 0x67, 0xf8, 0x0e, 0xf7, 0xaf, 0x70, 0x7f, 0x32,
-	0x19, 0xdc, 0x8c, 0xee, 0xfe, 0x1b, 0xda, 0x5b, 0xe8, 0x27, 0xd8, 0x1f, 0xde, 0x5c, 0x0d, 0x2e,
-	0x9e, 0x38, 0x8c, 0x4e, 0x0b, 0xcc, 0xf5, 0xb6, 0xa2, 0x06, 0x54, 0x87, 0xfd, 0x33, 0x3c, 0xb2,
-	0xb7, 0x90, 0x05, 0xf5, 0x31, 0xee, 0x5f, 0x0e, 0x2e, 0xa6, 0xb6, 0xd1, 0x39, 0x86, 0xba, 0xfe,
-	0x9d, 0x46, 0xdb, 0x60, 0x62, 0x1a, 0xdc, 0x8d, 0x92, 0x05, 0xb5, 0xb7, 0xd0, 0x0f, 0xd0, 0x10,
-	0x68, 0x48, 0x18, 0x4b, 0x6c, 0x63, 0x0d, 0x71, 0xe8, 0x07, 0xd4, 0x2e, 0x9d, 0x1f, 0xff, 0x7f,
-	0x14, 0x84, 0x7c, 0x9e, 0xcd, 0xc4, 0xf5, 0xbb, 0x63, 0xe2, 0xfb, 0x11, 0x55, 0x7f, 0x35, 0xb8,
-	0x9c, 0xde, 0x76, 0x7d, 0x12, 0x76, 0xe5, 0x07, 0x87, 0xe9, 0xcf, 0xcf, 0xac, 0x26, 0xe1, 0xd1,
-	0x97, 0x00, 0x00, 0x00, 0xff, 0xff, 0x31, 0xb8, 0x4b, 0x20, 0x96, 0x06, 0x00, 0x00,
+	// 1429 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x57, 0xcd, 0x6e, 0xdb, 0xc6,
+	0x16, 0x36, 0x25, 0x4b, 0xa2, 0x0e, 0x1d, 0x99, 0x19, 0xe7, 0xe6, 0x12, 0x4a, 0x90, 0x2b, 0xf0,
+	0xa2, 0x80, 0xe3, 0xb4, 0x36, 0xaa, 0x34, 0x48, 0xd2, 0x00, 0x01, 0x6c, 0x59, 0x49, 0x5c, 0xc8,
+	0xb6, 0x30, 0x52, 0x82, 0xa0, 0x1b, 0x63, 0x4c, 0x8e, 0x29, 0x22, 0x94, 0xa8, 0x72, 0x28, 0x25,
+	0xea, 0xaa, 0x9b, 0x3e, 0x43, 0x5f, 0xa0, 0xcb, 0x6e, 0xba, 0xea, 0x43, 0xf4, 0x51, 0xba, 0xeb,
+	0x13, 0x14, 0xf3, 0x43, 0x71, 0x64, 0x5b, 0x8e, 0x8d, 0x6e, 0x6c, 0x9e, 0x33, 0xe7, 0x67, 0xce,
+	0x77, 0x66, 0xe6, 0x3b, 0x82, 0x0d, 0x2f, 0x1e, 0x0e, 0xe3, 0xd1, 0x8e, 0xfc, 0xb7, 0x3d, 0x4e,
+	0xe2, 0x34, 0x46, 0x65, 0x29, 0xb9, 0xbf, 0x15, 0xc0, 0xea, 0x27, 0x24, 0x1c, 0x75, 0x49, 0x42,
+	0x86, 0x0c, 0xdd, 0x81, 0x52, 0x44, 0x4e, 0x69, 0xe4, 0x18, 0x0d, 0x63, 0xb3, 0x8a, 0xa5, 0x80,
+	0xee, 0x43, 0x55, 0x7c, 0x1c, 0x91, 0x21, 0x75, 0x0a, 0x62, 0x25, 0x57, 0xa0, 0x87, 0x50, 0x49,
+	0x68, 0x70, 0x18, 0xfb, 0xd4, 0x29, 0x36, 0x8c, 0xcd, 0x5a, 0x73, 0x7d, 0x5b, 0xe5, 0xc2, 0x52,
+	0x8d, 0xb3, 0x75, 0x54, 0x07, 0x33, 0xa1, 0x81, 0xc8, 0xe5, 0xac, 0x36, 0x8c, 0x4d, 0x03, 0xcf,
+	0x65, 0x9e, 0x9a, 0x44, 0xe3, 0x01, 0x71, 0x4a, 0x62, 0x41, 0x0a, 0x3c, 0x35, 0x19, 0x8e, 0xa3,
+	0x30, 0x9d, 0xf8, 0xd4, 0x29, 0x8b, 0x95, 0x5c, 0xc1, 0xe3, 0x11, 0xcf, 0x9b, 0x24, 0xc4, 0x9b,
+	0x39, 0x95, 0x86, 0xb1, 0x59, 0xc4, 0x73, 0x99, 0x7b, 0x86, 0xac, 0x4f, 0x78, 0xf4, 0xd4, 0x31,
+	0x1b, 0xc6, 0xa6, 0x89, 0x73, 0x05, 0xba, 0x0b, 0xe5, 0xd0, 0x17, 0xf5, 0x54, 0x45, 0x3d, 0x4a,
+	0xe2, 0x5e, 0x7b, 0x24, 0xf5, 0x06, 0xbd, 0xf0, 0x47, 0xea, 0x80, 0x08, 0x99, 0x2b, 0xdc, 0xdf,
+	0x8b, 0x0a, 0x2e, 0x5e, 0x4d, 0xc4, 0xd0, 0x53, 0x28, 0xa7, 0x03, 0x9a, 0x12, 0xe6, 0x18, 0x8d,
+	0xe2, 0xa6, 0xd5, 0xfc, 0x5f, 0x56, 0xb9, 0x66, 0xb4, 0xdd, 0x17, 0x16, 0xed, 0x51, 0x9a, 0xcc,
+	0xb0, 0x32, 0x47, 0xdf, 0x40, 0xe9, 0xd3, 0x29, 0x49, 0x98, 0x53, 0x10, 0x7e, 0x0f, 0x2e, 0xf3,
+	0x7b, 0xcf, 0x0d, 0xa4, 0x9b, 0x34, 0xe6, 0xe9, 0x58, 0x18, 0x0c, 0x09, 0x73, 0x8a, 0xcb, 0xd3,
+	0xf5, 0x84, 0x85, 0x4a, 0x27, 0xcd, 0xf3, 0xb6, 0xae, 0x9e, 0x6b, 0x6b, 0x8e, 0x50, 0x69, 0x39,
+	0x42, 0x65, 0x1d, 0xa1, 0xfa, 0x73, 0xb0, 0xb4, 0x8a, 0x90, 0x0d, 0xc5, 0x0f, 0x74, 0xa6, 0xce,
+	0x0b, 0xff, 0xe4, 0xc9, 0xa6, 0x24, 0x9a, 0xc8, 0x93, 0x62, 0x60, 0x29, 0x7c, 0x5b, 0x78, 0x66,
+	0xd4, 0x9f, 0x01, 0xe4, 0x45, 0xdd, 0xc8, 0xf3, 0x39, 0x58, 0x5a, 0x5d, 0x37, 0x71, 0x75, 0xff,
+	0x2a, 0x00, 0xf4, 0x09, 0xfb, 0xa0, 0x4e, 0xf8, 0x17, 0xb0, 0x4a, 0xa2, 0x20, 0x16, 0xbe, 0xb5,
+	0xe6, 0xed, 0x0c, 0xc1, 0xdd, 0x28, 0x88, 0x93, 0x30, 0x1d, 0x0c, 0xb1, 0x58, 0x46, 0x5f, 0x82,
+	0x99, 0x12, 0xf6, 0xa1, 0x3f, 0x1b, 0xcb, 0x90, 0xb5, 0xa6, 0x3d, 0x07, 0x5b, 0xe9, 0xf1, 0xdc,
+	0x02, 0x3d, 0x01, 0x2b, 0xcd, 0x6f, 0x91, 0xb8, 0x06, 0x56, 0x73, 0x63, 0xa1, 0x3b, 0x72, 0x09,
+	0xeb, 0x76, 0xa8, 0x01, 0xd6, 0x90, 0x37, 0x8d, 0x47, 0x3c, 0xd8, 0x57, 0xcd, 0xd1, 0x55, 0x3c,
+	0xb0, 0x10, 0x55, 0xe0, 0xd2, 0x25, 0x81, 0x65, 0xdb, 0xb1, 0x6e, 0x87, 0x9e, 0x01, 0xd0, 0x29,
+	0xc9, 0xbc, 0xca, 0xc2, 0xcb, 0xc9, 0xbc, 0xda, 0x1c, 0x1b, 0x92, 0x86, 0x71, 0xb6, 0x27, 0xcd,
+	0x16, 0xbd, 0x04, 0x2b, 0x0a, 0x73, 0xd7, 0x8a, 0x70, 0xbd, 0x9f, 0xb9, 0x76, 0xc2, 0x29, 0xbd,
+	0xe0, 0xae, 0x3b, 0xb8, 0x7f, 0x18, 0x60, 0x9f, 0xb7, 0xe0, 0x47, 0x89, 0x8e, 0xc8, 0x69, 0x44,
+	0x05, 0xea, 0x26, 0x56, 0x12, 0x6a, 0x82, 0xc9, 0x53, 0xe3, 0x49, 0x94, 0x81, 0x7c, 0xf7, 0xe2,
+	0x26, 0xf9, 0x2a, 0x9e, 0xdb, 0x71, 0x44, 0x12, 0x32, 0xf2, 0xe3, 0x61, 0x8f, 0x3f, 0x02, 0xe7,
+	0xa1, 0xc6, 0xf9, 0x12, 0xd6, 0xed, 0x50, 0x03, 0x0a, 0xde, 0x54, 0x20, 0x6c, 0xe5, 0x9d, 0x6c,
+	0x25, 0x31, 0x63, 0xef, 0x48, 0x84, 0x0b, 0xde, 0xd4, 0xa5, 0x70, 0xe7, 0xb2, 0xf2, 0x96, 0x6e,
+	0xfe, 0xdc, 0x46, 0x0a, 0xd7, 0xdb, 0x88, 0xfb, 0x08, 0x2c, 0x6d, 0x8d, 0xdf, 0xc1, 0x31, 0x4d,
+	0x3c, 0x3a, 0x4a, 0x3b, 0xc7, 0x22, 0x41, 0x09, 0xe7, 0x0a, 0xf7, 0x13, 0x98, 0xd9, 0x1e, 0xf9,
+	0x09, 0x3f, 0x8b, 0x23, 0x9f, 0x29, 0x2b, 0x29, 0x20, 0x07, 0x2a, 0x6c, 0x30, 0x39, 0x3b, 0x53,
+	0x08, 0x9a, 0x38, 0x13, 0xe5, 0x5b, 0x3b, 0xa6, 0x24, 0xa5, 0xbe, 0x40, 0xc9, 0xc4, 0x73, 0x99,
+	0x1f, 0x3c, 0xf9, 0xdd, 0x0f, 0x87, 0x94, 0x09, 0x58, 0x4a, 0x58, 0x57, 0xb9, 0x7f, 0x1b, 0x70,
+	0x37, 0x87, 0xe2, 0x90, 0xa6, 0x49, 0xe8, 0xf5, 0xbc, 0x38, 0xa1, 0x0c, 0x05, 0x70, 0xef, 0x34,
+	0x1c, 0x91, 0x64, 0xd6, 0x8a, 0x08, 0x63, 0x2d, 0xc2, 0xa8, 0xbe, 0x2c, 0xb6, 0x67, 0x35, 0xff,
+	0x9f, 0x01, 0xb1, 0xb7, 0xdc, 0xf4, 0xcd, 0x0a, 0xbe, 0x2a, 0x12, 0xf2, 0xa1, 0x8e, 0x69, 0x90,
+	0x50, 0xc6, 0xc2, 0x78, 0x74, 0x21, 0x8f, 0x04, 0xdc, 0xd5, 0xb8, 0x66, 0x89, 0xe5, 0x9b, 0x15,
+	0x7c, 0x45, 0x9c, 0xbd, 0x2a, 0x54, 0xc6, 0x64, 0x16, 0xc5, 0xc4, 0x77, 0x7f, 0x2d, 0xc1, 0xbd,
+	0x2b, 0xf6, 0xcb, 0x1f, 0x05, 0x8f, 0x30, 0x2a, 0x1e, 0x05, 0x63, 0xf1, 0x51, 0x68, 0x29, 0x3d,
+	0x9e, 0x5b, 0x70, 0x90, 0xc9, 0x34, 0xd8, 0xcd, 0xf8, 0x49, 0x3e, 0x4c, 0xba, 0x0a, 0xb9, 0xb0,
+	0x46, 0xa6, 0x41, 0x37, 0xa1, 0x5e, 0xc8, 0xb7, 0x26, 0xda, 0x64, 0xe0, 0x05, 0x9d, 0x20, 0xc0,
+	0x69, 0x80, 0xa9, 0x47, 0xa2, 0x48, 0x71, 0x66, 0xae, 0x40, 0x0f, 0x00, 0xc8, 0x34, 0x78, 0xf5,
+	0xb5, 0xd8, 0xa0, 0x62, 0x4e, 0x4d, 0xc3, 0x0f, 0x2f, 0x4f, 0xf8, 0xb6, 0xa5, 0xb8, 0x53, 0x49,
+	0xe8, 0x04, 0x6a, 0x43, 0x51, 0x19, 0xeb, 0xd2, 0xe4, 0x55, 0x1c, 0xf9, 0x4e, 0x45, 0x30, 0xca,
+	0xd3, 0x6b, 0xb4, 0x6d, 0xfb, 0x70, 0xc1, 0x53, 0x32, 0xcd, 0xb9, 0x70, 0xf5, 0xff, 0x40, 0xa9,
+	0x1b, 0x87, 0xa3, 0x14, 0xad, 0x81, 0x31, 0x16, 0xec, 0x68, 0x60, 0x63, 0x5c, 0xff, 0xd3, 0x80,
+	0xda, 0xa2, 0xfb, 0x02, 0x87, 0x1b, 0x72, 0x26, 0xd0, 0x39, 0x7c, 0x3c, 0x47, 0x47, 0x02, 0x98,
+	0x2b, 0x78, 0x71, 0x89, 0xc4, 0x45, 0x02, 0xa7, 0x24, 0x7e, 0x27, 0x32, 0x44, 0x24, 0x60, 0x99,
+	0xc8, 0x79, 0x83, 0x63, 0x21, 0x71, 0xe2, 0x9f, 0xe8, 0x05, 0x14, 0xf1, 0x31, 0x47, 0x87, 0x57,
+	0xff, 0xf0, 0x3a, 0xd5, 0x8b, 0xb2, 0x30, 0xf7, 0xaa, 0x4f, 0x60, 0xe3, 0x12, 0x2c, 0x74, 0x76,
+	0x2a, 0x49, 0x76, 0x7a, 0xa3, 0xb3, 0x93, 0xd5, 0x6c, 0xde, 0x1c, 0x65, 0x9d, 0xd1, 0x7e, 0x2e,
+	0x5c, 0x75, 0x31, 0x6e, 0x78, 0x4a, 0x5b, 0x50, 0xc2, 0x87, 0xbd, 0x76, 0x36, 0x89, 0x7c, 0xf5,
+	0xf9, 0xfb, 0xb4, 0x2d, 0xec, 0xd5, 0x60, 0x22, 0xbe, 0x79, 0x0f, 0x87, 0x94, 0x8c, 0xb8, 0xa0,
+	0x7a, 0x31, 0x97, 0xf9, 0x11, 0x65, 0xa9, 0xbf, 0x4f, 0xa7, 0x62, 0x55, 0x36, 0x44, 0xd3, 0xf0,
+	0xa1, 0x20, 0x0f, 0x78, 0x09, 0x76, 0xcb, 0x99, 0xfd, 0x97, 0x02, 0xac, 0x0b, 0x0a, 0xe4, 0x64,
+	0x89, 0x29, 0x9b, 0x44, 0x62, 0x6a, 0x49, 0x25, 0x9b, 0xca, 0xe1, 0x40, 0x49, 0xe2, 0x9d, 0x9c,
+	0x78, 0x1e, 0x65, 0x6c, 0xfe, 0x4e, 0x4a, 0x91, 0xc7, 0x17, 0xd4, 0x29, 0x36, 0xbe, 0x86, 0xa5,
+	0x20, 0x5e, 0xfd, 0x24, 0x39, 0x64, 0x81, 0x62, 0x65, 0x25, 0xa1, 0xef, 0xc0, 0xe6, 0x54, 0xb4,
+	0xf0, 0x12, 0x49, 0x7e, 0x7d, 0x70, 0x91, 0xba, 0x74, 0x2b, 0x7c, 0xc1, 0x0f, 0xbd, 0x00, 0x53,
+	0x4c, 0x03, 0x3d, 0xca, 0xc7, 0xaf, 0x8b, 0x03, 0x5d, 0x5e, 0xd6, 0xf6, 0xab, 0x30, 0xa2, 0x38,
+	0xfe, 0x88, 0xe7, 0x0e, 0xf5, 0x7b, 0x50, 0x51, 0x4a, 0x8e, 0x59, 0x12, 0x7f, 0x14, 0x97, 0xac,
+	0x8a, 0xf9, 0xa7, 0x3b, 0x83, 0xdb, 0xdd, 0x84, 0xfa, 0xa1, 0x97, 0xfe, 0x2b, 0x68, 0xea, 0x60,
+	0xc6, 0x93, 0xd4, 0x8b, 0x39, 0x47, 0x48, 0x74, 0xe6, 0xf2, 0x32, 0x80, 0xdc, 0x9f, 0x0c, 0xb0,
+	0x7b, 0x29, 0x49, 0x54, 0xe6, 0x1f, 0x26, 0x94, 0xe9, 0xa9, 0x0b, 0x0b, 0xa9, 0x11, 0xac, 0x9e,
+	0x85, 0x11, 0x55, 0xc1, 0xc5, 0x37, 0xef, 0xc7, 0x20, 0x66, 0x29, 0x67, 0x25, 0x5e, 0x8f, 0x14,
+	0xd0, 0x16, 0x94, 0xc7, 0xfa, 0x0c, 0x84, 0xf4, 0x69, 0x4c, 0x0d, 0x22, 0xca, 0xc2, 0x7d, 0x0b,
+	0xeb, 0xbd, 0x34, 0x1e, 0x5f, 0x67, 0x03, 0x79, 0xd8, 0xd5, 0xcf, 0x85, 0xdd, 0x7a, 0x09, 0xd5,
+	0xf9, 0x94, 0x88, 0x1c, 0xb8, 0xd3, 0x39, 0x38, 0x6a, 0xef, 0xe2, 0x13, 0xdc, 0x7e, 0x8d, 0xdb,
+	0xbd, 0xde, 0xc1, 0xf1, 0xd1, 0xc9, 0xbb, 0x8e, 0xbd, 0x82, 0xfe, 0x0b, 0x1b, 0x9d, 0xe3, 0xd7,
+	0x07, 0xad, 0x73, 0x0b, 0xc6, 0x96, 0x0b, 0x66, 0x36, 0x3a, 0xa2, 0x2a, 0x94, 0x3a, 0xed, 0x5d,
+	0x7c, 0x64, 0xaf, 0x20, 0x0b, 0x2a, 0x5d, 0xdc, 0xde, 0x3f, 0x68, 0xf5, 0x6d, 0x63, 0xeb, 0x09,
+	0x54, 0xd4, 0x8f, 0x26, 0xb4, 0x06, 0x26, 0xa6, 0xc1, 0xc9, 0x51, 0x3c, 0xa2, 0xf6, 0x0a, 0xba,
+	0x05, 0x55, 0x2e, 0x75, 0x08, 0x63, 0xb1, 0x6d, 0x64, 0x22, 0x0e, 0xfd, 0x80, 0xda, 0x85, 0xad,
+	0x97, 0x50, 0x5b, 0x1c, 0x98, 0xd0, 0x6d, 0xb8, 0xd5, 0x4e, 0xb4, 0x41, 0xc3, 0x5e, 0x41, 0x35,
+	0x80, 0x76, 0x92, 0x8d, 0x13, 0xb6, 0xc1, 0xf7, 0xd0, 0x4e, 0x3a, 0xc7, 0xc7, 0x76, 0x61, 0xeb,
+	0x11, 0x98, 0xd9, 0xd3, 0xc0, 0xcd, 0xf2, 0xbb, 0x6f, 0xaf, 0xa0, 0x75, 0xb0, 0xb4, 0x67, 0xca,
+	0x36, 0xf6, 0x9e, 0x7c, 0xff, 0x38, 0x08, 0xd3, 0xc1, 0xe4, 0x94, 0x63, 0xb5, 0xd3, 0x25, 0xbe,
+	0x1f, 0x51, 0xf9, 0x57, 0x09, 0xfb, 0xfd, 0xf7, 0x3b, 0x3e, 0x09, 0x77, 0xc4, 0x4f, 0x4d, 0xa6,
+	0x7e, 0x78, 0x9e, 0x96, 0x85, 0xf8, 0xf8, 0x9f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xef, 0x3b, 0xde,
+	0x23, 0x90, 0x0e, 0x00, 0x00,
 }

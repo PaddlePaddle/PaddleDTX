@@ -53,10 +53,11 @@ type ExecutorMpcConf struct {
 }
 
 type ExecutorStorageConf struct {
-	Type                  string
-	LocalModelStoragePath string
-	XuperDB               *XuperDBConf
-	Local                 *PredictLocalConf
+	Type                       string
+	LocalModelStoragePath      string
+	LocalEvaluationStoragePath string
+	XuperDB                    *XuperDBConf
+	Local                      *PredictLocalConf
 }
 
 type XuperDBConf struct {

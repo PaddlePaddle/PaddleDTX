@@ -19,6 +19,7 @@ keyPath = "./keys"
 
 [executor.storage]
     localModelStoragePath = "./models"
+    localEvaluationStoragePath = "./evalus"
 
     # Define the prediction result storage type, support XuperDB and Local, the default is local storage.
     type = 'Local'

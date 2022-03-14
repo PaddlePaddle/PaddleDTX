@@ -32,12 +32,33 @@ type Learner interface {
 // RpcHandler used to request remote mpc-node
 type RpcHandler interface {
 	StepTrain(req *pb.TrainRequest, peerName string) (*pb.TrainResponse, error)
+	// StepTrainWithRetry sends training message to remote mpc-node
+	// retries 2 times at most
+	// inteSec indicates the interval between retry requests, in seconds
+	StepTrainWithRetry(req *pb.TrainRequest, peerName string, times int, inteSec int64) (*pb.TrainResponse, error)
 }
 
 // ResultHandler handles final result which is successful or failed
 // Should be called when learning finished
 type ResultHandler interface {
 	SaveResult(*pbCom.TrainTaskResult)
+}
+
+// LiveEvaluator performs staged evaluation during training.
+// The basic steps of LiveEvaluator:
+//  Divide the dataset in the way of proportional random division.
+//  Initiate a learner for evaluation with training part.
+//  Train the model, and pause training when the pause round is reached,
+//  and instantiate the staged model for validation,
+//  then, calculate the evaluation metric scores with prediction result obtained on the validation set.
+//  Repeat Train-Pause-validate until the stop signal is received.
+type LiveEvaluator interface {
+	// Trigger triggers model evaluation.
+	// The parameter contains two types of messages.
+	// One is to set the learner for evaluation with training set and start it.
+	// The other is to drive the learner to continue training. When the conditions are met(reaching pause round),
+	// stop training and instantiate the model for validation.
+	Trigger(*pb.LiveEvaluationTriggerMsg) error
 }
 
 // NewLearner returns a Learner defined by algorithm and training samples
@@ -49,14 +70,35 @@ type ResultHandler interface {
 // rh handles final result which is successful or failed
 // params are parameters for training model
 // samplesFile contains samples for training model
+// le is an LiveEvaluator, and LiveEvaluation should be performed by learner if it is assigned without nil
 func NewLearner(id string, address string, algo pbCom.Algorithm,
 	params *pbCom.TrainParams, samplesFile []byte,
-	parties []string, rpc RpcHandler, rh ResultHandler) (Learner, error) {
+	parties []string, rpc RpcHandler, rh ResultHandler, le LiveEvaluator) (Learner, error) {
 	if pbCom.Algorithm_LINEAR_REGRESSION_VL == algo {
 		return linear_reg_vl.NewLearner(id, address, params, samplesFile,
-			parties, rpc, rh)
+			parties, rpc, rh, le)
 	} else { // pbCom.Algorithm_LOGIC_REGRESSION_VL
 		return logic_reg_vl.NewLearner(id, address, params, samplesFile,
+			parties, rpc, rh, le)
+	}
+}
+
+// NewLearner returns a Learner defined by algorithm and training samples, but doesn't run it
+// id is the assigned id for Learner
+// address indicates local mpc-node
+// algo is the assigned algorithm for learner
+// parties are other learners who participates in MPC, assigned with mpc-node address usually
+// rpc is used to request remote mpc-node
+// rh handles final result which is successful or failed
+// params are parameters for training model
+func NewLearnerWithoutSamples(id string, address string, algo pbCom.Algorithm,
+	params *pbCom.TrainParams,
+	parties []string, rpc RpcHandler, rh ResultHandler) (Learner, error) {
+	if pbCom.Algorithm_LINEAR_REGRESSION_VL == algo {
+		return linear_reg_vl.NewLearnerWithoutSamples(id, address, params,
+			parties, rpc, rh)
+	} else { // pbCom.Algorithm_LOGIC_REGRESSION_VL
+		return logic_reg_vl.NewLearnerWithoutSamples(id, address, params,
 			parties, rpc, rh)
 	}
 }

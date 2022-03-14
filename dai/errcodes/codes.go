@@ -34,4 +34,9 @@ const (
 	ErrCodeRPCFindNoPeer         = "PX0017" // find no peer when do rpc request
 	ErrCodeRPCConnect            = "PX0018" // failed to get connection
 	ErrCodeTaskDeleted           = "PX0019" // failed to delete task
+	ErrCodeDataSetSplit          = "PX0020" // failed to split data set
+	ErrCodeGetTrainSet           = "PX0021" // failed to get training set when evaluate model
+	ErrCodeGetPredictSet         = "PX0022" // failed to split predicting set when evaluate model
+	ErrCodeStartTask             = "PX0023" // failed to start task
+	ErrCodeTriggerTooMuch        = "PX0024" // LiveEvaluator be triggered more than once for same pause round
 )

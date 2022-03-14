@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
+	pbCom "github.com/PaddlePaddle/PaddleDTX/dai/protos/common"
 	requestClient "github.com/PaddlePaddle/PaddleDTX/dai/requester/client"
 )
 
@@ -48,6 +49,20 @@ var getByIDCmd = &cobra.Command{
 		fmt.Printf("Algorithm: %v\nAlpha: %f\nAmplitude: %f\nAccuracy: %v\nModelTaskID: %s\nStatus: %s\nPublishTime: %s\n\n",
 			blockchain.VlAlgorithmListValue[task.AlgoParam.Algo], task.AlgoParam.TrainParams.Alpha, task.AlgoParam.TrainParams.Amplitude,
 			task.AlgoParam.TrainParams.Accuracy, task.AlgoParam.ModelTaskID, task.Status, publishTime)
+
+		if task.AlgoParam.EvalParams != nil && task.AlgoParam.EvalParams.Enable {
+			fmt.Printf("ModelEvaluationRule: %s\n",
+				task.AlgoParam.EvalParams.EvalRule)
+			if task.AlgoParam.EvalParams.EvalRule == pbCom.EvaluationRule_ErRandomSplit {
+				fmt.Printf("PercentageToLeaveOutAsValidation: %d\n\n",
+					task.AlgoParam.EvalParams.RandomSplit.PercentLO)
+			} else if task.AlgoParam.EvalParams.EvalRule == pbCom.EvaluationRule_ErCrossVal {
+				fmt.Printf("Shuffled: %t\nFolds: %d\n\n",
+					task.AlgoParam.EvalParams.Cv.Shuffle, task.AlgoParam.EvalParams.Cv.Folds)
+			} else if task.AlgoParam.EvalParams.EvalRule == pbCom.EvaluationRule_ErLOO {
+				fmt.Print("\n")
+			}
+		}
 
 		fmt.Println("Task data sets: ")
 		for _, data := range task.DataSets {

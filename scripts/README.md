@@ -33,7 +33,7 @@ Usage: ./paddledtx_test.sh {upload_sample_files | start_vl_linear_train | start_
 
 ### 2.3 启动纵向线性回归预测任务
 - vlLinPredictfiles 取值为步骤2.1获取到的 vertical linear predict sample files
-- linearModelTaskId 取值为步骤2.2的模型任务ID
+- linearModelTaskId 取值为步骤2.2的模型训练任务ID
 - *请确保2.2训练任务已经完成*
 ```shell
 ./paddledtx_test.sh start_vl_linear_predict -f $vlLinPredictfiles -m $linearModelTaskId
