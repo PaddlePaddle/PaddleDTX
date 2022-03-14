@@ -1,4 +1,4 @@
-# The type of the running node, can be set with 'leasee' or 'storage'.
+# The type of the running node, can be set with 'dataOwner' or 'storage'.
 # The type of the running node, can be set with 'dataOwner' or 'storage'.
 type = "storage"
 
@@ -17,7 +17,9 @@ listenAddress = ":8122"
 
 # The private key of the node.
 # Different key express different identity.
-privateKey = "5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79"
+# Only need to choose one from 'privateKey' and 'keyPath', and if both exist, 'keyPath' takes precedence over 'privateKey'
+# privateKey = "5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79"
+keyPath = "./keys"
 
 # The endpoint can be connected by other node, and showed in blockchain.
 # If your network mode is 'host', it is the machine's ip and the port in publicAddress in before section.
@@ -38,7 +40,7 @@ publicAddress = "10.144.94.17:8122"
 
     # The configuration of how to invoke contracts using fabric. It is necessary when type is 'fabric'.
     [storage.blockchain.fabric]
-        configFile = "./config/fabric/config.yaml"
+        configFile = "./conf/fabric/config.yaml"
         channelId = "mychannel"
         chaincode = "mycc"
         userName = "Admin"
@@ -54,7 +56,7 @@ publicAddress = "10.144.94.17:8122"
 # The monitor will query new tasks in blockchain regularlly, and trigger the task handler's operations
 # The monitor will query new tasks in blockchain regularly, and trigger the task handler's operations
 [storage.monitor]
-    # Whether to monitor the challenge requests from the leasee node.
+    # Whether to monitor the challenge requests from the dataOwner node.
     # Whether to monitor the challenge requests from the dataOwner node.
     challengingSwitch = "on"
 

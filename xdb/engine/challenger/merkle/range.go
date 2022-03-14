@@ -21,8 +21,8 @@ import (
 	"sync"
 	"time"
 
+	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
@@ -30,11 +30,11 @@ import (
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/merkle"
 )
 
 var (
-	logger = logrus.WithField("module", "merkle-challenger")
+	logger       = logrus.WithField("module", "merkle-challenger")
+	xchainClient = new(fl_crypto.XchainCryptoClient)
 
 	defaultLDBRoot            = "/root/xdb/data/challenger"
 	defaultShrinkSize         = 500
@@ -103,13 +103,13 @@ func New(conf *config.ChallengerMerkleConf, privkey ecdsa.PrivateKey) (*RandChal
 }
 
 // GetChallengeConf get challenge configuration
-func (m *RandChallenger) GetChallengeConf() (a string, pdp types.PDP) {
-	return m.challengeAlgorithm, pdp
+func (m *RandChallenger) GetChallengeConf() (a string, conf types.PairingChallengeConf) {
+	return m.challengeAlgorithm, conf
 }
 
 // GenerateChallenge not implemented for merkle challenge
-func (m *RandChallenger) GenerateChallenge(maxIdx int) (i [][]byte, v [][]byte, err error) {
-	return i, v, errorx.New(errorx.ErrCodeInternal, "merkle not implemented method GenerateChallenge")
+func (m *RandChallenger) GenerateChallenge(sliceIdxList []int, interval int64) (i [][]byte, v [][]byte, r int64, w []byte, err error) {
+	return i, v, r, w, errorx.New(errorx.ErrCodeInternal, "merkle not implemented method GenerateChallenge")
 }
 
 // Setup prepare challenge materials for challenge loop later
@@ -151,45 +151,6 @@ func (m *RandChallenger) Setup(sliceData []byte, rangeAmount int) ([]ctype.Range
 	return mRangeList, nil
 }
 
-func (m *RandChallenger) NewSetup(sliceData []byte, rangeAmount int,
-	merkleMaterialQueue chan<- ctype.Material, cm ctype.Material) error {
-	length := len(sliceData)
-
-	logger.WithFields(logrus.Fields{
-		"length":       length,
-		"range_amount": rangeAmount,
-	}).Debug("setup started")
-
-	curmount := math.Ceil(float64(rangeAmount) / float64(MerkleChallengeSetUpRange))
-
-	wg := sync.WaitGroup{}
-
-	for i := 1; i <= int(curmount); i++ {
-		wg.Add(1)
-		go func(wg *sync.WaitGroup, i int) {
-			defer wg.Done()
-			mamount := 0
-			if rangeAmount <= MerkleChallengeSetUpRange {
-				mamount = rangeAmount
-			} else if i*MerkleChallengeSetUpRange > rangeAmount {
-				mamount = rangeAmount - (i-1)*MerkleChallengeSetUpRange
-			} else {
-				mamount = MerkleChallengeSetUpRange
-			}
-			pRanges := m.generateMerkleRanges(sliceData, mamount, length)
-			merkleMaterialQueue <- ctype.Material{
-				FileID:  cm.FileID,
-				SliceID: cm.SliceID,
-				NodeID:  cm.NodeID,
-				Ranges:  pRanges,
-			}
-		}(&wg, i)
-	}
-	wg.Wait()
-	close(merkleMaterialQueue)
-	return nil
-}
-
 // generateMerkleRanges generate content segments to make merkle tree
 func (m *RandChallenger) generateMerkleRanges(sliceData []byte, rangeAmount, length int) []ctype.RangeHash {
 	ranges := make([]ctype.RangeHash, 0, rangeAmount)
@@ -224,11 +185,11 @@ func (m *RandChallenger) generateMerkleRanges(sliceData []byte, rangeAmount, len
 				Start: uint64(start),
 				End:   uint64(end),
 			})
-			h := hash.HashUsingSha256(sliceData[start:end])
+			h := xchainClient.HashUsingSha256(sliceData[start:end])
 			hs = append(hs, h)
 		}
 		// calculate merkle root
-		h := merkle.GetMerkleRoot(hs)
+		h := xchainClient.GetMerkleRoot(hs)
 		current := ctype.RangeHash{
 			Ranges: sr,
 			Hash:   h,

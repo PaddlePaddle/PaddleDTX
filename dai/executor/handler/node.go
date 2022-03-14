@@ -17,23 +17,22 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
-	xdatachain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/peer"
 	"github.com/sirupsen/logrus"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
+	xdbchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/peer"
 )
 
 // Blockchain defines some contract methods
 //  refer blockchain module for more
 type Blockchain interface {
 	// executor operation
-	RegisterDataNode(opt *blockchain.AddNodeOptions) error
-	GetDataNodeByID(id []byte) (blockchain.DataNode, error)
-	ListDataNodes() (blockchain.DataNodes, error)
+	RegisterExecutorNode(opt *blockchain.AddNodeOptions) error
+	GetExecutorNodeByID(id []byte) (blockchain.ExecutorNode, error)
 	// task operation
 	ListTask(opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error)
 	PublishTask(opt *blockchain.PublishFLTaskOptions) error
@@ -42,8 +41,14 @@ type Blockchain interface {
 	RejectTask(opt *blockchain.FLTaskConfirmOptions) error
 	ExecuteTask(opt *blockchain.FLTaskExeStatusOptions) error
 	FinishTask(opt *blockchain.FLTaskExeStatusOptions) error
-	// gets file stored in xuperDB by id
-	GetFileByID(id string) (xdatachain.File, error)
+	// get file stored in xuperDB by id
+	GetFileByID(id string) (xdbchain.File, error)
+	// query the list of authorization applications
+	ListFileAuthApplications(opt *xdbchain.ListFileAuthOptions) (xdbchain.FileAuthApplications, error)
+	// publish sample file's authorization application
+	PublishFileAuthApplication(opt *xdbchain.PublishFileAuthOptions) error
+	// query the list of storage nodes
+	ListNodes() (xdbchain.Nodes, error)
 
 	Close()
 }
@@ -67,13 +72,13 @@ func (n *Node) autoRegister(chain Blockchain) error {
 	logrus.WithField("module", "handler.node")
 
 	pubkey := ecdsa.PublicKeyFromPrivateKey(n.PrivateKey)
-	if _, err := chain.GetDataNodeByID(pubkey[:]); err == nil {
+	if _, err := chain.GetExecutorNodeByID(pubkey[:]); err == nil {
 		logrus.Info("node already registered on blockchain")
 		return nil
 	}
 	timestamp := time.Now().UnixNano()
 	opt := blockchain.AddNodeOptions{
-		Node: blockchain.DataNode{
+		Node: blockchain.ExecutorNode{
 			ID:      pubkey[:],
 			Name:    n.Name,
 			Address: n.Address,
@@ -91,7 +96,7 @@ func (n *Node) autoRegister(chain Blockchain) error {
 	}
 
 	opt.Signature = sig[:]
-	if err := chain.RegisterDataNode(&opt); err != nil {
+	if err := chain.RegisterExecutorNode(&opt); err != nil {
 		logrus.Error("failed to register node automatically")
 		return errorx.Wrap(err, "failed to register node automatically")
 	}

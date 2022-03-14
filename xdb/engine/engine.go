@@ -20,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/aes"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
@@ -47,6 +48,7 @@ type Slicer interface {
 
 // Encryptor encrypts data and decrypts encoded data
 type Encryptor interface {
+	GetKey(fileID, sliceID string, nodeID []byte) aes.AESKey
 	Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (encryptor.EncryptedSlice, error)
 	Recover(r io.Reader, opt *encryptor.RecoverOptions) ([]byte, error)
 }
@@ -55,16 +57,15 @@ type Encryptor interface {
 //  Pairing-based and MerkleTree-based are both supported
 //  see more from engine.challenger
 type Challenger interface {
-	// pdp Challenge
-	GenerateChallenge(maxIdx int) ([][]byte, [][]byte, error)
+	// pairing based Challenge
+	GenerateChallenge(sliceIdxList []int, interval int64) ([][]byte, [][]byte, int64, []byte, error)
 
 	// merkle Challenge
 	Setup(sliceData []byte, rangeAmount int) ([]ctype.RangeHash, error)
-	NewSetup(sliceData []byte, rangeAmount int, merkleMaterialQueue chan<- ctype.Material, cm ctype.Material) error
 	Save(cms []ctype.Material) error
 	Take(fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
 
-	GetChallengeConf() (string, types.PDP)
+	GetChallengeConf() (string, types.PairingChallengeConf)
 	Close()
 }
 
@@ -77,7 +78,7 @@ type Copier interface {
 	Select(slice slicer.Slice, nodes blockchain.NodeHs, opt *copier.SelectOptions) (copier.LocatedSlice, error)
 	Push(ctx context.Context, id, sourceId string, r io.Reader, node *blockchain.Node) error
 	Pull(ctx context.Context, id, fileId string, node *blockchain.Node) (io.ReadCloser, error)
-	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc common.MigrateEncryptor,
+	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc common.CommonEncryptor,
 		challengeAlgorithm, sourceId, fileId string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
 }
 
@@ -85,6 +86,8 @@ type Copier interface {
 //  For xchain they are contract methods, and for fabric they are chaincode methods
 //  see more from blockchain.xchain and blockchain.fabric
 type Blockchain interface {
+	// The following contract methods are used by storage node,
+	// for distributed governance and healthy check of nodes
 	AddNode(opt *blockchain.AddNodeOptions) error
 	ListNodes() (blockchain.Nodes, error)
 	GetNode(id []byte) (blockchain.Node, error)
@@ -96,12 +99,12 @@ type Blockchain interface {
 	ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error)
 	GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error)
 
+	// The following contract methods are used by dataOwner node
 	PublishFile(file *blockchain.PublishFileOptions) error
 	GetFileByName(owner []byte, ns, name string) (blockchain.File, error)
 	GetFileByID(id string) (blockchain.File, error)
 	UpdateFileExpireTime(opt *blockchain.UpdateExptimeOptions) (blockchain.File, error)
 	AddFileNs(opt *blockchain.AddNsOptions) error
-	UpdateNsFilesCap(opt *blockchain.UpdateNsFilesCapOptions) (blockchain.Namespace, error)
 	UpdateNsReplica(opt *blockchain.UpdateNsReplicaOptions) error
 	UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions) error
 	SliceMigrateRecord(id, sig []byte, fid, sid string, ctime int64) error
@@ -109,6 +112,11 @@ type Blockchain interface {
 	ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
 	ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)
 	ListExpiredFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)
+	// The following contract methods used for authorizers to operate the file authorization application
+	GetAuthApplicationByID(authID string) (blockchain.FileAuthApplication, error)
+	ListFileAuthApplications(opt *blockchain.ListFileAuthOptions) (blockchain.FileAuthApplications, error)
+	ConfirmFileAuthApplication(opt *blockchain.ConfirmFileAuthOptions) error
+	RejectFileAuthApplication(opt *blockchain.ConfirmFileAuthOptions) error
 
 	ListChallengeRequests(opt *blockchain.ListChallengeOptions) ([]blockchain.Challenge, error)
 	ChallengeRequest(opt *blockchain.ChallengeRequestOptions) error
@@ -123,7 +131,7 @@ type Storage interface {
 	Delete(key string) (bool, error)
 	Exist(key string) (bool, error)
 	LoadStr(key string) (string, error)
-	SaveAndUpdate(key, value string) error
+	SaveAndUpdate(key string, value io.Reader) error
 }
 
 type Engine struct {
@@ -149,7 +157,7 @@ type NewEngineOption struct {
 	Storage    Storage
 }
 
-// NewEngine initiates Engine
+// NewEngine initiates Engine by the node's configuration file
 func NewEngine(conf *config.MonitorConf, opt *NewEngineOption) (*Engine, error) {
 	monitor, err := newMonitor(conf, opt)
 	if err != nil {

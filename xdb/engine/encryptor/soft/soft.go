@@ -43,26 +43,30 @@ func New(conf *config.SoftEncryptorConf) (*SoftEncryptor, error) {
 	return se, nil
 }
 
-// Encrypt derive key using nodeID and slice ID, then encrypt content using AES-GCM
-func (se *SoftEncryptor) Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (
-	encryptor.EncryptedSlice, error) {
+// GetKey derive key using fileID, nodeID and slice ID
+func (se *SoftEncryptor) GetKey(fileID, sliceID string, nodeID []byte) aes.AESKey {
+	key := se.getKey(fileID, sliceID, nodeID)
 
-	key := se.getKey(opt.SliceID, opt.NodeID)
-
-	salt := append(append([]byte{}, []byte(opt.SliceID)...), opt.NodeID...)
+	salt := append(append([]byte(fileID), []byte(sliceID)...), nodeID...)
 	nonce := hash.HashUsingSha256(salt)[:12]
 
 	aesKey := aes.AESKey{
 		Key:   key,
 		Nonce: nonce,
 	}
+	return aesKey
+}
+
+// Encrypt derive key using nodeID and slice ID, then encrypt content using AES-GCM
+func (se *SoftEncryptor) Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (
+	encryptor.EncryptedSlice, error) {
 
 	plaintext, err := ioutil.ReadAll(r)
 	if err != nil {
 		return encryptor.EncryptedSlice{},
-			errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read")
+			errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read plaintext during Encrypt")
 	}
-
+	aesKey := se.GetKey(opt.FileID, opt.SliceID, opt.NodeID)
 	ciphertext, err := aes.EncryptUsingAESGCM(aesKey, plaintext, nil)
 	if err != nil {
 		return encryptor.EncryptedSlice{}, errorx.Wrap(err, "failed to encrypt")
@@ -85,22 +89,11 @@ func (se *SoftEncryptor) Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (
 // Encrypt derive key using nodeID and slice ID, then decrypt content using AES-GCM
 func (se *SoftEncryptor) Recover(r io.Reader, opt *encryptor.RecoverOptions) (
 	[]byte, error) {
-
-	key := se.getKey(opt.SliceID, opt.NodeID)
-
-	salt := append(append([]byte{}, []byte(opt.SliceID)...), opt.NodeID...)
-	nonce := hash.HashUsingSha256(salt)[:12]
-
-	aesKey := aes.AESKey{
-		Key:   key,
-		Nonce: nonce,
-	}
-
 	ciphertext, err := ioutil.ReadAll(r)
 	if err != nil {
-		return nil, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read")
+		return nil, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read ciphertext during Recover")
 	}
-
+	aesKey := se.GetKey(opt.FileID, opt.SliceID, opt.NodeID)
 	plaintext, err := aes.DecryptUsingAESGCM(aesKey, ciphertext, nil)
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to decrypt")

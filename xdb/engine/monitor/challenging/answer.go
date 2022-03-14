@@ -84,8 +84,8 @@ func (c *ChallengingMonitor) loopAnswer(ctx context.Context) {
 			continue
 		}
 		for _, r := range requests {
-			if r.ChallengeAlgorithm == types.PDPChallengeAlgorithm {
-				c.doPDPChallengeAnswer(r, l)
+			if r.ChallengeAlgorithm == types.PairingChallengeAlgorithm {
+				c.doPairingChallengeAnswer(r, l)
 			} else if r.ChallengeAlgorithm == types.MerkleChallengeAlgorithm {
 				c.doMerkleChallengeAnswer(r, l)
 			} else {
@@ -95,13 +95,13 @@ func (c *ChallengingMonitor) loopAnswer(ctx context.Context) {
 	}
 }
 
-func (c *ChallengingMonitor) doPDPChallengeAnswer(r blockchain.Challenge, l *logrus.Entry) error {
+func (c *ChallengingMonitor) doPairingChallengeAnswer(r blockchain.Challenge, l *logrus.Entry) error {
 	// answer for each request
 	// calculate proof
 	l.WithField("challenge_id", r.ID).Infof("indices: %v, slices: %v", r.Indices, r.SliceIDs)
-	proof, err := c.doPDPCalculateProof(c.PrivateKey, &r)
+	proof, err := c.doPairingCalculateProof(c.PrivateKey, &r)
 	if err != nil {
-		l.WithError(err).Warn("failed to calculate pdp proof")
+		l.WithError(err).Warnf("failed to calculate pairing proof for round: %d", r.Round)
 		return err
 	}
 
@@ -121,7 +121,7 @@ func (c *ChallengingMonitor) doPDPChallengeAnswer(r blockchain.Challenge, l *log
 	if string(resp) != "answered" {
 		l.WithField("request_id", r.ID).Errorf("ChallengeAnswer err: %s", string(resp))
 	}
-	l.WithField("request_id", r.ID).Debug("success to answer challenge request")
+	l.WithField("request_id", r.ID).Debug("successfully answered challenge request")
 	return nil
 }
 
@@ -150,31 +150,59 @@ func (c *ChallengingMonitor) doMerkleChallengeAnswer(r blockchain.Challenge, l *
 		l.WithField("request_id", r.ID).Errorf("ChallengeAnswer err: %s", string(resp))
 	}
 
-	l.WithField("request_id", r.ID).Debug("success to answer challenge request")
+	l.WithField("request_id", r.ID).Debug("successfully answered challenge request")
 	return err
 }
 
-// doPDPCalculateProof calculate proof using stored files and random challenge
-func (c *ChallengingMonitor) doPDPCalculateProof(privkey ecdsa.PrivateKey, req *blockchain.Challenge) (randomProof, error) {
+// doPairingCalculateProof calculate proof using stored files and random challenge
+func (c *ChallengingMonitor) doPairingCalculateProof(privkey ecdsa.PrivateKey, req *blockchain.Challenge) (randomProof, error) {
 
 	var content [][]byte
+	var sigmaContent [][]byte
 	for _, sliceID := range req.SliceIDs {
+		// read slice content
 		dataReader, err := c.sliceStorage.Load(sliceID)
 		if err != nil {
 			return randomProof{}, errorx.Wrap(err, "failed to load local slice %s", sliceID)
 		}
 		data, err := ioutil.ReadAll(dataReader)
 		if err != nil {
-			return randomProof{}, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read")
+			return randomProof{}, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read slice data")
 		}
-
 		content = append(content, data)
+
+		// read sigmas content
+		sigmaFile := common.GetSliceSigmasID(sliceID)
+		dataReader, err = c.sliceStorage.Load(sigmaFile)
+		if err != nil {
+			return randomProof{}, errorx.Wrap(err, "failed to load local slice sigmas %s", sliceID)
+		}
+		data, err = ioutil.ReadAll(dataReader)
+		if err != nil {
+			return randomProof{}, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read slice sigmas")
+		}
+		sigmaContent = append(sigmaContent, data)
 		dataReader.Close()
 	}
-	if req.Indices == nil || req.Vs == nil || req.Sigmas == nil {
-		return randomProof{}, errorx.New(errorx.ErrCodeInternal, "AnswerChallenge failed")
+
+	if req.Indices == nil || req.Vs == nil {
+		return randomProof{}, errorx.New(errorx.ErrCodeInternal, "invalid challenge")
 	}
-	sigma, mu, err := common.AnswerPDPChallenge(content, req.Indices, req.Vs, req.Sigmas)
+
+	// get sigma for each slice with respect to the challenge round
+	var sigmas [][]byte
+	for _, sigma := range sigmaContent {
+		sigmaMap, err := common.SigmasFromBytes(sigma)
+		if err != nil {
+			return randomProof{}, errorx.New(errorx.ErrCodeInternal, "failed to unmarshal sigmas")
+		}
+		if len(sigmaMap[req.Round]) == 0 {
+			return randomProof{}, errorx.New(errorx.ErrCodeInternal, "empty sigma for this round")
+		}
+		sigmas = append(sigmas, sigmaMap[req.Round])
+	}
+
+	sigma, mu, err := common.AnswerPairingChallenge(content, req.Indices, req.Vs, sigmas, req.RandThisRound)
 	if err != nil {
 		return randomProof{}, errorx.NewCode(err, errorx.ErrCodeInternal, "AnswerChallenge failed")
 	}
@@ -201,13 +229,13 @@ func (c *ChallengingMonitor) doMerkleCalculation(privkey ecdsa.PrivateKey, req *
 
 	dataReader, err := c.sliceStorage.Load(req.SliceID)
 	if err != nil {
-		return rangeProof{}, errorx.Wrap(err, "faield to load local slice %s", req.SliceID)
+		return rangeProof{}, errorx.Wrap(err, "failed to load local slice %s", req.SliceID)
 	}
 	defer dataReader.Close()
 
 	data, err := ioutil.ReadAll(dataReader)
 	if err != nil {
-		return rangeProof{}, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read")
+		return rangeProof{}, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read slice during doMerkleCalculation")
 	}
 	var hs [][]byte
 	for _, rr := range req.Ranges {

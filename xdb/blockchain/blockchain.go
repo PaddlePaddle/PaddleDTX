@@ -18,11 +18,22 @@ import (
 	"time"
 )
 
+// define variables about challenge/fileAuth status
 const (
+	// Define the status of the challenge stored in Contract
 	ChallengeToProve = "ToProve"
 	ChallengeProved  = "Proved"
 	ChallengeFailed  = "Failed"
 
+	// Define File authorization status stored in Contract
+	FileAuthUnapproved = "Unapproved" // the applier published file's authorization application and the authorizer has not yet approved
+	FileAuthApproved   = "Approved"   // the authorizer approved applier's authorization application
+	FileAuthRejected   = "Rejected"   // the authorizer rejected applier's authorization application
+)
+
+// define variables about node health
+const (
+	// Define the status of the node health
 	NodeHealthGood   = "Green"
 	NodeHealthMedium = "Yellow"
 	NodeHealthBad    = "Red"
@@ -33,16 +44,25 @@ const (
 
 	DefaultChallProvedRate = 0.85
 	DefaultHearBeatRate    = 0.85
-
+	// Define the challenge ratio and the health ratio
+	// Storage node's health is determined by the approved challenge ratio and the heartbeat ratio
 	NodeHealthChallProp     = 0.7
 	NodeHealthHeartBeatProp = 0.3
 
-	NodeHealthBoundGood   = 0.85
-	NodeHealthBoundMedium = 0.6
+	// Define the threshold for the storage node's health
+	NodeHealthBoundGood   = 0.85 // health ratio greater than 0.85 means node's status is Green
+	NodeHealthBoundMedium = 0.6  // health ratio between 0.6 and 0.85 means node's status is Yellow
+)
 
+// define variables about monitor module
+const (
 	FileRetainPeriod = 7 * 24 * time.Hour
+)
 
-	ContractMessageMaxSize = 4 * 1024 * 1024
+// define variables about contract request
+const (
+	// Define the maximum number of list query
+	ListMaxNumber = 100
 )
 
 // PublicSliceMeta public, description of a slice stored on a specific node
@@ -51,9 +71,8 @@ type PublicSliceMeta struct {
 	CipherHash []byte // hash of cipher text
 	Length     uint64 // length of cipher text
 	NodeID     []byte // where slice is stored
-	// for pdp
-	SliceIdx int    // slice index stored on this node, like 0,1,2...
-	SigmaI   []byte // computed by index and ciphertext
+	// for pairing based challenge
+	SliceIdx int // slice index stored on this node, like 1,2,3...
 }
 
 // PrivateSliceMeta private, description of the order of original slices
@@ -86,7 +105,7 @@ type File struct {
 	PublishTime int64             // publish time on blockchain
 	ExpireTime  int64             // file expire time
 
-	// for pdp
+	// for pairing based challenge
 	PdpPubkey []byte
 	RandU     []byte
 	RandV     []byte
@@ -112,16 +131,16 @@ type Challenge struct {
 	TargetNode []byte // storage node
 	FileID     string // file ID
 
-	SliceIDs []string // slice IDs to challenge
-	Indices  [][]byte // indices of slice IDs
-	Vs       [][]byte // random params
-	Sigmas   [][]byte // sigma for each index
+	ChallengeAlgorithm string   // challenge algorithm
+	SliceIDs           []string // slice IDs to challenge
+	Indices            [][]byte // indices of slice IDs
+	Vs                 [][]byte // random params
+	Round              int64    // challenge found
+	RandThisRound      []byte   // random number for the challenge
 
 	SliceID     string
 	Ranges      []Range
 	HashOfProof []byte
-
-	ChallengeAlgorithm string // challenge algorithm
 
 	Status        string // challenge status
 	ChallengeTime int64  // challenge publish time
@@ -135,7 +154,7 @@ type ListFileOptions struct {
 	TimeStart   int64
 	TimeEnd     int64
 	CurrentTime int64
-	Limit       uint64 // file number limit
+	Limit       int64 // file number limit
 }
 
 type ListChallengeOptions struct {
@@ -146,9 +165,10 @@ type ListChallengeOptions struct {
 
 	TimeStart int64 // challenge time period
 	TimeEnd   int64
-	Limit     uint64 // challenge limit
+	Limit     int64 // challenge limit
 }
 
+// ChallengeRequestOptions used for dataOwner nodes to add challenge request on chain
 type ChallengeRequestOptions struct {
 	ChallengeID   string
 	FileOwner     []byte
@@ -157,17 +177,18 @@ type ChallengeRequestOptions struct {
 	SliceIDs      []string
 	ChallengeTime int64
 
-	Indices [][]byte
-	Vs      [][]byte
-	Sigmas  [][]byte
-	Sig     []byte
-
-	SliceID string
-	Ranges  []Range
-
 	ChallengeAlgorithm string
 
+	Indices       [][]byte
+	Vs            [][]byte
+	Round         int64
+	RandThisRound []byte
+
+	SliceID     string
+	Ranges      []Range
 	HashOfProof []byte
+
+	Sig []byte
 }
 
 type Range struct {
@@ -175,6 +196,7 @@ type Range struct {
 	End   uint64
 }
 
+// ChallengeAnswerOptions used for storage nodes to answer challenge request on chain
 type ChallengeAnswerOptions struct {
 	ChallengeID string
 	Sigma       []byte
@@ -187,6 +209,7 @@ type ChallengeAnswerOptions struct {
 
 type Nodes []Node
 
+// Node define storage node info stored on chain
 type Node struct {
 	ID       []byte
 	Name     string
@@ -221,6 +244,8 @@ type UpdateExptimeOptions struct {
 	Signature     []byte
 }
 
+// UpdateFilePSMOptions used to update the slice public info on chain
+// when the dataOwner migrates slice from bad storage node to good storage node
 type UpdateFilePSMOptions struct {
 	FileID    string
 	Owner     []byte
@@ -241,7 +266,7 @@ type ListNodeSliceOptions struct {
 
 	StartTime int64
 	EndTime   int64
-	Limit     uint64
+	Limit     int64
 }
 
 type NodeSliceMigrateOptions ListNodeSliceOptions
@@ -251,15 +276,16 @@ type AddNsOptions struct {
 	Signature []byte
 }
 
+// Namespace define file namespace stored on chain
+// Used by dataOwner to store files, like a folder
 type Namespace struct {
-	Name            string
-	Description     string
-	Owner           []byte
-	Replica         int
-	FilesStructSize int
-	FileTotalNum    int64
-	CreateTime      int64
-	UpdateTime      int64
+	Name         string
+	Description  string
+	Owner        []byte // file namespace owner
+	Replica      int    // The replicas of files under the namespace
+	FileTotalNum int64
+	CreateTime   int64
+	UpdateTime   int64
 }
 
 type NamespaceH struct {
@@ -299,9 +325,51 @@ type GetChallengeNumOptions struct {
 	TimeEnd   int64
 }
 
-type UpdateNsFilesCapOptions struct {
-	Owner       []byte
-	Name        string
-	CurrentTime int64
-	Signature   []byte
+// FileAuthApplication define the file's authorization application stored on chain
+type FileAuthApplication struct {
+	ID           string
+	FileID       string // file ID to authorize
+	Name         string
+	Description  string
+	Applier      []byte // applier's public key, who needs to use files
+	Authorizer   []byte // file's owner
+	AuthKey      []byte // authorization key, appliers used the key to decrypt the file
+	Status       string
+	RejectReason string // reason of the rejected authorization
+	CreateTime   int64
+	ApprovalTime int64 // time when authorizer confirmed or rejected the authorization
+	ExpireTime   int64 // expiration time for file use
+
+	// extension
+	Ext []byte
+}
+
+type FileAuthApplications []*FileAuthApplication
+
+// PublishFileAuthOptions parameters for appliers to publish file authorization application
+type PublishFileAuthOptions struct {
+	FileAuthApplication FileAuthApplication
+	Signature           []byte
+}
+
+// ConfirmFileAuthOptions parameters for authorizers to confirm or reject file authorization application
+type ConfirmFileAuthOptions struct {
+	ID           string
+	AuthKey      []byte // authorized file decryption key, if authorizer confirms authorization, it cannot be empty
+	RejectReason string // if authorizer rejects authorization, it cannot be empty
+	CurrentTime  int64
+	ExpireTime   int64
+
+	Signature []byte // authorizer's signature
+}
+
+// ConfirmFileAuthOptions parameters for authorizers or appliers to query the list of file authorization application
+type ListFileAuthOptions struct {
+	Applier    []byte // applier's public key
+	Authorizer []byte // authorizer's public key
+	FileID     string
+	Status     string // file authorization application status
+	TimeStart  int64
+	TimeEnd    int64
+	Limit      int64 // limit number of applications in list request
 }

@@ -34,8 +34,8 @@ XuperDB中有三类节点：
 抵御存储作弊的机制可简述为：数据持有节点发布挑战到区块链网络，存储节点提交证明到区块链网络以应答挑战，智能合约对应答信息进行自动化验证，如果通过，可证明存储节点保存着数据切片。
 
 该机制的核心是[副本保持证明算法](./engine/challenger/README_cn.md)。XuperDB实现了两种副本保持证明算法：
-- **基于双线性对** 详见[Pairing-based PoRH](../crypto/core/pdp/prove.go)
-- **基于梅克尔树** 详见[MerkleTree-based PoRH](./pkgs/merkle/merkle.go) 
+- **基于双线性对** 详见[Pairing-based PoRH](../crypto/core/pdp/pairing)
+- **基于梅克尔树** 详见[MerkleTree-based PoRH](../crypto/core/pdp/merkle)
 
 ## 二、安装
 XuperDB包含：

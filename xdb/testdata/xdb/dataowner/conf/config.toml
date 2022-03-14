@@ -3,7 +3,7 @@ type = "dataOwner"
 [dataOwner]
 name = "data-node1"
 listenAddress = ":80"
-privateKey = "14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21"
+keyPath = "./keys"
 publicAddress = "dataowner1.node.com:80"
 
 [dataOwner.slicer]
@@ -18,13 +18,13 @@ publicAddress = "dataowner1.node.com:80"
         password = "abcdefg"
 
 [dataOwner.challenger]
-    type = "pdp"
-    [dataOwner.challenger.pdp]
+    type = "merkle"
+    [dataOwner.challenger.pairing]
         maxIndexNum = 5
-        sk = "W4HyiC7kx+bafMftHrD7Mz4ff2/0Bb103fUIrbRVkFk="
-        pk = "AVcT6JO4Ddcq+JjC2Vw/kGZSrCjEeCu1Lu1EFya9C96Nb/HtJkaHEJ4Ni89leAAaCbKu/oEFrfEpb3oAaEd2JqNuyBlWZ0MZk7PmFkaUlYaTVvQRUWRRSmiIZa+iNtJEIYC/AC5C88k1vRoXq3m7VonvJUFP95oLX3CSMMfSiUln"
-        randu = "AfM3n7CzmkbVEBRPOYV8gH1qpyaQdTNA1MZ7PHYfmWs="
-        randv = "TKOt9kE7m5O7fCztoyy1J+WpNugLxKPS3hweeUK+09Y="
+        sk = "Fudm9gDXNlEdCkieMid1WHIHd9K/M/CctBPlF/4y+AU="
+        pk = "B60Vdoq4SVUpVRZf1FM7ImRXo/22q0ZjYMHlaB4HgUXMSsu+2iCrNkk3gROXOUDvB8zWMcBGCnBCAnb6N9WOaBPbKkYWnp/iodp0+GFWvW1DCnAYNV2+vdaFkHaezsqeDqRDsdqV2uG47PTE2xdkljSblWNgKhsHYp7LgCcbBWiMO3TcrzUdq+ETxfIu1Bi7AzSHHAj8oc7toGT0anrO9LPSDcde8rCdsptX5CLH7WvRF0AXrqhX4Mr7i+547qI3"
+        randu = "NA1xy6JCWWc8IB4x1CM4DCoxKTqEele6zqD8kCfuj5s="
+        randv = "TV0J8YFWEsybwFdwm3DJvUHXx88YXkzK97Zpvj/tyGc="
     [dataOwner.challenger.merkle]
         leveldbRoot = "/home/data/challenger"
         shrinkSize = 500

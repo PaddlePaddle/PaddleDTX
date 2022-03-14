@@ -32,7 +32,6 @@ var getFileSysHealthCmd = &cobra.Command{
 			fmt.Printf("err：%v\n", err)
 			return
 		}
-
 		fh, err := client.GetFileSysHealth(context.Background(), owner)
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
@@ -50,6 +49,4 @@ func init() {
 	rootCmd.AddCommand(getFileSysHealthCmd)
 
 	getFileSysHealthCmd.Flags().StringVarP(&owner, "owner", "o", "", "owner for files")
-
-	getFileSysHealthCmd.MarkFlagRequired("owner")
 }

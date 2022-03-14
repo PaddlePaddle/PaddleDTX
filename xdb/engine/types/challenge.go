@@ -14,14 +14,14 @@
 package types
 
 const (
-	MerkleChallengeAlgorithm = "Merkle"
-	PDPChallengeAlgorithm    = "PDP"
+	MerkleChallengeAlgorithm  = "Merkle"
+	PairingChallengeAlgorithm = "Pairing"
 )
 
-// PDP for pairing-based challenge
-type PDP struct {
-	PdpPrivkey []byte
-	PdpPubkey  []byte
-	RandU      []byte
-	RandV      []byte
+// PairingChallengeConf config of pairing based challenge
+type PairingChallengeConf struct {
+	Privkey []byte
+	Pubkey  []byte
+	RandU   []byte
+	RandV   []byte
 }

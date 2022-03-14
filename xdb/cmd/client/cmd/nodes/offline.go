@@ -16,11 +16,13 @@ package nodes
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/file"
 )
 
 // nodeOfflineCmd represents the command to get node offline by privatekey
@@ -32,6 +34,14 @@ var nodeOfflineCmd = &cobra.Command{
 		if err != nil {
 			fmt.Printf("err: %v\n", err)
 			return
+		}
+		if privateKey == "" {
+			privateKeyBytes, err := file.ReadFile(keyPath, file.PrivateKeyFileName)
+			if err != nil {
+				fmt.Printf("Read privateKey failed, err: %v\n", err)
+				return
+			}
+			privateKey = strings.TrimSpace(string(privateKeyBytes))
 		}
 		privKey, err := ecdsa.DecodePrivateKeyFromString(privateKey)
 		if err != nil {
@@ -50,7 +60,5 @@ func init() {
 	rootCmd.AddCommand(nodeOfflineCmd)
 
 	nodeOfflineCmd.Flags().StringVarP(&privateKey, "privateKey", "k", "", "privatekey")
-
-	nodeOfflineCmd.MarkFlagRequired("host")
-	nodeOfflineCmd.MarkFlagRequired("privateKey")
+	nodeOfflineCmd.Flags().StringVarP(&keyPath, "keyPath", "", file.KeyFilePath, "node's key path")
 }

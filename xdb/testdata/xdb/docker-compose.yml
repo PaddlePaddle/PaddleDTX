@@ -2,7 +2,7 @@ version: '3'
 
 services:
   data_owner:
-    image: registry.baidubce.com/paddledtx/xdb-dataowner:1.0
+    image: registry.baidubce.com/paddledtx/xdb-dataowner:1.1
     container_name: dataowner.node.com
     networks:
         - blockchain_network
@@ -10,10 +10,14 @@ services:
         - 38001:80
     volumes:
         - ./dataowner/conf:/home/conf
+        - ./dataowner/keys:/home/keys
+        - ./dataowner/ukeys:/home/ukeys
+        - ./dataowner/authkeys:/home/authkeys
         - ./dataowner/logs:/home/logs
+        - ./dataowner/challenger:/home/data/challenger
 
   storage1:
-    image: registry.baidubce.com/paddledtx/xdb-storage:1.0
+    image: registry.baidubce.com/paddledtx/xdb-storage:1.1
     container_name: storage1.node.com
     networks:
         - blockchain_network
@@ -21,10 +25,11 @@ services:
         - 38002:80
     volumes:
         - ./storage1/conf:/home/conf
+        - ./storage1/keys:/home/keys
         - ./storage1/logs:/home/logs
 
   storage2:
-    image: registry.baidubce.com/paddledtx/xdb-storage:1.0
+    image: registry.baidubce.com/paddledtx/xdb-storage:1.1
     container_name: storage2.node.com
     networks:
         - blockchain_network
@@ -34,10 +39,11 @@ services:
         - 38003:80
     volumes:
         - ./storage2/conf:/home/conf
+        - ./storage2/keys:/home/keys
         - ./storage2/logs:/home/logs
 
   storage3:
-    image: registry.baidubce.com/paddledtx/xdb-storage:1.0
+    image: registry.baidubce.com/paddledtx/xdb-storage:1.1
     container_name: storage3.node.com
     networks:
        - blockchain_network
@@ -47,6 +53,7 @@ services:
         - 38004:80
     volumes:
         - ./storage3/conf:/home/conf
+        - ./storage3/keys:/home/keys
         - ./storage3/logs:/home/logs
 
 networks:

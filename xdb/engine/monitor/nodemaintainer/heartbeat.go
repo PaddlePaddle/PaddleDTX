@@ -58,7 +58,7 @@ func (m *NodeMaintainer) heartbeat(ctx context.Context) {
 		l.WithFields(logrus.Fields{
 			"target_node": hex.EncodeToString(pubkey[:4]),
 			"update_at":   timestamp,
-		}).Info("success to update heartbeat of node")
+		}).Info("successfully updated heartbeat of node")
 	}
 
 }

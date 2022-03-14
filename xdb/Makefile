@@ -17,6 +17,7 @@ all: prepare compile package
 # set proxy env
 set-env:
 	$(GO) env -w GO111MODULE=on
+	$(GO) env -w GOPROXY=https://goproxy.cn
 	$(GO) env -w GONOSUMDB=\*
 
 #make prepare, download dependencies
@@ -29,8 +30,8 @@ gomod: set-env
 compile: build
 
 build:
-	$(GOBUILD) -o $(HOMEDIR)/bin/xdata
-	$(GOBUILD) -o $(HOMEDIR)/bin/xdata-cli $(HOMEDIR)/cmd/client
+	$(GOBUILD) -o $(HOMEDIR)/bin/xdb
+	$(GOBUILD) -o $(HOMEDIR)/bin/xdb-cli ./cmd/client
 
 # make test, test your code
 test: prepare test-case

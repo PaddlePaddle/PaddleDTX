@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	DefaultRequestInterval = time.Minute * 67 // avoid file migrate time
+	DefaultRequestInterval = time.Minute * 60
 	defaultAnswerInterval  = time.Minute * 10
 )
 
@@ -37,14 +37,14 @@ var (
 )
 
 type ChallengeDB interface {
-	GenerateChallenge(maxIdx int) ([][]byte, [][]byte, error)
+	GenerateChallenge(sliceIdxList []int, interval int64) ([][]byte, [][]byte, int64, []byte, error)
 
 	// merkle Challenge
 	Setup(sliceData []byte, rangeAmount int) ([]ctype.RangeHash, error)
 	Save(cms []ctype.Material) error
 	Take(fileID string, sliceID string, nodeID []byte) (ctype.RangeHash, error)
 
-	GetChallengeConf() (string, types.PDP)
+	GetChallengeConf() (string, types.PairingChallengeConf)
 }
 
 type SliceStorage interface {

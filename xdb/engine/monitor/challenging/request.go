@@ -98,10 +98,9 @@ func (c *ChallengingMonitor) loopRequest(ctx context.Context) {
 			}
 			if len(files) > 0 || (i == len(nss)-1) {
 				l.WithFields(logrus.Fields{
-					"ns selected": nss[nsSelected].Name,
-					"file num":    len(files),
-					"ns index":    i,
-				}).Info("file ns selected")
+					"ns_selected": nss[nsSelected].Name,
+					"file_num":    len(files),
+				}).Info("ns selected")
 				break
 			}
 		}
@@ -114,15 +113,15 @@ func (c *ChallengingMonitor) loopRequest(ctx context.Context) {
 		if len(files) == 0 {
 			continue
 		}
-		if challengeAlgorithm == types.PDPChallengeAlgorithm {
-			c.doPDPChallengeRequest(challengeAlgorithm, files, pubkey, l)
+		if challengeAlgorithm == types.PairingChallengeAlgorithm {
+			c.doPairingChallengeRequest(challengeAlgorithm, files, pubkey, l)
 		} else {
 			c.doMerkleChallengeRequest(challengeAlgorithm, files, pubkey, l)
 		}
 	}
 }
 
-func (c *ChallengingMonitor) doPDPChallengeRequest(challengeAlgorithm string, files []blockchain.File,
+func (c *ChallengingMonitor) doPairingChallengeRequest(challengeAlgorithm string, files []blockchain.File,
 	pubkey ecdsa.PublicKey, l *logrus.Entry) error {
 
 	// select just one file and nodeID
@@ -133,32 +132,28 @@ func (c *ChallengingMonitor) doPDPChallengeRequest(challengeAlgorithm string, fi
 
 	l.WithField("fileID", fileSelected.ID).Info("file selected")
 
-	// find amount of index to generate pdp challenge
-	maxIdx := 1
-	// map slice idx to slice ID
+	// find slice idx list for selected node
+	// get map from sliceIdx to sliceID
+	var sliceList []int
 	sliceMap := make(map[int]string)
-	sigmaMap := make(map[int][]byte)
 	for _, slice := range fileSelected.Slices {
 		if reflect.DeepEqual(slice.NodeID, nodeSelected) {
-			if slice.SliceIdx > maxIdx {
-				maxIdx = slice.SliceIdx
-			}
+			sliceList = append(sliceList, slice.SliceIdx)
 			sliceMap[slice.SliceIdx] = slice.ID
-			sigmaMap[slice.SliceIdx] = slice.SigmaI
 		}
 	}
 
-	// calculate challenge request
-	indices, vs, err := c.challengeDB.GenerateChallenge(maxIdx)
+	// generate challenge info, which includes sliceIdx list, random number list, round number and random number for this round
+	indices, vs, round, randNum, err := c.challengeDB.GenerateChallenge(sliceList, c.RequestInterval.Nanoseconds())
 	if err != nil {
 		l.WithError(err).Warn("failed GenerateChallenge")
 		return err
 	}
+
+	// get sliceID for each idx
 	var sliceIDs []string
-	var sigmas [][]byte
 	for _, idx := range indices {
 		sliceIDs = append(sliceIDs, sliceMap[int(new(big.Int).SetBytes(idx).Int64())])
-		sigmas = append(sigmas, sigmaMap[int(new(big.Int).SetBytes(idx).Int64())])
 	}
 	if len(sliceIDs) == 0 {
 		l.Warn("failed GenerateChallenge, sliceIDs is empty")
@@ -175,7 +170,8 @@ func (c *ChallengingMonitor) doPDPChallengeRequest(challengeAlgorithm string, fi
 		ChallengeTime:      time.Now().UnixNano(),
 		Indices:            indices,
 		Vs:                 vs,
-		Sigmas:             sigmas,
+		Round:              round,
+		RandThisRound:      randNum,
 		ChallengeAlgorithm: challengeAlgorithm,
 	}
 
@@ -199,9 +195,10 @@ func (c *ChallengingMonitor) doPDPChallengeRequest(challengeAlgorithm string, fi
 	l.WithFields(logrus.Fields{
 		"challenge_id": requestOpt.ChallengeID,
 		"target_node":  string(requestOpt.TargetNode),
+		"round":        requestOpt.Round,
 		"indices":      requestOpt.Indices,
 		"slices":       requestOpt.SliceIDs,
-	}).Info("success to publish challenge request")
+	}).Info("successfully published challenge request")
 	return nil
 }
 
@@ -273,11 +270,11 @@ func (c *ChallengingMonitor) doMerkleChallengeRequest(challengeAlgorithm string,
 	}
 
 	l.WithFields(logrus.Fields{
-		"challenge_id":  requestOpt.ChallengeID,
-		"target_node":   string(sliceSelected.NodeID),
-		"fileSelected":  fileSelected.ID,
-		"sliceSelected": sliceSelected.ID,
-		"range_list":    requestOpt.Ranges,
-	}).Info("success to publish merkle challenge request")
+		"challenge_id":   requestOpt.ChallengeID,
+		"target_node":    string(sliceSelected.NodeID),
+		"file_selected":  fileSelected.ID,
+		"slice_selected": sliceSelected.ID,
+		"range_list":     requestOpt.Ranges,
+	}).Info("successfully published merkle challenge request")
 	return nil
 }

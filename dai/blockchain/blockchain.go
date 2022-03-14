@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	/* define Task Status stored in Contract */
+	/* Define Task Status stored in Contract */
 	TaskConfirming = "Confirming" // waiting for Executors to confirm
 	TaskReady      = "Ready"      // has been confirmed by all Executors, and ready to start
 	TaskToProcess  = "ToProcess"  // has started, and waiting to be precessed
@@ -28,19 +28,19 @@ const (
 	TaskFailed     = "Failed"     // task failed
 	TaskRejected   = "Rejected"   // task rejected by one of the Executors
 
-	/* define Task Type stored in Contract */
+	/* Define Task Type stored in Contract */
 	TaskTypeTrain   = "train"   // training task
 	TaskTypePredict = "predict" // prediction task
 
-	/* define Algorithms stored in Contract */
+	/* Define Algorithms stored in Contract */
 	AlgorithmVLine = "linear-vl"   // linear regression with multiple variables in vertical federated learning
 	AlgorithmVLog  = "logistic-vl" // logistic regression with multiple variables in vertical federated learning
 
-	/* define Regularization stored in Contract */
+	/* Define Regularization stored in Contract */
 	RegModeL1 = "l1" // L1-norm
 	RegModeL2 = "l2" // L2-norm
 
-	/* defines the maximum number of task list query */
+	/* Define the maximum number of task list query */
 	TaskListMaxNum = 100
 )
 
@@ -80,19 +80,19 @@ var RegModeListValue = map[pbCom.RegMode]string{
 type FLInfo struct {
 	FileType  string // file type, only supports "csv"
 	Features  string // feature list
-	TotalRows uint64 // total number of samples
+	TotalRows int64 // total number of samples
 }
 
-// DataNode has access to samples with which to train models or to predict,
+// ExecutorNode has access to samples with which to train models or to predict,
 //  and starts task that multi parties execute synchronically
-type DataNode struct {
+type ExecutorNode struct {
 	ID      []byte
 	Name    string
 	Address string // local host
 	RegTime int64  // node registering time
 }
 
-type DataNodes []DataNode
+type ExecutorNodes []ExecutorNode
 
 // FLTask defines Federated Learning Task based on MPC
 type FLTask *pbTask.FLTask
@@ -112,14 +112,15 @@ type ListFLTaskOptions struct {
 	Status    string // task status
 	TimeStart int64  // task publish time period, only task published after TimeStart and before TimeEnd will be listed
 	TimeEnd   int64
-	Limit     uint64 // limit number of tasks in list request, default 'all'
+	Limit     int64 // limit number of tasks in list request, default 'all'
 }
 
 // FLTaskConfirmOptions contains parameters for confirming task
 type FLTaskConfirmOptions struct {
-	Owner       []byte // one of the task dataset's owner
-	TaskID      string
-	CurrentTime int64 // time when confirming task
+	Pubkey       []byte // one of the task executor's public key
+	TaskID       string
+	RejectReason string // reason of the rejected task
+	CurrentTime  int64  // time when confirming task
 
 	Signature []byte // executor's signature
 }
@@ -138,6 +139,6 @@ type FLTaskExeStatusOptions struct {
 
 // AddNodeOptions contains parameters for adding node of Executor
 type AddNodeOptions struct {
-	Node      DataNode
+	Node      ExecutorNode
 	Signature []byte
 }

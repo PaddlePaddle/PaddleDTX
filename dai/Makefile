@@ -42,8 +42,8 @@ compile: build
 
 build:
 	$(GOBUILD) -o $(HOMEDIR)/bin/executor
-	$(GOBUILD) -o $(HOMEDIR)/bin/executor-cli $(HOMEDIR)/executor/cmd
-	$(GOBUILD) -o $(HOMEDIR)/bin/requester-cli $(HOMEDIR)/requester/cmd
+	$(GOBUILD) -o $(HOMEDIR)/bin/executor-cli ./executor/cmd
+	$(GOBUILD) -o $(HOMEDIR)/bin/requester-cli ./requester/cmd
 
 # make test, test your code
 test: prepare test-case

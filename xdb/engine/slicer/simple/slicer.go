@@ -90,7 +90,7 @@ func (ss *SimpleSlicer) Slice(ctx context.Context, r io.Reader, opt *slicer.Slic
 			case io.EOF:
 				// end of file
 			default:
-				onErr(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read"))
+				onErr(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read file during Slice"))
 			}
 
 			close(resCh)

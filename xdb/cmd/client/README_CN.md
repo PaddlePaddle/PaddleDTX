@@ -2,154 +2,194 @@
 
 # XuperDB 命令行工具
 
-## 一、存储节点操作
+## 一、节点操作
 
-### 存储节点操作命令说明 [./bin/client nodes]
-| command    |        说明      |
+### 节点公私钥对生成命令说明 [./xdb-cli key]
+| command    |        explanation      | 
+| :----------: |   :-----------:   | 
+| genkey       | generate a pair of key |  
+| addukey      | used for the dataOwner node to add client's public key into the whitelist | 
+| genpdpkeys   | generate pairing based challenge parameters |
+
+### 为数据持有节点或存储节点生成公私钥
+```shell
+$ ./xdb-cli key genkey -o ./keys
+```
+
+### 为数据持有节点客户端生成公私钥
+```shell
+$ ./xdb-cli key genkey -o ./ukeys
+```
+
+### 将数据持有节点的客户端公钥加入白名单
+```shell
+$ ./xdb-cli key addukey -o ./authkeys -u 339524f35fb86a85bc3f9eed2b6ffd976de08b2cd47953b6640912f16e6863f2123f057cfef1f7132072602255a5a39bf254569fa6f8591327255c97881bc112
+```
+
+### 为数据持有节点生成基于双线性对挑战的公私钥
+```shell
+$ ./xdb-cli nodes genpdpkeys
+```
+
+## 二、存储节点操作
+
+### 存储节点操作命令说明 [./xdb-cli nodes]
+| command    |        explanation      |
 | ---------- |   -----------   |
-| add        | add node into xuper db  |
-| genkey     | generate a pair of node key |
-| genpdpkeys | generate pdp keys |
-| get        | get node of xuper db by id  |
-| health     | get node health status by id  |
-| list       | list nodes of xuper db  |
+| get        | get the storage node by id  |
+| health     | get the storage node's health status by id  |
+| list       | list storage nodes |
 | mrecords   | get node slice migrate records  |
-| heartbeat  | heartbeatnum of given day, example '2021-07-10 12:00:00' |   
-| offline    | get node of xuper db offline by privatekey |
-| online     | get node of xuper db online by privatekey |    
-
-### 为节点生成公私钥
-```shell
-$ ./bin/client nodes genkey
-```
-
-### 为租赁节点生成基于双线性对挑战的公私钥
-```shell
-$ ./bin/client nodes genpdpkeys
-```
+| heartbeat  | get storage node heart beat number of one day, example '2021-07-10 12:00:00' |   
+| offline    | set a storage node offline |
+| online     | set a storage node online |   
 
 ### 获取节点列表
 ```shell
-$ ./bin/client --host http://localhost:8001 nodes list
+$ ./xdb-cli nodes list --host http://localhost:8122
 ```
 
 ### 获取节点信息
 ```shell
-$ ./bin/client --host http://localhost:8001 nodes get --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+$ ./xdb-cli nodes get --host http://localhost:8122 --keyPath ./keys
 ```
 
 ### 节点上线
 ```shell
-$ ./bin/client --host http://localhost:8001 nodes online -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+$ ./xdb-cli --host http://localhost:8122 nodes online --keyPath ./keys
 ```
 
 ### 节点下线
 ```shell
-$ ./bin/client --host http://localhost:8001 nodes offline -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+$ ./xdb-cli --host http://localhost:8122 nodes offline --keyPath ./keys
 ```
 
 ### 节点健康度查询
 ```shell
-$ ./bin/client --host http://localhost:8001 nodes health --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+$ ./xdb-cli nodes health --host http://localhost:8122 --keyPath ./keys
 ```
 
 ### 节点迁移记录查询
 ```shell
-$ ./bin/client --host http://localhost:8001 nodes mrecords --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+$ ./xdb-cli nodes mrecords --host http://localhost:8122 --keyPath ./keys
 ```
 
 ### 节点心跳检测数量
 ```shell
-$./bin/client --host http://localhost:8001 nodes heartbeat --id 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -c "2021-08-04 17:29:00"
+$ ./xdb-cli nodes heartbeat --host http://localhost:8122 --keyPath ./keys -c "2021-08-04 17:29:00"
 ```
 
-## 二、文件操作
+## 三、文件操作
 
-### 文件操作命令说明 [./bin/client files]：
-| command    |        说明      |
-| ---------- |   -----------   |
-| addns      | add file namespace into xuper db  |
-| download   | download file from xuper db  |
-| getbyid    | get file of xuper db by id  |
-| getbyname  | get file of xuper db by name  |
-| getns      | get file namespace detail of xuper db  |
-| list       | list files of xuper db |
-| listexp    | list expired but valid files of xuper db |
-| listns     | list file namespaces of owner |
-| syshealth  | get files sys health of xuper db  |
-| upload     | upload file into xuper db  |
-| ureplica   | update file replica of xuper db |
-| utime      | update file expiretime by id  |
+### 文件操作命令说明 [./bin/xdb-cli files]：
+| command     |        explanation      |
+| ----------  |   -----------   |
+| addns       | add a file namespace into XuperDB  |
+| download    | download the file from XuperDB  |
+| getbyid     | get the file by id from XuperDB  |
+| getbyname   | get the file by name from XuperDB |
+| getns       | get the file namespace detail in XuperDB  |
+| list        | list files in XuperDB |
+| listexp     | list expired but valid files in XuperDB |
+| listns      | list file namespaces of the DataOwner |
+| syshealth   | get the DataOwner's health status  |
+| upload      | save a file into XuperDB |
+| ureplica    | update file replica of XuperDB |
+| utime       | update file's expiretime by the id |  
+| getauthbyid | get the file authorization application detail | 
+| confirmauth | confirm the applier's file authorization application | 
+| rejectauth  | reject the applier's file authorization application |
+| listauth    | list file authorization applications | 
  
 
 ### 文件命名空间新增
 ```shell
-$ ./bin/client --host http://localhost:8001 files addns -n py1  -r 1 -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 
+$ ./xdb-cli --host http://localhost:8121 files addns -n testns  -r 2 --keyPath ./ukeys
 ```
 
 ### 命名空间详情查询
 ```shell
-$ ./bin/client --host http://localhost:8001 files getns -n py1  -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 
+$ ./xdb-cli --host http://localhost:8121 files getns -n testns
 ```
 
 ### 查看命名空间列表
 ```shell
-$ ./bin/client --host http://localhost:8001 files listns -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 
+$ ./xdb-cli --host http://localhost:8121 files listns -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```
 
 ### 修改命名空间副本数
 ```shell
-$ ./bin/client --host http://localhost:8001 files ureplica -n py  -r 3 -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+$ ./xdb-cli --host http://localhost:8121 files ureplica -n testns  -r 3 --keyPath ./ukeys
 ```
 
 ### 文件上传
 ```shell
-$ ./bin/client --host http://localhost:8001 files upload -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 -n test -m bigfile -i ./bin/client -e "2021-06-30 15:00:00" -d "this is a test file"
+$ ./xdb-cli --host http://localhost:8121 files upload --keyPath ./ukeys -n testns -m bigfile -i ./bin/client -e "2021-06-30 15:00:00" -d "this is a test file"
 ```
 
 ### 文件续期
 ```shell
-$ ./bin/client --host http://localhost:8001 files utime -e '2021-08-08 15:15:04' -i b87b588f-2e46-4ee5-8128-888592ada4fd -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79
+$ ./xdb-cli --host http://localhost:8121 files utime -e '2021-08-08 15:15:04' -i b87b588f-2e46-4ee5-8128-888592ada4fd --keyPath ./ukeys
 ```
 
 ### 文件下载：依据文件名下载
 ```shell
-$ ./bin/client --host http://localhost:8001 files download -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 -n test -m bigfile -o ./testdata/bigfile
+$ ./bin/xdb-cli --host http://localhost:8001 files download --keyPath ./ukeys -n testns -m bigfile -o ./testdata/bigfile
 ```
 
 ### 文件下载：依据文件ID下载
 ```shell
-$ ./bin/client --host http://localhost:8001 files download -k 5572e2fa0c259fe798e5580884359a4a6ac938cfff62d027b90f2bac3eceef79 --fileid 2695c0c5-5a30-4184-bf15-94df43857070 -o ./testdata/bigfile
+$ ./bin/xdb-cli --host http://localhost:8001 files download --keyPath ./ukeys --fileid 2695c0c5-5a30-4184-bf15-94df43857070 -o ./testdata/bigfile
 ```
 
 ### 查看文件列表
 ```shell
-$ ./bin/client --host http://localhost:8001 files list -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n test -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00" --ext "{'FileType':'csv','Features':'room,price', 'TotalRows':400}"
+$ ./xdb-cli --host http://localhost:8121 files list -n testns -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```
 
 ### 查看过期(仍在保留期内)文件列表
 ```shell
-$ ./bin/client --host http://localhost:8001 files listexp -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n test -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
+$ ./xdb-cli --host http://localhost:8121 files listexp -n testns -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```
 
 ### 查看文件信息：依据文件ID
 ```shell
-$ ./bin/client --host http://localhost:8001 files getbyid --id d86737bf-97ac-427f-a835-871d307c3589
+$ ./xdb-cli --host http://localhost:8121 files getbyid --id d86737bf-97ac-427f-a835-871d307c3589
 ```
 
 ### 查看文件信息：依据文件名称
 ```shell
-$ ./bin/client --host http://localhost:8001 files getbyname -n test -m bigfile -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+$ ./xdb-cli --host http://localhost:8121 files getbyname -n testns -m bigfile
 ```
 
 ### 查看文件系统健康度
 ```shell
-$ ./bin/client --host http://localhost:8001 files syshealth -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6
+$ ./xdb-cli --host http://localhost:8121 files syshealth
 ```
 
-## 三、挑战操作
+### 查看文件授权申请列表
+```shell
+$ ./xdb-cli --host http://localhost:8121 files listauth -s '2022-01-08 15:15:04'
+```
 
-### 挑战操作命令说明[./bin/client challenge]
+### 查看文件授权申请详情
+```shell
+$ ./xdb-cli --host http://localhost:8121 files getauthbyid  --id 933b347a-a207-46ed-bcd7-8fdde94596d0
+```
+
+### 确认文件授权申请
+```shell
+$ ./xdb-cli --host http://localhost:8121 files confirmauth -e '2022-08-08 15:15:04' -i b87b588f-2e46-4ee5-8128-888592ada4fd --keyPath ./ukeys
+```
+
+### 拒绝文件授权申请
+```shell
+$ ./xdb-cli --host http://localhost:8121 files rejectauth -r '拒绝授权申请' -i b87b588f-2e46-4ee5-8128-888592ada4fd --keyPath ./ukeys
+```
+
+## 四、挑战操作
+
+### 挑战操作命令说明[./bin/xdb-cli challenge]
 | command    |        说明      |
 | ---------- |   -----------   |
 | failed     | get failed challenges by filters  |
@@ -159,20 +199,20 @@ $ ./bin/client --host http://localhost:8001 files syshealth -o 363c4c996a0a6d83f
 
 ### 获取挑战
 ```shell
-$ ./bin/client --host http://localhost:8001 challenge get --id ff334622-1442-425c-8d57-3f1b915b84e8 
+$ ./xdb-cli --host http://localhost:8121 challenge get --id ff334622-1442-425c-8d57-3f1b915b84e8 
 ```
 
 ### 获取成功的挑战列表
 ```shell
-$ ./bin/client --host http://localhost:8001 challenge proved -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
+$ ./xdb-cli --host http://localhost:8121 challenge proved -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```
 
 ### 获取失败的挑战列表
 ```shell
-$ ./bin/client --host http://localhost:8001 challenge failed -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
+$ ./xdb-cli --host http://localhost:8121 challenge failed -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```
 
 ### 获取待挑战的列表
 ```shell
-$ ./bin/client --host http://localhost:8001 challenge toprove -o 363c4c996a0a6d83f3d8b3180019702be1b7bb7a5e2a61ce1ef9503a5ad55c4beb1c78d616355a58556010a3518c66526c6dc17b0bea3fe965042ad3adcfe3e6 -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00" --list 0
+$ ./xdb-cli --host http://localhost:8121 challenge toprove -n 58c4fe74988b3bd62a99f143bd07eb1b1e27f77a0c2d90d1c76f84d1adbcb240c652c81f005e4a0a0b3f43c9ebfab713e0e68d74695701f5564478ee59354f58 -l 10 -s "2021-06-30 15:00:00" -e "2021-06-30 16:00:00"
 ```

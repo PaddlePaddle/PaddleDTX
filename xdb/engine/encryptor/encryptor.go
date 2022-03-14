@@ -13,8 +13,9 @@
 
 package encryptor
 
-// EncryptOptions use sliceID and nodeID info when encrypting slice content
+// EncryptOptions use fileID, sliceID and nodeID info when encrypting slice content
 type EncryptOptions struct {
+	FileID  string
 	SliceID string
 	NodeID  []byte
 }
@@ -32,8 +33,9 @@ type EncryptedSlice struct {
 	CipherText []byte // slice ciphertext
 }
 
-// RecoverOptions use sliceID and nodeID info when recovering slice content
+// RecoverOptions use fileID, sliceID and nodeID info when recovering slice content
 type RecoverOptions struct {
+	FileID  string
 	SliceID string
 	NodeID  []byte
 }

@@ -3,7 +3,7 @@ module github.com/PaddlePaddle/PaddleDTX/crypto
 go 1.13
 
 require (
-	github.com/cloudflare/bn256 v0.0.0-20200818021822-8aba7cd1ae4c
+	github.com/consensys/gnark-crypto v0.5.3
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 )

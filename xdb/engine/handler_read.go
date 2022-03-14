@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/cjqpker/slidewindow"
 	"github.com/sirupsen/logrus"
@@ -45,9 +46,9 @@ func verifyReadToken(opt types.ReadOptions) error {
 	// verify token
 	var msg string
 	if len(opt.FileID) > 0 {
-		msg = fmt.Sprintf("%s:%d", opt.FileID, opt.Timestamp)
+		msg = fmt.Sprintf("%s,%d", opt.FileID, opt.Timestamp)
 	} else {
-		msg = fmt.Sprintf("%s:%s:%s:%d", opt.User, opt.Namespace, opt.FileName, opt.Timestamp)
+		msg = fmt.Sprintf("%s,%s,%s,%d", opt.User, opt.Namespace, opt.FileName, opt.Timestamp)
 	}
 	msgDigest := hash.HashUsingSha256([]byte(msg))
 	if err := verifyUserToken(opt.User, opt.Token, msgDigest); err != nil {
@@ -58,6 +59,13 @@ func verifyReadToken(opt types.ReadOptions) error {
 }
 
 // Read download file by pulling slices from storage nodes
+// The detailed steps are as follows:
+// 1. parameters check
+// 2. read file info from the blockchain
+// 3. decrypt the file's struct to get slice's order
+// 4. download slices from the storage node, if request fails, pull slices from other storage nodes
+// 5. slices decryption and combination
+// 6. decrypt the combined slices to get the original file
 func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser, error) {
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -71,6 +79,8 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 		cancel()
 		return nil, err
 	}
+	pubkey := ecdsa.PublicKeyFromPrivateKey(e.monitor.challengingMonitor.PrivateKey)
+	opt.User = pubkey.String()
 
 	// prepare
 	allNodes, err := e.chain.ListNodes()
@@ -103,7 +113,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 	}
 
 	// recover structure
-	fs, err := e.recoverChainFileStructure(f.Structure)
+	fs, err := e.recoverChainFileStructure(f.Structure, opt.FileID)
 	if err != nil {
 		cancel()
 		return nil, err
@@ -172,6 +182,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 
 			// decrypt
 			eOpt := encryptor.RecoverOptions{
+				FileID:  opt.FileID,
 				SliceID: target.ID,
 				NodeID:  target.NodeID,
 			}
@@ -225,13 +236,14 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 	}()
 
 	// decrypt recovered file
-	plain, err := e.encryptor.Recover(reader, &encryptor.RecoverOptions{})
+	plain, err := e.encryptor.Recover(reader, &encryptor.RecoverOptions{FileID: opt.FileID})
 	if err != nil {
-		return nil, errorx.NewCode(err, errorx.ErrCodeCrypto, "file decryption failed")
+		return nil, errorx.NewCode(err, errorx.ErrCodeCrypto, "failed to recover original file")
 	}
 	return ioutil.NopCloser(bytes.NewReader(plain)), nil
 }
 
+// getBlockchainFile4Read query file details by fileID or fileName from blockchain
 func getBlockchainFile4Read(chain Blockchain, opt *types.ReadOptions) (
 	blockchain.File, error) {
 	var err error
@@ -249,6 +261,8 @@ func getBlockchainFile4Read(chain Blockchain, opt *types.ReadOptions) (
 	return f, nil
 }
 
+// makeSlicesPool4Read get the list of storage nodes of slices by blockchain.PublicSliceMeta.
+// return map, key is sliceID, value is storage nodeID lists
 func makeSlicesPool4Read(srs []blockchain.PublicSliceMeta) map[string][]blockchain.PublicSliceMeta {
 	slicesPool := make(map[string][]blockchain.PublicSliceMeta)
 	for _, s := range srs {

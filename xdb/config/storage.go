@@ -17,6 +17,7 @@ type StorageConf struct {
 	Name          string
 	ListenAddress string
 	PrivateKey    string
+	KeyPath       string
 	PublicAddress string
 
 	Blockchain *BlockchainConf

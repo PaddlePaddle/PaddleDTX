@@ -16,10 +16,12 @@ package files
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/file"
 )
 
 var (
@@ -41,7 +43,16 @@ var addNsCmd = &cobra.Command{
 			return
 		}
 
-		err = client.AddFileNs(context.Background(), privateKey, namespace, description, replica)
+		if privateKey == "" {
+			privateKeyBytes, err := file.ReadFile(keyPath, file.PrivateKeyFileName)
+			if err != nil {
+				fmt.Printf("Read privateKey failed, err: %v\n", err)
+				return
+			}
+			privateKey = strings.TrimSpace(string(privateKeyBytes))
+		}
+
+		err = client.AddFileNs(context.Background(), owner, privateKey, namespace, description, replica)
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
 			return
@@ -55,11 +66,11 @@ func init() {
 	rootCmd.AddCommand(addNsCmd)
 
 	addNsCmd.Flags().StringVarP(&privateKey, "privkey", "k", "", "private key")
+	addNsCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./ukeys", "key path")
 	addNsCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace for file")
 	addNsCmd.Flags().StringVarP(&description, "description", "d", "", "description")
 	addNsCmd.Flags().IntVarP(&replica, "replica", "r", 0, "replica")
 
-	addNsCmd.MarkFlagRequired("privkey")
 	addNsCmd.MarkFlagRequired("namespace")
 	addNsCmd.MarkFlagRequired("replica")
 }

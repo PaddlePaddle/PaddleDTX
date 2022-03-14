@@ -17,6 +17,7 @@ type DataOwnerConf struct {
 	Name          string
 	ListenAddress string
 	PrivateKey    string
+	KeyPath       string
 	PublicAddress string
 
 	Slicer     *DataOwnerSlicerConf
@@ -47,12 +48,12 @@ type SoftEncryptorConf struct {
 }
 
 type DataOwnerChallenger struct {
-	Type   string
-	Pdp    *ChallengerPdpConf
-	Merkle *ChallengerMerkleConf
+	Type    string
+	Pairing *ChallengerPairingConf
+	Merkle  *ChallengerMerkleConf
 }
 
-type ChallengerPdpConf struct {
+type ChallengerPairingConf struct {
 	MaxIndexNum int64
 	Sk          string
 	Pk          string

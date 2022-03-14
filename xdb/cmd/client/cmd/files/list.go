@@ -20,6 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
 )
 
@@ -46,6 +47,10 @@ var listFilesCmd = &cobra.Command{
 		endTime, err := time.ParseInLocation(timeTemplate, end, time.Local)
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
+			return
+		}
+		if limit > blockchain.ListMaxNumber {
+			fmt.Printf("invalid limit, the value must smaller than %v \n", blockchain.ListMaxNumber)
 			return
 		}
 
@@ -100,6 +105,10 @@ var listExpFilesCmd = &cobra.Command{
 			fmt.Printf("err：%v\n", err)
 			return
 		}
+		if limit > blockchain.ListMaxNumber {
+			fmt.Printf("invalid limit, the value must smaller than %v \n", blockchain.ListMaxNumber)
+			return
+		}
 
 		opt := httpclient.ListFileOptions{
 			Owner:     owner,
@@ -135,17 +144,15 @@ func init() {
 	listFilesCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace for file")
 	listFilesCmd.Flags().StringVarP(&start, "start", "s", "", "file publish after startTime, example '2021-06-10 12:00:00'")
 	listFilesCmd.Flags().StringVarP(&end, "end", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate), "file publish before endTime, example '2021-06-10 12:00:00'")
-	listFilesCmd.Flags().Uint64VarP(&limit, "limit", "l", 0, "limit for list file, 0 for unlimited")
+	listFilesCmd.Flags().Int64VarP(&limit, "limit", "l", blockchain.ListMaxNumber, "limit for list files")
 
-	listFilesCmd.MarkFlagRequired("owner")
 	listFilesCmd.MarkFlagRequired("namespace")
 
 	listExpFilesCmd.Flags().StringVarP(&owner, "owner", "o", "", "owner for file")
 	listExpFilesCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace for file")
 	listExpFilesCmd.Flags().StringVarP(&start, "start", "s", "", "file publish after startTime, example '2021-06-10 12:00:00'")
 	listExpFilesCmd.Flags().StringVarP(&end, "end", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate), "file publish before endTime, example '2021-06-10 12:00:00'")
-	listExpFilesCmd.Flags().Uint64VarP(&limit, "limit", "l", 0, "limit for list file, 0 for unlimited")
+	listExpFilesCmd.Flags().Int64VarP(&limit, "limit", "l", blockchain.ListMaxNumber, "limit for list expired files")
 
-	listExpFilesCmd.MarkFlagRequired("owner")
 	listExpFilesCmd.MarkFlagRequired("namespace")
 }

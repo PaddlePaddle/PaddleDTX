@@ -28,15 +28,6 @@ CONTRACT_ACCOUNT=1111111111111112
 # 用户安装合约所使用的区块链账户地址
 ADDRESS_PATH=../$TMP_CONF_PATH/blockchain/user
 TRANSFER_AMOUNT=110009887797
-# Executor1 private key, same as paddledtx_test.sh's EXECUTOR1_PRIVATEKEY
-# 任务执行节点1私钥，同paddledtx_test.sh的EXECUTOR1_PRIVATEKEY
-EXECUTOR1_PRIVATEKEY=14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21
-# Executor2 private key, same as paddledtx_test.sh's EXECUTOR2_PRIVATEKEY
-# 任务执行节点2私钥，同paddledtx_test.sh的EXECUTOR2_PRIVATEKEY
-EXECUTOR2_PRIVATEKEY=858843291fe4ed4bd2afc1120efd7315f3cae2d3f79e582f7df843ac6eb0543b
-# The namespace of the sample files and prediction files store, same as paddledtx_test.sh's NAMESPACE
-# 样本文件存储的命名空间，同paddledtx_test.sh的NAMESPACE
-NAMESPACE=paddlempc
 
 function start() {
   # 1. Standardize Conf

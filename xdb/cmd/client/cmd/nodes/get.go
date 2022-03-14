@@ -16,11 +16,13 @@ package nodes
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/file"
 )
 
 // getNodeCmd gets storage node by id
@@ -32,6 +34,14 @@ var getNodeCmd = &cobra.Command{
 		if err != nil {
 			fmt.Printf("err: %v\n", err)
 			return
+		}
+		if id == "" {
+			pubKeyBytes, err := file.ReadFile(keyPath, file.PublicKeyFileName)
+			if err != nil {
+				fmt.Printf("Read publicKey failed, err: %v\n", err)
+				return
+			}
+			id = strings.TrimSpace(string(pubKeyBytes))
 		}
 
 		n, err := client.GetNode(context.Background(), id)
@@ -47,9 +57,6 @@ var getNodeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(getNodeCmd)
-
 	getNodeCmd.Flags().StringVarP(&id, "id", "i", "", "id")
-
-	getNodeCmd.MarkFlagRequired("host")
-	getNodeCmd.MarkFlagRequired("id")
+	getNodeCmd.Flags().StringVarP(&keyPath, "keyPath", "", file.KeyFilePath, "node's key path")
 }

@@ -14,7 +14,6 @@
 package filemaintainer
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -35,7 +34,10 @@ import (
 
 var l = logger.WithField("runner", "file migrate loop")
 
-// migrate checks storage-nodes health conditions and migrate slices from bad nodes to healthy nodes.
+// migrate checks storage-nodes health conditions and migrate slices from bad nodes to healthy nodes
+// The health of slices is determined by the number of slices's replicas and
+// the health of storage nodes where slices stored,
+// if the number of replicas is not enough, expand the slice replicas firstly during slice migration
 func (m *FileMaintainer) migrate(ctx context.Context) {
 	pubkey := ecdsa.PublicKeyFromPrivateKey(m.localNode.PrivateKey)
 
@@ -43,7 +45,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 
 	ticker := time.NewTicker(m.fileMigrateInterval)
 	interval := m.challengerInterval
-	chanllengeAlgorithm, pdp := m.challenger.GetChallengeConf()
+	challengeAlgorithm, pairingConf := m.challenger.GetChallengeConf()
 	defer ticker.Stop()
 
 	m.doneMigrateC = make(chan struct{})
@@ -143,16 +145,19 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 							if err := common.ExpandFileSlices(ctx, m.localNode.PrivateKey, m.copier, m.encryptor, m.blockchain,
 								m.challenger, file, nodesMap, ns.Replica, healthNodes, interval, l); err != nil {
 								l.WithField("file_id", file.ID).WithError(err).Error("failed to migrate file")
+								return
 							} else {
 								l.WithField("file_id", file.ID).Info("file migrated success expand")
 								ef, err := m.blockchain.GetFileByID(file.ID)
 								if err != nil {
-									l.WithField("file_id", file.ID).Info("file expand failed get file id")
+									l.WithField("file_id", file.ID).Info("failed to get file after expansion")
 								} else {
 									file.Slices = ef.Slices
 								}
 							}
 						}
+
+						// find storage nodeIDs for each slice
 						selectedNodes := make(map[string][]string)
 						for _, slice := range file.Slices {
 							selectedNodes[slice.ID] = append(selectedNodes[slice.ID], string(slice.NodeID))
@@ -160,16 +165,11 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 
 						// 5.2 migrate red nodes
 						fileUpdated := false
-						orderedSlices := file.Slices
-						// decrease the number of slice pull
-						if chanllengeAlgorithm == types.PDPChallengeAlgorithm {
-							orderedSlices = orderSlicesByIdx(file.Slices)
-						}
-						newSlices := orderedSlices
+						newSlices := file.Slices
 						var yellowNodeSlices []blockchain.PublicSliceMeta
-						var migrateEnSlices []encryptor.EncryptedSlice
+						var migrateEncSlices []encryptor.EncryptedSlice
 						var mSlice encryptor.EncryptedSlice
-						for _, slice := range orderedSlices {
+						for _, slice := range file.Slices {
 							nodeSliceMap := nodeSliceMap(newSlices, slice.ID)
 							nh, err := m.blockchain.GetNodeHealth(slice.NodeID)
 							if err != nil {
@@ -177,9 +177,8 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 								continue
 							}
 							if nh == blockchain.NodeHealthBad {
-								newSlices, mSlice, selectedNodes, err = m.migrateNode(ctx, slice, nodeSliceMap, healthNodes,
-									healthNodesMap, selectedNodes, file.ID, newSlices, chanllengeAlgorithm,
-									hex.EncodeToString(file.Owner), pdp)
+								newSlices, mSlice, selectedNodes, err = m.migrateSliceToNewNode(ctx, slice, nodeSliceMap, healthNodes,
+									healthNodesMap, selectedNodes, file.ID, newSlices, challengeAlgorithm, hex.EncodeToString(file.Owner))
 								if err != nil {
 									l.WithFields(logrus.Fields{
 										"file_id":  file.ID,
@@ -187,7 +186,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 									}).WithError(err).Error("migrate red node failed")
 								} else {
 									fileUpdated = true
-									migrateEnSlices = append(migrateEnSlices, mSlice)
+									migrateEncSlices = append(migrateEncSlices, mSlice)
 								}
 							}
 							if nh == blockchain.NodeHealthMedium {
@@ -197,13 +196,12 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 
 						// 5.3 migrate yellow node, only migrate to green nodes
 						if len(greenNodes) == 0 {
-							l.WithError(err).Warn("empty Green nodes, not need migrate yellowslices")
+							l.WithError(err).Warn("empty Green nodes, unable to migrate yellow slices")
 						} else {
 							for _, slice := range yellowNodeSlices {
 								nodeSliceMap := nodeSliceMap(newSlices, slice.ID)
-								newSlices, mSlice, selectedNodes, err = m.migrateNode(ctx, slice, nodeSliceMap, greenNodes,
-									healthNodesMap, selectedNodes, file.ID, newSlices, chanllengeAlgorithm,
-									hex.EncodeToString(file.Owner), pdp)
+								newSlices, mSlice, selectedNodes, err = m.migrateSliceToNewNode(ctx, slice, nodeSliceMap, greenNodes,
+									healthNodesMap, selectedNodes, file.ID, newSlices, challengeAlgorithm, hex.EncodeToString(file.Owner))
 								if err != nil {
 									l.WithFields(logrus.Fields{
 										"file_id":  file.ID,
@@ -211,23 +209,36 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 									}).WithError(err).Error("migrate yellow node failed")
 								} else {
 									fileUpdated = true
-									migrateEnSlices = append(migrateEnSlices, mSlice)
+									migrateEncSlices = append(migrateEncSlices, mSlice)
 								}
 							}
 						}
 
 						if fileUpdated {
-							// add new challenge
-							if chanllengeAlgorithm == types.MerkleChallengeAlgorithm {
-								if err := common.AddSlicesNewMerkleChallenge(m.challenger, m.copier,
-									file, migrateEnSlices, interval, l); err != nil {
+							// add new merkle challenge material
+							if challengeAlgorithm == types.MerkleChallengeAlgorithm {
+								if err := common.AddSlicesNewMerkleChallenge(m.challenger, file, migrateEncSlices,
+									interval, l); err != nil {
 									l.WithFields(logrus.Fields{
 										"file_id": file.ID,
-									}).WithError(err).Error("failed to add slices merkle challenge")
+									}).WithError(err).Error("failed to add slices merkle challenge material")
 									return
 								}
-								l.WithField("file_id", file.ID).Info("file migrate merkle challenege add success")
+								l.WithField("file_id", file.ID).Info("file migrate merkle challenge material added successfully")
 							}
+							// add new pairing challenge material
+							if challengeAlgorithm == types.PairingChallengeAlgorithm {
+								file.Slices = newSlices
+								if err := common.AddSlicesNewPairingChallenge(ctx, pairingConf, m.copier, migrateEncSlices, file, m.blockchain,
+									hex.EncodeToString(file.Owner), interval, time.Now().UnixNano(), file.ExpireTime, nil, l); err != nil {
+									l.WithFields(logrus.Fields{
+										"file_id": file.ID,
+									}).WithError(err).Error("failed to add slices pairing challenge material")
+									return
+								}
+								l.WithField("file_id", file.ID).Info("file migrate pairing challenge material added successfully")
+							}
+
 							// update file slices
 							if err := m.updateFileSlicesOnChain(file.ID, file.Owner, newSlices); err == nil {
 								l.WithField("file_id", file.ID).Info("file migrate finished")
@@ -250,14 +261,16 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 	}
 }
 
-// migrateNode find available healthy node and migrate a slice from bad node to it
-func (m FileMaintainer) migrateNode(ctx context.Context, slice blockchain.PublicSliceMeta,
+// migrateSliceToNewNode find available healthy node and migrate a slice from bad node to it
+// 1. pull slice from healthy node and decrypt it
+// 2. encrypt slice and push into the new storage node
+// 3. record slice migrated info and update it to the blockchain
+func (m FileMaintainer) migrateSliceToNewNode(ctx context.Context, slice blockchain.PublicSliceMeta,
 	nodeSliceMap map[string]blockchain.PublicSliceMeta, healthNodes blockchain.NodeHs,
 	healthNodesMap map[string]blockchain.NodeH, selectedNodes map[string][]string, fileID string,
-	slices []blockchain.PublicSliceMeta, chanllengeAlgorithm, sourceId string,
-	pdp types.PDP) ([]blockchain.PublicSliceMeta, encryptor.EncryptedSlice, map[string][]string, error) {
+	slices []blockchain.PublicSliceMeta, challengeAlgorithm, sourceId string) ([]blockchain.PublicSliceMeta,
+	encryptor.EncryptedSlice, map[string][]string, error) {
 
-	// var newMigrateSlice blockchain.PublicSliceMeta
 	var newMigrateEnSlice encryptor.EncryptedSlice
 	// find new nodes to migrate slice
 	newNodes, err := common.FindNewNodes(healthNodes, selectedNodes[slice.ID])
@@ -296,7 +309,6 @@ func (m FileMaintainer) migrateNode(ctx context.Context, slice blockchain.Public
 	}
 
 	success := false
-
 	for _, node := range newNodes {
 		l.WithFields(logrus.Fields{
 			"slice_id":    slice.ID,
@@ -305,7 +317,7 @@ func (m FileMaintainer) migrateNode(ctx context.Context, slice blockchain.Public
 		}).Debug("migrate slice")
 
 		// push to new node
-		if es, err := common.EncAndPush(ctx, m.copier, m.encryptor, plaintext, slice.ID, sourceId, &node); err == nil {
+		if es, err := common.EncAndPush(ctx, m.copier, m.encryptor, plaintext, slice.ID, sourceId, fileID, &node); err == nil {
 			l.WithFields(logrus.Fields{
 				"slice_id":    slice.ID,
 				"old_node":    string(slice.NodeID),
@@ -316,10 +328,9 @@ func (m FileMaintainer) migrateNode(ctx context.Context, slice blockchain.Public
 
 			// put migrate record on blockchain
 			m.migrateRecordOnChain(string(slice.NodeID), fileID, slice.ID)
-			if chanllengeAlgorithm == types.PDPChallengeAlgorithm {
-				// rearrange file slices
-				slices, err = m.rearrangeSlices(ctx, slices, slice.ID, string(slice.NodeID), string(es.NodeID), sourceId,
-					es.CipherText, healthNodesMap, selectedNodes, pdp)
+			if challengeAlgorithm == types.PairingChallengeAlgorithm {
+				// rearrange file slices, remove bad slice and insert new slice with new index
+				slices, err = m.rearrangeSlices(slices, slice.ID, string(slice.NodeID), string(es.NodeID), es.CipherText)
 				if err != nil {
 					l.WithFields(logrus.Fields{
 						"slice_id": slice.ID,
@@ -329,17 +340,17 @@ func (m FileMaintainer) migrateNode(ctx context.Context, slice blockchain.Public
 					continue
 				}
 			} else {
+				// remove old slice and insert new slice
 				newMigrateSlice := blockchain.PublicSliceMeta{
 					ID:         es.EncryptedSliceMeta.SliceID,
 					CipherHash: es.EncryptedSliceMeta.CipherHash,
 					Length:     es.EncryptedSliceMeta.Length,
 					NodeID:     es.EncryptedSliceMeta.NodeID,
 				}
-				newMigrateEnSlice = es
 				slices = append(slices, newMigrateSlice)
-				// remove old slice
 				slices = removeSlice(slices, slice)
 			}
+			newMigrateEnSlice = es
 			break
 		} else {
 			l.WithFields(logrus.Fields{
@@ -366,94 +377,34 @@ func nodeSliceMap(sliceMetas []blockchain.PublicSliceMeta, sliceID string) map[s
 }
 
 // rearrangeSlices update slices in file structure saved on blockchain
-func (m FileMaintainer) rearrangeSlices(ctx context.Context, oldSlices []blockchain.PublicSliceMeta, sliceID, badNode,
-	newNode, fileId string, ciphertext []byte, healthNodesMap map[string]blockchain.NodeH,
-	selectedNodes map[string][]string, pdp types.PDP) ([]blockchain.PublicSliceMeta, error) {
+func (m FileMaintainer) rearrangeSlices(oldSlices []blockchain.PublicSliceMeta, sliceID, badNode,
+	newNode string, ciphertext []byte) ([]blockchain.PublicSliceMeta, error) {
 
-	var newSlices []blockchain.PublicSliceMeta
-	var badNodeSlices []blockchain.PublicSliceMeta
-	badSliceIdx := 1
-	newNodeIdx := 1
+	var badSlice blockchain.PublicSliceMeta
+	newNodeLargestIdx := 0
 	for _, slice := range oldSlices {
-		if string(slice.NodeID) != badNode {
-			newSlices = append(newSlices, slice)
-		} else {
-			badNodeSlices = append(badNodeSlices, slice)
-			if slice.ID == sliceID {
-				badSliceIdx = slice.SliceIdx
-			}
+		// get bad slice from file slice list
+		if slice.ID == sliceID && string(slice.NodeID) == badNode {
+			badSlice = slice
 		}
+		// get largest slice index for new storage node
 		if string(slice.NodeID) == newNode {
-			newNodeIdx++
+			if newNodeLargestIdx < slice.SliceIdx {
+				newNodeLargestIdx = slice.SliceIdx
+			}
 		}
 	}
-
-	// remove slice from bad node
-	for _, slice := range badNodeSlices {
-		if slice.SliceIdx < badSliceIdx {
-			newSlices = append(newSlices, slice)
-		}
-		//
-		if slice.SliceIdx > badSliceIdx {
-			newIdx := slice.SliceIdx - 1
-
-			// pull and decrypt
-			var plaintext []byte
-			var err error
-			for _, node := range selectedNodes[slice.ID] {
-				nodeH, exist := healthNodesMap[node]
-				if !exist {
-					continue
-				}
-				plaintext, err = common.PullAndDec(ctx, m.copier, m.encryptor, slice, &nodeH.Node, fileId)
-				if err == nil {
-					break
-				}
-			}
-			if len(plaintext) == 0 {
-				return nil, errorx.New(errorx.ErrCodeInternal, "failed to pull slice")
-			}
-
-			// re-encrypt
-			encOpt := encryptor.EncryptOptions{
-				SliceID: slice.ID,
-				NodeID:  slice.NodeID,
-			}
-			es, err := m.encryptor.Encrypt(bytes.NewReader(plaintext), &encOpt)
-			if err != nil {
-				return nil, err
-			}
-
-			// get new sigmaI
-			newSigmaI, err := common.GetSigmaISliceIdx(es.CipherText, newIdx, pdp)
-			if err != nil {
-				return nil, err
-			}
-			newSlice := blockchain.PublicSliceMeta{
-				ID:         slice.ID,
-				CipherHash: slice.CipherHash,
-				Length:     slice.Length,
-				NodeID:     slice.NodeID,
-				SliceIdx:   newIdx,
-				SigmaI:     newSigmaI,
-			}
-			newSlices = append(newSlices, newSlice)
-		}
-	}
+	// remove bad slice
+	newSlices := removeSlice(oldSlices, badSlice)
 
 	// get slice for new node
-	newNodeSigmaI, err := common.GetSigmaISliceIdx(ciphertext, newNodeIdx, pdp)
-	if err != nil {
-		return nil, err
-	}
 	newSliceHash := hash.HashUsingSha256(ciphertext)
 	newNodeSlice := blockchain.PublicSliceMeta{
 		ID:         sliceID,
 		CipherHash: newSliceHash,
 		Length:     uint64(len(ciphertext)),
 		NodeID:     []byte(newNode),
-		SliceIdx:   newNodeIdx,
-		SigmaI:     newNodeSigmaI,
+		SliceIdx:   newNodeLargestIdx + 1,
 	}
 	newSlices = append(newSlices, newNodeSlice)
 	return newSlices, nil
@@ -501,7 +452,7 @@ func (m FileMaintainer) updateFileSlicesOnChain(fileID string, owner []byte, sli
 	return m.blockchain.UpdateFilePublicSliceMeta(&opt)
 }
 
-// orderSlicesByIdx put slice with larger idx in front of others
+// orderSlicesByIdx rearrange slices with descending sliceIdx order with respect to each storage node
 func orderSlicesByIdx(slices []blockchain.PublicSliceMeta) []blockchain.PublicSliceMeta {
 	nodeSlicesMap := make(map[string][]blockchain.PublicSliceMeta)
 	for _, slice := range slices {

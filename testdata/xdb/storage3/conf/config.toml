@@ -3,7 +3,7 @@ type = "storage"
 [storage]
 name = "storage-node3"
 listenAddress = ":80"
-privateKey = "c8f56724151a4d318ecdb0812b3b52a940bb3bd1711c14ff9c4b18e8d60019df"
+keyPath = "./keys"
 publicAddress = "storage3.node.com:80"
 
 [storage.blockchain]

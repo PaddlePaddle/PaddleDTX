@@ -15,12 +15,14 @@ package task
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
 	requestClient "github.com/PaddlePaddle/PaddleDTX/dai/requester/client"
+	"github.com/PaddlePaddle/PaddleDTX/dai/util/file"
 )
 
 var (
@@ -57,9 +59,18 @@ var listTasksCmd = &cobra.Command{
 		}
 
 		if limit > blockchain.TaskListMaxNum {
-			fmt.Printf("invalid limit, the value must less than %v \n", blockchain.TaskListMaxNum)
+			fmt.Printf("invalid limit, the value must smaller than %v \n", blockchain.TaskListMaxNum)
 			return
 		}
+		if pubkey == "" {
+			pubkeyBytes, err := file.ReadFile(keyPath, file.PublicKeyFileName)
+			if err != nil {
+				fmt.Printf("Read publicKey failed, err: %v\n", err)
+				return
+			}
+			pubkey = strings.TrimSpace(string(pubkeyBytes))
+		}
+
 		tasks, err := client.ListTask(pubkey, status, startTime, endTime.UnixNano(), limit)
 		if err != nil {
 			fmt.Printf("ListTask failed：%v\n", err)
@@ -79,10 +90,10 @@ func init() {
 	rootCmd.AddCommand(listTasksCmd)
 
 	listTasksCmd.Flags().StringVarP(&pubkey, "pubkey", "p", "", "requester or executor's public key hex string, support listing tasks who published or involved")
+	listTasksCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./keys", "key path")
 	listTasksCmd.Flags().StringVarP(&start, "st", "s", "", "start of time range during which tasks were published, example '2021-06-10 12:00:00'")
 	listTasksCmd.Flags().StringVarP(&end, "et", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate), "end of time range during which tasks were published, example '2021-06-10 12:00:00'")
-	listTasksCmd.Flags().Int64VarP(&limit, "limit", "l", 100, "maximum of tasks can be queried")
+	listTasksCmd.Flags().Int64VarP(&limit, "limit", "l", blockchain.TaskListMaxNum, "maximum of tasks can be queried")
 	listTasksCmd.Flags().StringVar(&status, "status", "", "status of task, such as Confirming, Ready, ToProcess, Processing, Finished, Failed, default for all types of status")
 
-	listTasksCmd.MarkFlagRequired("pubkey")
 }

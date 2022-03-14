@@ -14,7 +14,11 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/spf13/viper"
+
+	"github.com/PaddlePaddle/PaddleDTX/dai/util/file"
 )
 
 var (
@@ -28,9 +32,16 @@ type ExecutorConf struct {
 	ListenAddress string
 	PublicAddress string
 	PrivateKey    string
+	KeyPath       string
+	Mode          *ExecutorModeConf
 	Mpc           *ExecutorMpcConf
 	Storage       *ExecutorStorageConf
 	Blockchain    *ExecutorBlockchainConf
+}
+
+type ExecutorModeConf struct {
+	Type string
+	Self *XuperDBConf
 }
 
 type ExecutorMpcConf struct {
@@ -42,15 +53,22 @@ type ExecutorMpcConf struct {
 }
 
 type ExecutorStorageConf struct {
-	Type             string
-	LocalStoragePath string
-	XuperDB          *XuperDBConf
+	Type                  string
+	LocalModelStoragePath string
+	XuperDB               *XuperDBConf
+	Local                 *PredictLocalConf
 }
 
 type XuperDBConf struct {
+	PrivateKey string
 	Host       string
+	KeyPath    string
 	NameSpace  string
 	ExpireTime int64
+}
+
+type PredictLocalConf struct {
+	LocalPredictStoragePath string
 }
 
 type ExecutorBlockchainConf struct {
@@ -87,6 +105,14 @@ func InitConfig(configPath string) error {
 	err = v.Sub("executor").Unmarshal(executorConf)
 	if err != nil {
 		return err
+	}
+	if executorConf.PrivateKey == "" {
+		privateKeyBytes, err := file.ReadFile(executorConf.KeyPath, file.PrivateKeyFileName)
+		if err == nil && len(privateKeyBytes) != 0 {
+			executorConf.PrivateKey = strings.TrimSpace(string(privateKeyBytes))
+		} else {
+			return err
+		}
 	}
 	return nil
 }

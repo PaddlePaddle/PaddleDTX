@@ -24,19 +24,8 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
-// HealthChain defines several contract/chaincode methods related to file/nodes health
-type HealthChain interface {
-	ListNodes() (blockchain.Nodes, error)
-	GetNode(id []byte) (blockchain.Node, error)
-	GetNodeHealth(id []byte) (string, error)
-	GetHeartbeatNum(id []byte, timestamp int64) (int, error)
-
-	ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)
-	ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
-}
-
 // GetHealthNodes gets online healthy(green, yellow) nodes
-func GetHealthNodes(chain HealthChain) (nodes blockchain.NodeHs, err error) {
+func GetHealthNodes(chain CommonChain) (nodes blockchain.NodeHs, err error) {
 	// Prepare
 	allNodes, err := chain.ListNodes()
 	if err != nil {
@@ -94,7 +83,7 @@ func FindNewNodes(healthNodes blockchain.NodeHs, selected []string) (blockchain.
 }
 
 // GetNsFilesHealth gets namespace health conditions
-func GetNsFilesHealth(ctx context.Context, ns blockchain.Namespace, chain HealthChain) (nsh blockchain.NamespaceH, err error) {
+func GetNsFilesHealth(ctx context.Context, ns blockchain.Namespace, chain CommonChain) (nsh blockchain.NamespaceH, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	listOpt := blockchain.ListFileOptions{
@@ -150,7 +139,7 @@ func GetNsFilesHealth(ctx context.Context, ns blockchain.Namespace, chain Health
 }
 
 // GetFileHealth gets file heath status
-func GetFileHealth(ctx context.Context, chain HealthChain, file blockchain.File, replica int) (health string, err error) {
+func GetFileHealth(ctx context.Context, chain CommonChain, file blockchain.File, replica int) (health string, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	// check file legal
@@ -181,7 +170,7 @@ func GetFileHealth(ctx context.Context, chain HealthChain, file blockchain.File,
 	for _, nodes := range sliceList {
 		select {
 		case <-ctx.Done():
-			return
+			return health, errorx.New(errorx.ErrCodeInternal, "context is canceled")
 		default:
 		}
 		// concurrent to get slice health
@@ -251,7 +240,7 @@ func GetSliceAvgHealth(nodes []string, fhns map[string]string) (health string, e
 }
 
 // GetFileSysHealth get system health status of a file owner, include files and nodes health status
-func GetFileSysHealth(ctx context.Context, nss []blockchain.Namespace, nodes blockchain.Nodes, chain HealthChain) (
+func GetFileSysHealth(ctx context.Context, nss []blockchain.Namespace, nodes blockchain.Nodes, chain CommonChain) (
 	fh blockchain.FileSysHealth, err error) {
 	fh.NsNum = len(nss)
 	fh.NodeNum = len(nodes)
@@ -264,7 +253,7 @@ func GetFileSysHealth(ctx context.Context, nss []blockchain.Namespace, nodes blo
 	for _, ns := range nss {
 		select {
 		case <-ctx.Done():
-			return
+			return fh, errorx.New(errorx.ErrCodeInternal, "context is canceled")
 		default:
 		}
 		go func(ns blockchain.Namespace) {
@@ -282,7 +271,7 @@ func GetFileSysHealth(ctx context.Context, nss []blockchain.Namespace, nodes blo
 	for _, n := range nodes {
 		select {
 		case <-ctx.Done():
-			return
+			return fh, errorx.New(errorx.ErrCodeInternal, "context is canceled")
 		default:
 		}
 		go func(n blockchain.Node) {
@@ -336,7 +325,7 @@ func GetFileSysHealth(ctx context.Context, nss []blockchain.Namespace, nodes blo
 }
 
 // getFileNodesHealth get nodes health status
-func getFileNodesHealth(ctx context.Context, nodes []string, chain HealthChain) (map[string]string, error) {
+func getFileNodesHealth(ctx context.Context, nodes []string, chain CommonChain) (map[string]string, error) {
 	nhlist := make(map[string]string)
 	wg := sync.WaitGroup{}
 	wg.Add(len(nodes))

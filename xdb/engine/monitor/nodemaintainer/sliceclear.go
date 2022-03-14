@@ -14,8 +14,10 @@
 package nodemaintainer
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"strconv"
 	"strings"
 	"time"
@@ -79,25 +81,35 @@ func (m *NodeMaintainer) sliceClear(ctx context.Context) {
 			l.WithError(err).Warn("failed to get expire slice")
 			continue
 		}
-		var deleteSlice []string
-		var delete bool
+		var deleteSlices []string
+		var deleteContentErr, deleteSigmasErr error
+		var deleteContent, deleteSigmas = true, true
 		for _, slice := range sliceList {
-			exist, _ := m.sliceStorage.Exist(slice)
 			// if slice exists, remove it
-			if exist {
-				deleteSlice = append(deleteSlice, slice)
-				delete, err = m.sliceStorage.Delete(slice)
-				if !delete {
-					break
-				}
+			sliceSigmas := common.GetSliceSigmasID(slice)
+			if exist, _ := m.sliceStorage.Exist(slice); exist {
+				deleteContent, deleteContentErr = m.sliceStorage.Delete(slice)
 			}
+			// delete pairing based challenge material if exists
+			if exist, _ := m.sliceStorage.Exist(sliceSigmas); exist {
+				deleteSigmas, deleteSigmasErr = m.sliceStorage.Delete(sliceSigmas)
+			}
+			if !deleteContent || !deleteSigmas {
+				break
+			}
+			deleteSlices = append(deleteSlices, slice)
 		}
-		if err != nil {
-			l.WithError(err).Warn("failed to delete node slice")
+		if deleteContentErr != nil {
+			l.WithError(deleteContentErr).Warn("failed to delete node slice")
 			continue
 		}
-		err = m.sliceStorage.SaveAndUpdate(clearKey, strconv.FormatInt(endTime, 10))
-		if err != nil {
+		if deleteSigmasErr != nil {
+			l.WithError(deleteSigmasErr).Warn("failed to delete node slice sigmas")
+			continue
+		}
+
+		r := bytes.NewBufferString(strconv.FormatInt(endTime, 10))
+		if err := m.sliceStorage.SaveAndUpdate(clearKey, r); err != nil {
 			l.WithError(err).Warn("failed to update clear slice time ")
 		}
 
@@ -105,8 +117,8 @@ func (m *NodeMaintainer) sliceClear(ctx context.Context) {
 			"start_time":     time.Unix(0, startTime).Format("2006-01-02 15:04:05"),
 			"end_time":       time.Unix(0, endTime).Format("2006-01-02 15:04:05"),
 			"update_at":      time.Now().Format("2006-01-02 15:04:05"),
-			"dslice_id_list": strings.Join(deleteSlice, ","),
-		}).Info("success to clear slice of node")
+			"dslice_id_list": strings.Join(deleteSlices, ","),
+		}).Info("successfully cleared slice of node")
 	}
 }
 
@@ -114,7 +126,8 @@ func (m *NodeMaintainer) getExpireRangeTime(clearKey string, latestTime, regTime
 	var startTime, endTime int64
 	exist, _ := m.sliceStorage.Exist(clearKey)
 	if !exist {
-		if err := m.sliceStorage.SaveAndUpdate(clearKey, strconv.FormatInt(regTime, 10)); err != nil {
+		r := bytes.NewBufferString(strconv.FormatInt(regTime, 10))
+		if err := m.sliceStorage.SaveAndUpdate(clearKey, r); err != nil {
 			return 0, 0, errorx.Wrap(err, "failed to save and update slice")
 		}
 		endTime = m.getEndExpireTime(regTime, latestTime)

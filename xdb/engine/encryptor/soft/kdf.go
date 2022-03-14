@@ -21,10 +21,10 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 )
 
-// getKey derive encrypt key by password, sliceID and NodeID using key derivation function
-func (se *SoftEncryptor) getKey(sliceID string, nodeID []byte) []byte {
+// getKey derive encrypt key by password, fileID, sliceID and NodeID using key derivation function
+func (se *SoftEncryptor) getKey(fileID, sliceID string, nodeID []byte) []byte {
 	secret := []byte(se.password)
-	salt := append(append([]byte{}, []byte(sliceID)...), nodeID...)
+	salt := append(append([]byte(fileID), []byte(sliceID)...), nodeID...)
 	r := hkdf.New(hash.DefaultHasher, secret, salt, nil)
 
 	// 256 bit symmetric encryption

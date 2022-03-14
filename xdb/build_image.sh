@@ -1,5 +1,5 @@
 #!/bin/sh
-VERSION=1.0
+VERSION=1.1
 serverBinary=xdb
 clientBinary=xdb-cli
 dataOwnerImageName=xdb-dataowner

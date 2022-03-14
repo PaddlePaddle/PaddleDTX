@@ -14,7 +14,6 @@
 package client
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -37,6 +36,7 @@ import (
 	pbCom "github.com/PaddlePaddle/PaddleDTX/dai/protos/common"
 	pbTask "github.com/PaddlePaddle/PaddleDTX/dai/protos/task"
 	util "github.com/PaddlePaddle/PaddleDTX/dai/util/strings"
+	xdbchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 )
 
 type Client struct {
@@ -65,6 +65,7 @@ func GetRequestClient(configPath string) (*Client, error) {
 type PublishOptions struct {
 	PrivateKey  string           // requester private key
 	Files       string           // file list with "," as delimiter, used for training or prediction
+	Executors   string           // executor nodes with "," as delimiter, used for executing a training or prediction task
 	TaskName    string           // task name, not unique for one requester
 	AlgoParam   pbCom.TaskParams // parameters required for training or prediction
 	PSILabels   string           // ID feature name list with "," as delimiter, used for PSI
@@ -94,10 +95,22 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 		}
 	}
 
-	// 2. check data set number, at least two parties
+	// 2. check data sets number and executor nodes number, at least two parties
 	fileIDs := strings.Split(strings.TrimSpace(opt.Files), ",")
+	executors := strings.Split(strings.TrimSpace(opt.Executors), ",")
 	if len(fileIDs) < 2 {
 		return nil, errorx.New(errorx.ErrCodeParam, "not enough data set numbers, got: %d", len(fileIDs))
+	}
+	if util.IsContainDuplicateItems(fileIDs) {
+		return nil, errorx.New(errorx.ErrCodeParam, "sample file IDs cannot be the same")
+	}
+	// the number of files and the number of nodes must be the same
+	// when task is executed, the executor node take the sample file with the same index position
+	if len(fileIDs) != len(executors) {
+		return nil, errorx.New(errorx.ErrCodeParam, "sample files num not match executor nodes num, got: %d", len(executors))
+	}
+	if util.IsContainDuplicateItems(executors) {
+		return nil, errorx.New(errorx.ErrCodeParam, "executor node names cannot be the same")
 	}
 
 	// 3. check if algorithm exists
@@ -113,7 +126,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 
 	// 4. check if dataset and specified label exist
 	var dataSets []*pbTask.DataForTask
-	var fileOwners []string
+	var isTagPart bool
 	isLabelExist := 0
 	for index, fileID := range fileIDs {
 		file, err := c.XchainClient.GetFileByID(fileID)
@@ -134,28 +147,25 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 		// check if label exists in one of the datasets
 		if util.IsContain(fileFeatures, opt.AlgoParam.TrainParams.Label) {
 			isLabelExist += 1
+			isTagPart = true
 		}
 		// only one party is allowed to have label
 		if isLabelExist > 1 {
 			return nil, errorx.New(errorx.ErrCodeParam, "invalid fileIDs, only one sample file is allowed to have label")
 		}
 
-		// owners duplicate check
-		if util.IsContain(fileOwners, fmt.Sprintf("%x", file.Owner)) {
-			return nil, errorx.New(errorx.ErrCodeParam, "duplicate owners")
-
-		}
 		// get dataID address
-		fileOwners = append(fileOwners, fmt.Sprintf("%x", file.Owner))
-		dataNode, err := c.XchainClient.GetDataNodeByID(file.Owner)
+		executorNode, err := c.XchainClient.GetExecutorNodeByName(executors[index])
 		if err != nil {
-			return nil, err
+			return nil, errorx.Wrap(err, "failed to get executor node by node name")
 		}
 		dataSets = append(dataSets, &pbTask.DataForTask{
-			Owner:    file.Owner,
-			PSILabel: psiLabels[index],
-			DataID:   fileID,
-			Address:  dataNode.Address,
+			Owner:     file.Owner,
+			Executor:  executorNode.ID,
+			PSILabel:  psiLabels[index],
+			DataID:    fileID,
+			Address:   executorNode.Address,
+			IsTagPart: isTagPart,
 		})
 	}
 	if opt.AlgoParam.TaskType == pbCom.TaskType_LEARN && isLabelExist < 1 {
@@ -237,7 +247,7 @@ func (c *Client) ListTask(pubkeyStr, status string, start, end,
 		TimeStart: start,
 		TimeEnd:   end,
 		Status:    status,
-		Limit:     uint64(limit),
+		Limit:     limit,
 	})
 	return
 }
@@ -266,7 +276,7 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 		return err
 	}
 
-	// get task
+	// get prediction task
 	task, err := c.XchainClient.GetTaskById(taskID)
 	if err != nil {
 		return err
@@ -275,16 +285,14 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 	if task.AlgoParam.TaskType != pbCom.TaskType_PREDICT {
 		return errorx.New(errorx.ErrCodeParam, "invalid task type, not a predict task")
 	}
-
-	// get result file and owner's host
-	resultFile, err := c.XchainClient.GetFileByID(task.Result)
+	// get training task
+	modelTask, err := c.XchainClient.GetTaskById(task.AlgoParam.ModelTaskID)
 	if err != nil {
-		return errorx.Wrap(err, "failed to get predict fileId")
+		return err
 	}
-
 	var executorHost string
-	for _, dataset := range task.DataSets {
-		if bytes.Equal(dataset.Owner, resultFile.Owner) {
+	for _, dataset := range modelTask.DataSets {
+		if dataset.IsTagPart {
 			executorHost = dataset.Address
 			break
 		}
@@ -299,12 +307,12 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 	taskClient := pbTask.NewTaskClient(conn)
 
 	in := &pbTask.TaskRequest{
-		Owner:  pubkey[:],
+		PubKey: pubkey[:],
 		TaskID: taskID,
 	}
 
 	// verify signature
-	msg := fmt.Sprintf("%x,%s", in.Owner, in.TaskID)
+	msg := fmt.Sprintf("%x,%s", in.PubKey, in.TaskID)
 	sig, err := ecdsa.Sign(privkey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign predict task")
@@ -326,4 +334,33 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 	}
 
 	return nil
+}
+
+// ListExecutorNodes list executor nodes
+func (c *Client) ListExecutorNodes() (nodes blockchain.ExecutorNodes, err error) {
+	return c.XchainClient.ListExecutorNodes()
+}
+
+// GetExecutorNodeByID get executor node by nodeID
+func (c *Client) GetExecutorNodeByID(pubkeyStr string) (node blockchain.ExecutorNode, err error) {
+	pubkey, err := hex.DecodeString(pubkeyStr)
+	if err != nil {
+		return node, errorx.Wrap(err, "failed to decode executor public key")
+	}
+	return c.XchainClient.GetExecutorNodeByID(pubkey[:])
+}
+
+// GetExecutorNodeByName get executor node by nodeName
+func (c *Client) GetExecutorNodeByName(name string) (node blockchain.ExecutorNode, err error) {
+	return c.XchainClient.GetExecutorNodeByName(name)
+}
+
+// GetAuthByID get file authorization application detail by authID
+func (c *Client) GetFileAuthByID(id string) (fileAuth xdbchain.FileAuthApplication, err error) {
+	return c.XchainClient.GetAuthApplicationByID(id)
+}
+
+// ListFileAuthApplications query the list of authorization applications
+func (c *Client) ListFileAuthApplications(opt *xdbchain.ListFileAuthOptions) (fileAuths xdbchain.FileAuthApplications, err error) {
+	return c.XchainClient.ListFileAuthApplications(opt)
 }

@@ -16,23 +16,11 @@
 # Script to test PaddleDTX service, start train or predict task with docker-compose.
 # Usage: ./paddledtx_test.sh {upload_sample_files | start_vl_linear_train | start_vl_linear_predict | start_vl_logistic_train | start_vl_logistic_predict | tasklist | gettaskbyid}
 
-# Requester private key 
-# 计算需求方私钥
-REQUESTERKEY="40816c779f624a8fbc4e37be1ef8bbddc6c07b5f91e704953a599f9080458f60"
-# Requester public key 
-# 计算需求方公钥
-REQUESTER_PUBLICKEY="6cb69efc0439032b0d0f52bae1c9aada3f8fb46a5f24fa99065910055b77a1174d4afbac3c0529c8927587bb0e2ad90a85eaa600cfddd6b99f1212112135ef2b"
-# Executor1 private key, same as network_up.sh's EXECUTOR1_PRIVATEKEY
-# 任务执行节点1私钥，同network_up.sh的EXECUTOR1_PRIVATEKEY
-EXECUTOR1_PRIVATEKEY="14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21"
-EXECUTOR1_PUBLICKEY="4637ef79f14b036ced59b76408b0d88453ac9e5baa523a86890aa547eac3e3a0f4a3c005178f021c1b060d916f42082c18e1d57505cdaaeef106729e6442f4e5"
-# Executor2 private key, same as network_up.sh's EXECUTOR2_PRIVATEKEY
-# 任务执行节点2私钥，同network_up.sh的EXECUTOR2_PRIVATEKEY
-EXECUTOR2_PRIVATEKEY="858843291fe4ed4bd2afc1120efd7315f3cae2d3f79e582f7df843ac6eb0543b"
-EXECUTOR2_PUBLICKEY="e4530d81ccddc478978070e8f9fcc9f101dfc3b5c3ca1519c522c5e9698f394a35aab9145f242765185689a64b7338e9929c6a32e09050ff15645bb121ce1754"
+# The blockchain network configuration used when the requester client publishes or starts tasks
+# 计算需求方任务发布和启动时，使用的区块链网络配置
 CONFIG="./conf/config.toml"
-# The namespace of the sample file store, same as network_up.sh's NAMESPACE
-# 样本文件存储的命名空间，同network_up.sh的NAMESPACE
+# The namespace of the sample file store, used for dataOwner nodes to upload their own training or prediction files
+# 样本文件存储的命名空间，用于数据持有节点分别上传自己的训练或预测文件
 NAMESPACE=paddlempc
 # Sample file description, used for training or prediction task
 # 样本文件描述说明，用于任务训练或预测
@@ -40,13 +28,18 @@ LINEAR_TRAIN_SAMPLE_FILE_DES="vertical linear regression training sample file of
 LINEAR_PREDICT_SAMPLE_FILE_DES="vertical linear regression prediction sample file of Boston house price"
 LOGISTIC_TRAIN_SAMPLE_FILE_DES="vertical logistic regression training sample file of Iris plants"
 LOGISTIC_PREDICT_SAMPLE_FILE_DES="vertical logistic regression prediction sample file of Iris plants"
-# Expiration time of file storage
-# 文件存储的到期时间
+# After uploading the files, get the file IDs from UPLOAD_FILES directory
+# 上传文件后，从 UPLOAD_FILES 目录获取文件ID列表
+UPLOAD_FILES="./upload_files.csv"
+# Define the expiration time of file storage and the expiration time of file authorization available
+# 定义文件存储的到期时间和文件授权可用到期时间
 ARCH=$(uname -s | grep Darwin)
 if [ "$ARCH" == "Darwin" ]; then
   FILE_EXPIRE_TIME=`date -v +6m +"%Y-%m-%d %H:%M:%S"`
+  FILE_AUTH_EXPIRE_TIME=`date -v +1m +"%Y-%m-%d %H:%M:%S"`
 else
   FILE_EXPIRE_TIME=`date -d "+6 month" +"%Y-%m-%d %H:%M:%S"`
+  FILE_AUTH_EXPIRE_TIME=`date -d "+1 month" +"%Y-%m-%d %H:%M:%S"`
 fi
 
 # Parameters required for training or prediction task
@@ -96,7 +89,7 @@ function createNamespace() {
   # 1. Create namespace for dataOwner1
   # 1. 数据持有节点1创建命名空间
   data1AddNsResult=`docker exec -it dataowner1.node.com sh -c "
-    ./xdb-cli files addns  --host http://dataowner1.node.com:80 -k $EXECUTOR1_PRIVATEKEY -n $NAMESPACE -r 2"`
+    ./xdb-cli files addns --keyPath ./ukeys --host http://dataowner1.node.com:80 -n $NAMESPACE -r 2"`
   echo "======> DataOwner1 create files storage namespace result: $data1AddNsResult"
   isData1AddNsOk=$(echo $data1AddNsResult | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1')
   if [ "$isData1AddNsOk" != "OK" ]; then
@@ -105,7 +98,7 @@ function createNamespace() {
   # 2. Create namespace for dataOwner2
   # 2. 数据持有节点2创建命名空间
   data2AddNsResult=`docker exec -it dataowner2.node.com sh -c "
-    ./xdb-cli files addns --host http://dataowner2.node.com:80 -k $EXECUTOR2_PRIVATEKEY  -n $NAMESPACE  -r 2 
+    ./xdb-cli files addns --keyPath ./ukeys --host http://dataowner2.node.com:80 -n $NAMESPACE  -r 2 
   "`
   echo "======> DataOwner2 create files storage namespace result: $data2AddNsResult"
   isData2AddNsOk=$(echo $data2AddNsResult | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1')
@@ -125,8 +118,8 @@ function uploadLinearTrainSampleFile() {
   # DataOwner1 uploads linear train sample files
   # 数据持有节点1上传纵向线性训练样本文件
   data1Samples=`docker exec -it dataowner1.node.com sh -c "
-    ./xdb-cli files upload --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName -k $EXECUTOR1_PRIVATEKEY \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,CRIM,ZN,INDUS,CHAS,NOX,RM\", \"TotalRows\":456}' -i /home/mpc-data/linear_boston_housing/$sampleFileAName \
+    ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName \
+    --ext '{\"FileType\":\"csv\",\"Features\":\"id,CRIM,ZN,INDUS,CHAS,NOX,RM\", \"TotalRows\":457}' -i /home/mpc-data/linear_boston_housing/$sampleFileAName \
     -d '$LINEAR_TRAIN_SAMPLE_FILE_DES'
   "`
   echo "======> DataOwner1 upload vertical_linear_train sample file: $data1Samples"
@@ -138,8 +131,8 @@ function uploadLinearTrainSampleFile() {
   # DataOwner2 uploads linear train sample files
   # 数据持有节点2上传纵向线性训练样本文件
   data2Samples=`docker exec -it dataowner2.node.com sh -c "
-    ./xdb-cli files upload --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName -k $EXECUTOR2_PRIVATEKEY \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,AGE,DIS,RAD,TAX,PTRATIO,B,LSTAT,MEDV\",\"TotalRows\":456}' -i /home/mpc-data/linear_boston_housing/$sampleFileBName \
+    ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName \
+    --ext '{\"FileType\":\"csv\",\"Features\":\"id,AGE,DIS,RAD,TAX,PTRATIO,B,LSTAT,MEDV\",\"TotalRows\":457}' -i /home/mpc-data/linear_boston_housing/$sampleFileBName \
     -d '$LINEAR_TRAIN_SAMPLE_FILE_DES'
   "`
   echo "======> DataOwner2 upload vertical_linear_train sample file: $data2Samples"
@@ -150,6 +143,7 @@ function uploadLinearTrainSampleFile() {
   files="$data1FileId,$data2FileId"
 
   printf "\033[0;32m%s\033[0m\n" "======> Vertical linear train sample files: $files"
+  echo "Vertical linear train sample files: $files" > $UPLOAD_FILES
 }
 
 # uploadLinearPredictSampleFile dataOwner1 and dataOwner2 upload vertical linear prediction sample files
@@ -163,7 +157,7 @@ function uploadLinearPredictSampleFile() {
   # DataOwner1 uploads linear prediction sample files
   # 数据持有节点1上传纵向线性预测样本文件
   data1Samples=`docker exec -it dataowner1.node.com sh -c "
-    ./xdb-cli files upload --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName -k $EXECUTOR1_PRIVATEKEY \
+    ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName \
     --ext '{\"FileType\":\"csv\",\"Features\":\"id,CRIM,ZN,INDUS,CHAS,NOX,RM\", \"TotalRows\":50}' -i /home/mpc-data/linear_boston_housing/$sampleFileAName \
     -d '$LINEAR_PREDICT_SAMPLE_FILE_DES'
   "`
@@ -175,7 +169,7 @@ function uploadLinearPredictSampleFile() {
   # DataOwner2 uploads linear prediction sample files
   # 数据持有节点2上传纵向线性预测样本文件
   data2Samples=`docker exec -it dataowner2.node.com sh -c "
-    ./xdb-cli files upload --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName -k $EXECUTOR2_PRIVATEKEY \
+    ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName \
     --ext '{\"FileType\":\"csv\",\"Features\":\"id,AGE,DIS,RAD,TAX,PTRATIO,B,LSTAT\",\"TotalRows\":50}' -i /home/mpc-data/linear_boston_housing/$sampleFileBName \
     -d '$LINEAR_PREDICT_SAMPLE_FILE_DES'
   "`
@@ -186,6 +180,7 @@ function uploadLinearPredictSampleFile() {
 
   files="$data1FileId,$data2FileId"
   printf "\033[0;32m%s\033[0m\n" "======> Vertical linear prediction sample files: $files"
+  echo "Vertical linear prediction sample files: $files" >> $UPLOAD_FILES
 }
 
 # uploadLogisticTrainSampleFile dataOwner1 and dataOwner2 upload vertical logistic train sample files
@@ -199,7 +194,7 @@ function uploadLogisticTrainSampleFile() {
   # DataOwner1 uploads logistic train sample files
   # 数据持有节点1上传纵向逻辑训练样本文件
   data1Samples=`docker exec -it dataowner1.node.com sh -c "
-    ./xdb-cli files upload --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName -k $EXECUTOR1_PRIVATEKEY \
+    ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName \
     --ext '{\"FileType\":\"csv\",\"Features\":\"id,Sepal Length,Sepal Width\", \"TotalRows\":135}' -i /home/mpc-data/logic_iris_plants/$sampleFileAName \
     -d $LOGISTIC_TRAIN_SAMPLE_FILE_DES
   "`
@@ -211,7 +206,7 @@ function uploadLogisticTrainSampleFile() {
   # DataOwner2 uploads logistic train sample files
   # 数据持有节点2上传纵向逻辑训练样本文件
   data2Samples=`docker exec -it dataowner2.node.com sh -c "
-    ./xdb-cli files upload --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName -k $EXECUTOR2_PRIVATEKEY \
+    ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName \
     --ext '{\"FileType\":\"csv\",\"Features\":\"id,Petal Length,Petal Width,Label\", \"TotalRows\":135}' -i /home/mpc-data/logic_iris_plants/$sampleFileBName \
     -d $LOGISTIC_TRAIN_SAMPLE_FILE_DES
   "`
@@ -223,6 +218,7 @@ function uploadLogisticTrainSampleFile() {
   files="$data1FileId,$data2FileId"
 
   printf "\033[0;32m%s\033[0m\n" "======> Vertical logistic train sample files: $files"
+  echo "Vertical logistic train sample files: $files" >> $UPLOAD_FILES
 }
 
 # uploadLogisticPredictSampleFile dataOwner1 and dataOwner2 upload vertical logistic prediction sample files
@@ -236,7 +232,7 @@ function uploadLogisticPredictSampleFile() {
   # DataOwner1 uploads logistic prediction sample files
   # 数据持有节点1上传纵向逻辑预测样本文件
   data1Samples=`docker exec -it dataowner1.node.com sh -c "
-    ./xdb-cli files upload --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName -k $EXECUTOR1_PRIVATEKEY \
+    ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName \
     --ext '{\"FileType\":\"csv\",\"Features\":\"id,Petal Length,Petal Width\", \"TotalRows\":15}' -i /home/mpc-data/logic_iris_plants/$sampleFileAName \
     -d $LOGISTIC_PREDICT_SAMPLE_FILE_DES
   "`
@@ -248,7 +244,7 @@ function uploadLogisticPredictSampleFile() {
   # DataOwner2 uploads logistic prediction sample files
   # 数据持有节点2上传纵向逻辑预测样本文件
   data2Samples=`docker exec -it dataowner2.node.com sh -c "
-    ./xdb-cli files upload --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName -k $EXECUTOR2_PRIVATEKEY \
+    ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName \
     --ext '{\"FileType\":\"csv\",\"Features\":\"id,Petal Length,Petal Width\", \"TotalRows\":15}' -i /home/mpc-data/logic_iris_plants/$sampleFileBName \
     -d $LOGISTIC_PREDICT_SAMPLE_FILE_DES
   "`
@@ -260,33 +256,46 @@ function uploadLogisticPredictSampleFile() {
   files="$data1FileId,$data2FileId"
 
   printf "\033[0;32m%s\033[0m\n" "======> Vertical logistic prediction sample files: $files"
+  echo "Vertical logistic prediction sample files: $files" >> $UPLOAD_FILES
 }
 
-# taskConfirmAndStart used Executor1 and Executor2 confirm task, then requester start ready task
-# 任务执行节点分别确认任务后，计算需求方启动任务
+# taskConfirmAndStart used DataOwner confirms Executor's file authorization applications, then requester start ready task
+# 数据持有节点分别确认计算方发起的文件使用授权申请，授权通过后，计算需求方启动任务
 function taskConfirmAndStart() {
-  sleep 4
-  # Executor1 confirms the task published by the requester
-  # 任务执行节点1确认任务
-  executor1ConfirmResult=`docker exec -it executor1.node.com sh -c "
-    ./executor-cli task --host executor1.node.com:80 confirm -k $EXECUTOR1_PRIVATEKEY -i $1"`
-  echo "======> DataOwner1 authorizes Requester to use its data to train or predict and Executor1 confirms the task: $executor1ConfirmResult"
-  sleep 4
+  sleep 15
+  # DataOwner1 authorizes Executor1 to use its data to train or predict
+  # 数据持有节点1确认授权样本文件给任务执行节点1进行训练或预测
+  data1ListAuthResult=`docker exec -it dataowner1.node.com sh -c "
+    ./xdb-cli files listauth --host http://dataowner1.node.com:80 --status Unapproved" |grep "AuthID" | awk '{print $2}' | awk 'BEGIN{RS="\r";ORS="";}{print $0}'`
+  if [ "$data1ListAuthResult" ]; then
+    for line in $data1ListAuthResult
+    do
+      data1ConfirmAuthResult=`docker exec -it dataowner1.node.com sh -c "
+      ./xdb-cli files confirmauth --keyPath ./ukeys --host http://dataowner1.node.com:80 -i $line -e '$FILE_AUTH_EXPIRE_TIME'"`
+      echo "======> DataOwner1 authorizes Executor1 to use its data to train or predict: $data1ConfirmAuthResult"
+    done
+  fi
 
-  # Executor2 confirms the task published by the requester
-  # 任务执行节点2确认任务
-  executor2ConfirmResult=`docker exec -it executor2.node.com sh -c "
-    ./executor-cli task --host executor2.node.com:80 confirm  -k $EXECUTOR2_PRIVATEKEY -i $1
-    "`
-  echo "======> DataOwner2 authorizes Requester to use its data to train or predict and Executor2 confirms the task: $executor1ConfirmResult"
-  sleep 4
-
+  # DataOwner2 authorizes Executor2 to use its data to train or predict
+  # 数据持有节点2确认授权样本文件给任务执行节点2进行训练或预测
+  data2ListAuthResult=`docker exec -it dataowner2.node.com sh -c "
+  ./xdb-cli files listauth --host http://dataowner2.node.com:80 --status Unapproved" |grep "AuthID" | awk '{print $2}' | awk 'BEGIN{RS="\r";ORS="";}{print $0}'`
+  if [ "$data2ListAuthResult" ]; then
+    for line in $data2ListAuthResult
+    do
+      data2ConfirmAuthResult=`docker exec -it dataowner2.node.com sh -c "
+      ./xdb-cli files confirmauth --keyPath ./ukeys --host http://dataowner2.node.com:80 -i $line -e '$FILE_AUTH_EXPIRE_TIME'"`
+      echo "======> DataOwner2 authorizes Executor2 to use its data to train or predict: $data2ConfirmAuthResult"
+    done
+  fi
+  sleep 15
+  
   # Requester starts the task when train or prediction task is confirmed
   # 计算方需求方启动任务
   requesterStartResult=`docker exec -it executor1.node.com sh -c "
-  ./requester-cli task start -k $REQUESTERKEY -c ./conf/config.toml -i $1
-  "`
-  echo "======> Requester started task: $executor1ConfirmResult"
+  ./requester-cli task start --keyPath ./reqkeys -c ./conf/config.toml -i $1
+  " | awk 'BEGIN{RS="\r";ORS="";}{print $0}'`
+  echo "======> Requester started task: $requesterStartResult"
 }
 
 function linearVlTrain() {
@@ -298,7 +307,7 @@ function linearVlTrain() {
   # Requester published linear training task
   # 计算需求方发布纵向线性训练任务
   result=`docker exec -it executor1.node.com sh -c "./requester-cli task publish -p $PSI -a $VLLINALGO -f $VLLIN_TRAIN_FILES \
-  -l $VLLINLABEL -k $REQUESTERKEY -t train -n $VLLINTASKTRAINNAME -c $CONFIG --amplitude $AMPLITUDE" | awk 'BEGIN{RS="\r";ORS="";}{print $0}'| awk '$1=$1'`
+  -l $VLLINLABEL --keyPath ./reqkeys -t train -n $VLLINTASKTRAINNAME -c $CONFIG --amplitude $AMPLITUDE -e executor1,executor2" | awk 'BEGIN{RS="\r";ORS="";}{print $0}'| awk '$1=$1'`
   checkOperateResult "$result"
   echo "======> Requester published linear train task: $result "
   taskid=${result##*: }
@@ -317,8 +326,7 @@ function linearVlPredict() {
   # Requester published linear prediction task
   # 计算需求方发布纵向线性预测任务
   result=`docker exec -it executor1.node.com sh -c " 
-    ./requester-cli task publish -p $PSI -a $VLLINALGO -f $VLLIN_PREDICT_FILES -k $REQUESTERKEY -t predict -n $VLLINTASKPREDICTNAME -c $CONFIG -i $LINEAR_MODEL_TASKID
-  " | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1'`
+    ./requester-cli task publish -p $PSI -a $VLLINALGO -f $VLLIN_PREDICT_FILES --keyPath ./reqkeys -t predict -n $VLLINTASKPREDICTNAME -c $CONFIG -i $LINEAR_MODEL_TASKID -e executor1,executor2" | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1'`
   checkOperateResult "$result"
   echo "======> Requester published linear prediction task: $result "
   taskid=${result##*: }
@@ -329,7 +337,7 @@ function linearVlPredict() {
   # Get linear prediction results
   # 获取线性预测任务的预测结果
   linearVlPredictRes=`docker exec -it executor1.node.com sh -c "
-  ./requester-cli task result -k $REQUESTERKEY -o ./linear_output.csv \
+  ./requester-cli task result --keyPath ./reqkeys -o ./linear_output.csv \
   --conf ./conf/config.toml  -i $taskid" | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1'`
   echo "======> Requester get linear prediction task result: $linearVlPredictRes "
   # Copy linear prediction results to the current directory
@@ -355,7 +363,7 @@ function logisticVlTrain() {
   # Requester published logistic training task
   # 计算需求方发布纵向逻辑训练任务
   result=`docker exec -it executor1.node.com sh -c "./requester-cli task publish -p $PSI -a $VLLOGALGO -f $VLLOG_TRAIN_FILES \
-  -l $VLLOGLABEL -k $REQUESTERKEY -t train -n $VLLOGTASKTRAINNAME -c $CONFIG --labelName $VLLOGLABELName
+  -l $VLLOGLABEL --keyPath ./reqkeys -t train -n $VLLOGTASKTRAINNAME -c $CONFIG --labelName $VLLOGLABELName -e executor1,executor2
   " | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1'`
 
   checkOperateResult "$result"
@@ -376,8 +384,7 @@ function logisticVlPredict() {
   # Requester published logistic training task
   # 计算需求方发布纵向逻辑预测任务
   result=`docker exec -it executor1.node.com sh -c " 
-    ./requester-cli task publish -p $PSI -a $VLLOGALGO -f $VLLOG_PREDICT_FILES -k $REQUESTERKEY -t predict -n $VLLOGTASKPREDICTNAME -c $CONFIG -i $LOGISTIC_MODEL_TASKID
-    " | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1'`
+    ./requester-cli task publish -p $PSI -a $VLLOGALGO -f $VLLOG_PREDICT_FILES --keyPath ./reqkeys -t predict -n $VLLOGTASKPREDICTNAME -c $CONFIG -i $LOGISTIC_MODEL_TASKID -e executor1,executor2 " | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1'`
 
   checkOperateResult "$result"
   echo "======> Requester published logistic prediction task: $result "
@@ -389,7 +396,7 @@ function logisticVlPredict() {
   # Get logistic prediction results
   # 获取逻辑预测任务的预测结果
   logisticVlPredictRes=`docker exec -it executor1.node.com sh -c "
-  ./requester-cli task result -k $REQUESTERKEY -o ./logistic_output.csv \
+  ./requester-cli task result --keyPath ./reqkeys -o ./logistic_output.csv \
   --conf ./conf/config.toml  -i $taskid
   " | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1'`
   echo "======> Requester get logistic prediction task result: $logisticVlPredictRes "
@@ -409,7 +416,7 @@ function logisticVlPredict() {
 
 function taskList() {
   docker exec -it executor1.node.com sh -c "
-  ./requester-cli task list --conf ./conf/config.toml  -p $REQUESTER_PUBLICKEY"
+  ./requester-cli task list --conf ./conf/config.toml --keyPath ./reqkeys"
 }
 
 function getTaskById() {

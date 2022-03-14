@@ -82,7 +82,7 @@ func (m *NodeMaintainer) autoRegister() error {
 		logrus.WithFields(logrus.Fields{
 			"node_id":   pubkey.String(),
 			"online_at": timestamp,
-		}).Info("success to register node on blockchain")
+		}).Info("successfully registered node on blockchain")
 
 		return nil
 	} else {

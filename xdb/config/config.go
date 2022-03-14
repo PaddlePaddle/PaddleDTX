@@ -15,8 +15,11 @@ package config
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/spf13/viper"
+
+	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/file"
 )
 
 // The application can be running as a dataOwner node or a storage node.
@@ -123,17 +126,30 @@ func GetLogConf() *Log {
 
 // GetServerConf
 func GetServerConf() *ServerConf {
+	var privateKey string
+
 	if serverType == NodeTypeDataOwner {
+		privateKey = dataOwnerConf.PrivateKey
+		privateKeyBytes, err := file.ReadFile(dataOwnerConf.KeyPath, file.PrivateKeyFileName)
+		if err == nil && len(privateKeyBytes) != 0 {
+			privateKey = strings.TrimSpace(string(privateKeyBytes))
+		}
 		return &ServerConf{
 			Name:          dataOwnerConf.Name,
 			ListenAddress: dataOwnerConf.ListenAddress,
-			PrivateKey:    dataOwnerConf.PrivateKey,
+			PrivateKey:    privateKey,
 			PublicAddress: dataOwnerConf.PublicAddress}
 	} else if serverType == NodeTypeStorage {
+		privateKey = storageConf.PrivateKey
+		privateKeyBytes, err := file.ReadFile(storageConf.KeyPath, file.PrivateKeyFileName)
+		if err == nil && len(privateKeyBytes) != 0 {
+			privateKey = strings.TrimSpace(string(privateKeyBytes))
+		}
+
 		return &ServerConf{
 			Name:          storageConf.Name,
 			ListenAddress: storageConf.ListenAddress,
-			PrivateKey:    storageConf.PrivateKey,
+			PrivateKey:    privateKey,
 			PublicAddress: storageConf.PublicAddress}
 	} else {
 		return nil

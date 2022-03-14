@@ -21,6 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
 )
 
@@ -47,6 +48,10 @@ var toProveCmd = &cobra.Command{
 		endTime, err := time.ParseInLocation(timeTemplate, end, time.Local)
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
+			return
+		}
+		if limit > blockchain.ListMaxNumber {
+			fmt.Printf("invalid limit, the value must smaller than %v \n", blockchain.ListMaxNumber)
 			return
 		}
 
@@ -84,7 +89,7 @@ func init() {
 	toProveCmd.Flags().StringVarP(&fileID, "file", "f", "", "file ID")
 	toProveCmd.Flags().StringVarP(&start, "start", "s", "", "challenge before startTime, example '2021-06-10 12:00:00'")
 	toProveCmd.Flags().StringVarP(&end, "end", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate), "challenge after endTime, example '2021-06-10 12:00:00'")
-	toProveCmd.Flags().Uint64VarP(&limit, "limit", "l", 0, "limit")
+	toProveCmd.Flags().Int64VarP(&limit, "limit", "l", blockchain.ListMaxNumber, "limit")
 	toProveCmd.Flags().Int8VarP(&list, "list", "", 1, "show challenges list or not, 0 not to show")
 
 	toProveCmd.MarkFlagRequired("node")

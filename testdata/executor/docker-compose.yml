@@ -2,7 +2,7 @@ version: '3'
 
 services:
   executor1:
-    image: registry.baidubce.com/paddledtx/paddledtx-dai:1.0
+    image: registry.baidubce.com/paddledtx/paddledtx-dai:1.1
     container_name: executor1.node.com
     networks:
       - blockchain_xchain_network
@@ -10,10 +10,12 @@ services:
       - 38106:80
     volumes:
       - ./node1/conf:/home/conf
+      - ./node1/keys:/home/keys
+      - ./requester/keys:/home/reqkeys
       - ./node1/logs:/home/logs
 
   executor2:
-    image: registry.baidubce.com/paddledtx/paddledtx-dai:1.0
+    image: registry.baidubce.com/paddledtx/paddledtx-dai:1.1
     container_name: executor2.node.com
     depends_on:
       - executor1
@@ -23,6 +25,8 @@ services:
       - 38107:80
     volumes:
       - ./node2/conf:/home/conf
+      - ./node2/keys:/home/keys
+      - ./requester/keys:/home/reqkeys
       - ./node2/logs:/home/logs
 networks:
   blockchain_xchain_network:

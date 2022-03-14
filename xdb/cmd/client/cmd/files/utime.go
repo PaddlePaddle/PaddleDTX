@@ -16,11 +16,13 @@ package files
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	httpclient "github.com/PaddlePaddle/PaddleDTX/xdb/client/http"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/file"
 )
 
 // updateExpTimeCmd represents the command to update file expiration time
@@ -38,6 +40,16 @@ var updateExpTimeCmd = &cobra.Command{
 			fmt.Printf("err：%v\n", err)
 			return
 		}
+
+		if privateKey == "" {
+			privateKeyBytes, err := file.ReadFile(keyPath, file.PrivateKeyFileName)
+			if err != nil {
+				fmt.Printf("Read privateKey failed, err: %v\n", err)
+				return
+			}
+			privateKey = strings.TrimSpace(string(privateKeyBytes))
+		}
+
 		err = client.UpdateExpTimeByID(context.Background(), id, privateKey, stamp.UnixNano())
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
@@ -53,9 +65,8 @@ func init() {
 	updateExpTimeCmd.Flags().StringVarP(&id, "id", "i", "", "id for file")
 	updateExpTimeCmd.Flags().StringVarP(&expireTime, "expireTime", "e", "", "expire time, example '2021-07-10 12:00:00'")
 	updateExpTimeCmd.Flags().StringVarP(&privateKey, "privkey", "k", "", "private key")
+	updateExpTimeCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./ukeys", "key path")
 
 	updateExpTimeCmd.MarkFlagRequired("id")
-	updateExpTimeCmd.MarkFlagRequired("privkey")
 	updateExpTimeCmd.MarkFlagRequired("expireTime")
-
 }

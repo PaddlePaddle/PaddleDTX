@@ -20,12 +20,13 @@ import (
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/cmd/client/cmd/challenge"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/cmd/client/cmd/files"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/cmd/client/cmd/key"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/cmd/client/cmd/nodes"
 )
 
 // rootCmd represents the base command that is called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "xdata",
+	Use:   "xdb-cli",
 	Short: "for file and node operation",
 }
 
@@ -40,4 +41,5 @@ func init() {
 	rootCmd.AddCommand(files.RootCmd())
 	rootCmd.AddCommand(nodes.RootCmd())
 	rootCmd.AddCommand(challenge.RootCmd())
+	rootCmd.AddCommand(key.RootCmd())
 }
