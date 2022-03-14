@@ -120,19 +120,27 @@ func newNode(conf *config.ExecutorConf) (node handler.Node, err error) {
 
 // newStorage initiates local storage, contains train-model and prediction-result storage
 func newStorage(conf *config.ExecutorStorageConf) (fileStroage handler.FileStorage, err error) {
-	// train-model storage only supports local path mode
+	// train-model could only be stored locally
 	mStorage, err := local.New(conf.LocalModelStoragePath)
 	if err != nil {
-		return fileStroage, errorx.New(errorx.ErrCodeConfig, "invalid train model-path：%s", err)
+		return fileStroage, errorx.New(errorx.ErrCodeConfig, "invalid model storage path：%s", err)
 	}
-	// prediction-result storage supports local path and xuperdb mode
+
+	// evaluation result could only be stored locally
+	eStorage, err := local.New(conf.LocalEvaluationStoragePath)
+	if err != nil {
+		return fileStroage, errorx.New(errorx.ErrCodeConfig, "invalid evaluation result storage path：%s", err)
+	}
+	// prediction-result could stored in local path or in xuperdb
 	pStroage, err := newPredictStorage(conf)
 	if err != nil {
 		return fileStroage, err
 	}
+
 	fileStroage = handler.FileStorage{
-		ModelStorage:   mStorage,
-		PredictStorage: pStroage,
+		ModelStorage:      mStorage,
+		EvaluationStorage: eStorage,
+		PredictStorage:    pStroage,
 	}
 	return fileStroage, nil
 }

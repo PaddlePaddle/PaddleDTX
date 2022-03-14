@@ -14,6 +14,9 @@
 package predictor
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	"github.com/sirupsen/logrus"
 
@@ -40,6 +43,11 @@ type Model interface {
 // RpcHandler performs remote procedure calls to remote cluster nodes.
 type RpcHandler interface {
 	StepPredict(req *pb.PredictRequest, peerName string) (*pb.PredictResponse, error)
+
+	// StepPredictWithRetry sends prediction message to remote mpc-node
+	// retries 2 times at most
+	// inteSec indicates the interval between retry requests, in seconds
+	StepPredictWithRetry(req *pb.PredictRequest, peerName string, times int, inteSec int64) (*pb.PredictResponse, error)
 }
 
 // Callback contains some methods would be called when finish prediction
@@ -51,7 +59,11 @@ type Callback interface {
 
 	// StopTask to stop a prediction task
 	// You'd better use it asynchronously to avoid deadlock
-	StopTask(*pbCom.StopTaskRequest)
+	StopTask(*pbCom.StopTaskRequest) error
+
+	// Validate saves the prediction results to the Evaluator or LiveEvaluator,
+	// then trigger the subsequent verification process.
+	Validate(*pb.ValidateRequest) error
 }
 
 type PredictResponse struct {
@@ -130,17 +142,40 @@ func (p *Predictor) Predict(req *pb.PredictRequest, resC chan *PredictResponse) 
 }
 
 // SaveResult saves the prediction results (failed status or successful status) of samples for a Model
-// and stops related task
+// and stops related task.
+// Analyze the TaskID to determine whether the prediction task is a common task from user
+// or a task from Evaluator or LiveEvaluator.
+// If the former, persist the prediction results locally, if the latter, call trainer.validate()
 func (p *Predictor) SaveResult(result *pbCom.PredictTaskResult) {
-	err := p.callback.SavePredictOut(result)
-	if err != nil {
-		logger.WithField("taskId", result.TaskID).Errorf("failed to save outcomes[%v] and prediction result[%t], and error is[%s]",
-			result.Outcomes, result.Success, err.Error())
+	fromEvaluator, validReq := p.checkOrigin(result)
+	if fromEvaluator {
+		// the prediction task is a task from Evaluator or LiveEvaluator
+		// and call trainer.validate()
+
+		if result.Success {
+			err := p.callback.Validate(validReq)
+			if err != nil {
+				logger.WithField("taskId", result.TaskID).Errorf("failed to trigger validation with prediction outcomes[%v], and error is[%s]",
+					result.Outcomes, err.Error())
+			}
+		} else {
+			logger.WithField("taskId", result.TaskID).Errorf("prediction task from evaluation has failed and error is[%s]", result.ErrMsg)
+		}
+	} else {
+		// the prediction task is a common task from user
+		// and persist the prediction results locally
+
+		err := p.callback.SavePredictOut(result)
+		if err != nil {
+			logger.WithField("taskId", result.TaskID).Errorf("failed to save outcomes[%v] and prediction result[%t], and error is[%s]",
+				result.Outcomes, result.Success, err.Error())
+		}
 	}
 
 	logger.WithField("taskId", result.TaskID).Infof("Stop prediction task. And delete outcomes[%v] and prediction result[%t]",
 		result.Outcomes, result.Success)
 
+	// stop the related task
 	req := &pbCom.StopTaskRequest{
 		TaskID: result.TaskID,
 		Params: &pbCom.TaskParams{
@@ -148,6 +183,53 @@ func (p *Predictor) SaveResult(result *pbCom.PredictTaskResult) {
 		},
 	}
 	go p.callback.StopTask(req)
+}
+
+// checkOrigin analyzes the TaskID to determine whether the prediction task is a common task from user
+// or a task from Evaluator or LiveEvaluator.
+// Return true together with ValidateRequest if the prediction task is from Evaluator or LiveEvaluator, otherwise return false.
+func (p *Predictor) checkOrigin(result *pbCom.PredictTaskResult) (fromEvaluator bool, vreq *pb.ValidateRequest) {
+	// If the prediction is from Evaluator, the TaskID conforms such form like `{uuid}_{k}_predict_Eva`, 
+	//  and the number of slices should be 4.
+	// And if the prediction is from LiveEvaluator, the TaskID conforms such form like `{uuid}_{k}_predict_LEv` (also couble be `{uuid}_{k}_train_Eva_0_predict_LEv`),
+	//  and the number of slices should be 4 (or 7).
+	ss := strings.Split(result.TaskID, "_")
+	lss := len(ss)
+
+	if lss == 4 {
+		idx, err := strconv.ParseInt(ss[1], 10, 32)
+		if err != nil {
+			return
+		}
+		fromEvaluator = true
+		vreq = &pb.ValidateRequest{
+			TaskID:        ss[0],
+			FoldIdx:       int32(idx),
+			PredictResult: result,
+		}
+
+		if ss[3] == "Eva" {
+			vreq.From = pb.Evaluator_NORMAL
+		} else {
+			vreq.From = pb.Evaluator_LIVE
+		}
+	} else if lss == 7 {
+		idx, err := strconv.ParseInt(ss[4], 10, 32)
+		if err != nil {
+			return
+		}
+		fromEvaluator = true
+		vreq = &pb.ValidateRequest{
+			TaskID:        result.TaskID[0 : len(result.TaskID)-len("_0_predict_LEv")],
+			FoldIdx:       int32(idx),
+			PredictResult: result,
+			From:          pb.Evaluator_LIVE,
+		}
+	} else {
+		return
+	}
+
+	return
 }
 
 func (p *Predictor) modelExists(taskId string) (Model, bool) {

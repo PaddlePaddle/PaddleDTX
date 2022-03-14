@@ -33,6 +33,11 @@ type Model interface {
 // RpcHandler used to request remote mpc-node
 type RpcHandler interface {
 	StepPredict(req *pb.PredictRequest, peerName string) (*pb.PredictResponse, error)
+
+	// StepPredictWithRetry sends prediction message to remote mpc-node
+	// retries 2 times at most
+	// inteSec indicates the interval between retry requests, in seconds
+	StepPredictWithRetry(req *pb.PredictRequest, peerName string, times int, inteSec int64) (*pb.PredictResponse, error)
 }
 
 // ResultHandler handles final result which is successful or failed
