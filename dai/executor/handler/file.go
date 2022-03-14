@@ -39,8 +39,9 @@ type Storage interface {
 
 // FileStorage contains model storage and prediction result storage.
 type FileStorage struct {
-	ModelStorage   Storage
-	PredictStorage Storage
+	ModelStorage      Storage
+	EvaluationStorage Storage
+	PredictStorage    Storage
 }
 
 // FileDownload mode for download the sample file during the task execution.

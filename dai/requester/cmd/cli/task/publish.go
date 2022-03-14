@@ -43,10 +43,18 @@ var (
 	description string
 	psiLabel    string
 	batchSize   uint64
+	ev          bool  // whether perform model evaluation
+	evRule      int32 // evRule is the way to evaluate model, 0 means `Random Split`, 1 means `Cross Validation`, 2 means `Leave One Out`
+	percentLO   int32 // percentage to leave out as validation set when perform model evaluation in the way of `Random Split`
+	folds       int32 // number of folds, 5 or 10 supported, default `10`, a optional parameter when perform model evaluation in the way of `Cross Validation`
+	shuffle     bool  // whether to randomly disorder the samples before dividion, default `false`, a optional parameter when perform model evaluation in the way of `Cross Validation`
+
+	le         bool  // whether perform live model evaluation
+	lPercentLO int32 // percentage to leave out as validation set when perform live model evaluation
 )
 
 // checkTaskPublishParams check mpc task parameters
-// verify algorithm, taskType, regMode is legal
+// verify if algorithm, taskType, regMode is legal
 func checkTaskPublishParams() (pbCom.Algorithm, pbCom.TaskType, pbCom.RegMode, error) {
 	var pAlgo pbCom.Algorithm
 	var pType pbCom.TaskType
@@ -77,6 +85,7 @@ var publishCmd = &cobra.Command{
 	Use:   "publish",
 	Short: "publish a task, can be a training task or a prediction task",
 	Run: func(cmd *cobra.Command, args []string) {
+
 		client, err := requestClient.GetRequestClient(configPath)
 		if err != nil {
 			fmt.Printf("GetRequestClient failed: %v\n", err)
@@ -84,9 +93,28 @@ var publishCmd = &cobra.Command{
 		}
 		algo, taskType, regMode, err := checkTaskPublishParams()
 		if err != nil {
-			fmt.Printf("check task publish algoParam failed: %v\n", err)
+			fmt.Printf("failed to check task publish algoParam : %v\n", err)
 			return
 		}
+		// check params about evaluation
+		if evRule < 0 || evRule > 2 {
+			fmt.Printf("invalid `evRule`, it should be 0 or 1 or 2")
+			return
+		}
+		if percentLO <= 0 || percentLO >= 100 {
+			fmt.Printf("invalid `plo`, it should in the range of (0,100)")
+			return
+		}
+		if folds != 5 && folds != 10 {
+			fmt.Printf("invalid `folds`, it should be 5 or 10")
+			return
+		}
+		if lPercentLO <= 0 || lPercentLO >= 100 {
+			fmt.Printf("invalid `lplo`, it should in the range of (0,100)")
+			return
+		}
+
+		// pack `pbCom.TaskParams`
 		algorithmParams := pbCom.TaskParams{
 			Algo:        algo,
 			TaskType:    taskType,
@@ -102,6 +130,31 @@ var publishCmd = &cobra.Command{
 				BatchSize: int64(batchSize),
 			},
 		}
+		// set `Evaluation` part
+		if ev {
+			algorithmParams.EvalParams = &pbCom.EvaluationParams{
+				Enable:   true,
+				EvalRule: pbCom.EvaluationRule(evRule),
+			}
+			if algorithmParams.EvalParams.EvalRule == pbCom.EvaluationRule_ErRandomSplit {
+				algorithmParams.EvalParams.RandomSplit = &pbCom.RandomSplit{PercentLO: percentLO}
+			} else if algorithmParams.EvalParams.EvalRule == pbCom.EvaluationRule_ErCrossVal {
+				algorithmParams.EvalParams.Cv = &pbCom.CrossVal{
+					Folds:   folds,
+					Shuffle: shuffle,
+				}
+			}
+		}
+		// set `LiveEvaluation` part
+		if le {
+			algorithmParams.LivalParams = &pbCom.LiveEvaluationParams{
+				Enable: true,
+				RandomSplit: &pbCom.RandomSplit{
+					PercentLO: lPercentLO,
+				},
+			}
+		}
+
 		if privateKey == "" {
 			privateKeyBytes, err := file.ReadFile(keyPath, file.PrivateKeyFileName)
 			if err != nil {
@@ -152,6 +205,16 @@ func init() {
 	publishCmd.Flags().StringVarP(&description, "description", "d", "", "task description")
 	publishCmd.Flags().Uint64VarP(&batchSize, "batchSize", "b", 4,
 		"size of samples for one round of training loop, 0 for BGD(Batch Gradient Descent), non-zero for SGD(Stochastic Gradient Descent) or MBGD(Mini-Batch Gradient Descent)")
+	// optional params about evaluation
+	publishCmd.Flags().BoolVar(&ev, "ev", false, "perform model evaluation")
+	publishCmd.Flags().Int32Var(&evRule, "evRule", 0, "the way to evaluate model, 0 means 'Random Split', 1 means 'Cross Validation', 2 means 'Leave One Out'")
+	publishCmd.Flags().Int32Var(&folds, "folds", 10, "number of folds, 5 or 10 supported, a optional parameter when perform model evaluation in the way of 'Cross Validation'")
+	publishCmd.Flags().BoolVar(&shuffle, "shuffle", false, "shuffle the samples before dividion when perform model evaluation in the way of 'Cross Validation'")
+	publishCmd.Flags().Int32Var(&percentLO, "plo", 30, "percentage to leave out as validation set when perform  model evaluation in the way of 'Random Split'")
+
+	// optional params about live evaluation
+	publishCmd.Flags().BoolVar(&le, "le", false, "perform live model evaluation")
+	publishCmd.Flags().Int32Var(&lPercentLO, "lplo", 30, "percentage to leave out as validation set when perform live model evaluation")
 
 	publishCmd.MarkFlagRequired("name")
 	publishCmd.MarkFlagRequired("type")

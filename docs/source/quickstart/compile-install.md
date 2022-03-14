@@ -273,6 +273,8 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		[executor.storage]
 		    # 定义模型存储的路径
 		    localModelStoragePath = "./models"
+			# 定义模型评估结果的存储路径
+    		localEvaluationStoragePath = "./evalus"
 		    # 定义预测结果存储的方式，默认本地存储，如果用户采取XuperDB方式存储，则需提前生成数据持有节点客户端./ukeys并授权，同时创建预测结果存储的命名空间
 		    type = 'Local'
 		    [executor.storage.XuperDB]
@@ -301,6 +303,8 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		[executor.storage]
 		    # 定义模型存储的路径
 		    localModelStoragePath = "./models"
+			# 定义模型评估结果的存储路径
+    		localEvaluationStoragePath = "./evalus"
 		    # 定义预测结果存储的方式，默认本地存储，如果用户采取XuperDB方式存储，则需提前生成数据持有节点客户端./ukeys并授权，同时创建预测结果存储的命名空间
 		    type = 'Local'
 		    [executor.storage.XuperDB]

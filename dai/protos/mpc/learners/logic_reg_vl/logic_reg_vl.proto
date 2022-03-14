@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "mpc/psi.proto";
+import "common/common.proto";
 
 package logic_reg_vl;
 
@@ -27,26 +28,32 @@ enum MessageType {
     MsgTrainStatus              = 14;
     MsgTrainCheckStatus         = 15; // local message
     MsgTrainModels              = 16; // local message
+    MsgCheckPauseRound          = 17; // local message
+    MsgTrainSet                 = 18; // from live evaluator
+    MsgContinueLoop             = 19; // from live evaluator
 
-    MsgPredictHup               = 17; // local message
-    MsgPredictPart              = 18; 
-    MsgPredictFinal             = 19; // local message
+    MsgPredictHup               = 51; // local message
+    MsgPredictPart              = 52; 
+    MsgPredictFinal             = 53; // local message
 }
 
 message Message {
-    MessageType                 type                    = 1;
-    string                      to                      = 2;
-    string                      from                    = 3;
-    uint64                      loopRound               = 4; //loopRound is used for MsgTrainLoop and message about Train
-    mpc.VLPsiReEncIDsRequest    vlLPsiReEncIDsReq       = 5; 
-    mpc.VLPsiReEncIDsResponse   vlLPsiReEncIDsResp      = 6;
-    bytes                       homoPubkey              = 7;
-    bytes                       PartBytes               = 8;
-    bytes                       encGradFromOther        = 9;
-    bytes                       encCostFromOther        =10;
-    bytes                       gradBytes               =11;
-    bytes                       costBytes               =12;
-    bool                        stopped                 =13;                      
+    MessageType                                 type                    = 1;
+    string                                      to                      = 2;
+    string                                      from                    = 3;
+    uint64                                      loopRound               = 4; //loopRound is used for MsgTrainLoop and message about Train
+    mpc.VLPsiReEncIDsRequest                    vlLPsiReEncIDsReq       = 5; 
+    mpc.VLPsiReEncIDsResponse                   vlLPsiReEncIDsResp      = 6;
+    bytes                                       homoPubkey              = 7;
+    bytes                                       PartBytes               = 8;
+    bytes                                       encGradFromOther        = 9;
+    bytes                                       encCostFromOther        =10;
+    bytes                                       gradBytes               =11;
+    bytes                                       costBytes               =12;
+    bool                                        stopped                 =13;
+    repeated common.TrainTaskResult.FileRow     trainSet                =14;
+    uint64                                      pauseRound              =15;
+    uint64                                      triggerRound            =16;                                                                  
 }
 
 message PredictMessage {

@@ -39,10 +39,20 @@ type Rpc interface {
 
 type PredictHandler interface {
 	StepPredict(req *pb.PredictRequest, peerName string) (*pb.PredictResponse, error)
+
+	// StepPredictWithRetry sends prediction message to remote mpc-node
+	// retries 2 times at most
+	// inteSec indicates the interval between retry requests, in seconds
+	StepPredictWithRetry(req *pb.PredictRequest, peerName string, times int, inteSec int64) (*pb.PredictResponse, error)
 }
 
 type TrainHandler interface {
 	StepTrain(req *pb.TrainRequest, peerName string) (*pb.TrainResponse, error)
+
+	// StepTrainWithRetry sends training message to remote mpc-node
+	// retries 2 times at most
+	// inteSec indicates the interval between retry requests, in seconds
+	StepTrainWithRetry(req *pb.TrainRequest, peerName string, times int, inteSec int64) (*pb.TrainResponse, error)
 }
 
 // P2P is used to get rpc connection to remote cluster nodes,
@@ -90,6 +100,33 @@ func (rc *RpcClient) StepPredict(req *pb.PredictRequest, peerName string) (*pb.P
 	return resp, err
 }
 
+// StepPredictWithRetry sends prediction message to remote mpc-node
+// retries 2 times at most
+// inteSec indicates the interval between retry requests, in seconds
+func (rc *RpcClient) StepPredictWithRetry(req *pb.PredictRequest, peerName string, times int, inteSec int64) (*pb.PredictResponse, error) {
+	if times <= 0 {
+		times = 1
+	} else if times > 2 {
+		times = 3
+	} else {
+		times += 1
+	}
+
+	var errR error
+	for i := 0; i < times; i++ {
+		if i > 0 {
+			time.Sleep(time.Duration(inteSec) * time.Second)
+		}
+		resp, err := rc.StepPredict(req, peerName)
+		if err == nil {
+			return resp, err
+		}
+		errR = err
+	}
+
+	return nil, errR
+}
+
 func (rc *RpcClient) StepTrain(req *pb.TrainRequest, peerName string) (*pb.TrainResponse, error) {
 	peer, err := rc.cluster.GetPeer(peerName)
 	if err != nil {
@@ -120,6 +157,33 @@ func (rc *RpcClient) StepTrain(req *pb.TrainRequest, peerName string) (*pb.Train
 
 	resp := stepResp.GetTrainResponse()
 	return resp, err
+}
+
+// StepTrainWithRetry sends training message to remote mpc-node
+// retries 2 times at most
+// inteSec indicates the interval between retry requests, in seconds
+func (rc *RpcClient) StepTrainWithRetry(req *pb.TrainRequest, peerName string, times int, inteSec int64) (*pb.TrainResponse, error) {
+	if times <= 0 {
+		times = 1
+	} else if times > 2 {
+		times = 3
+	} else {
+		times += 1
+	}
+
+	var errR error
+	for i := 0; i < times; i++ {
+		if i > 0 {
+			time.Sleep(time.Duration(inteSec) * time.Second)
+		}
+		resp, err := rc.StepTrain(req, peerName)
+		if err == nil {
+			return resp, err
+		}
+		errR = err
+	}
+
+	return nil, errR
 }
 
 // NewRpcClient returns RpcClient instance

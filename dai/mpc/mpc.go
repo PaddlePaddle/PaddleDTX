@@ -30,12 +30,20 @@ import (
 type Mpc interface {
 	// Train to train out a model
 	Train(*pb.TrainRequest) (*pb.TrainResponse, error)
+
 	// Predict to do prediction
 	Predict(*pb.PredictRequest) (*pb.PredictResponse, error)
+
 	// StartTask starts a specific task of training or prediction
 	StartTask(*pbCom.StartTaskRequest) error
+
 	// StopTask stops a specific task of training or prediction
 	StopTask(*pbCom.StopTaskRequest) error
+
+	// Validate writes the prediction results to the Evaluator or LiveEvaluator,
+	//  then trigger the subsequent verification process.
+	Validate(*pb.ValidateRequest) error
+
 	// Stop performs any necessary termination of the node
 	Stop()
 }
@@ -53,12 +61,17 @@ type P2P interface {
 type Trainer interface {
 	// NewLearner creates a Learner related to TaskId
 	NewLearner(*pbCom.StartTaskRequest) error
-	// DeleteLearner deletes a learner
+
+	// DeleteLearner deletes a Learner
 	DeleteLearner(*pbCom.StopTaskRequest) error
 
 	// Train to dispatch requests to different Learners by taskId during training processes
 	// Response channel returns the result, and couldn't be set with nil
 	Train(*pb.TrainRequest, chan *trainer.TrainResponse)
+
+	// Validate saves the prediction results to the Evaluator or LiveEvaluator,
+	// then trigger the subsequent verification process.
+	Validate(*pb.ValidateRequest, chan *trainer.TrainResponse)
 }
 
 // Predictor manages Models, such as to create or to delete a model
@@ -79,6 +92,7 @@ type trainRequest struct {
 	startRequest *pbCom.StartTaskRequest // request to start a new task
 	stopRequest  *pbCom.StopTaskRequest  // request to end a task
 	trainRequest *pb.TrainRequest        // request during training process
+	validRequest *pb.ValidateRequest     // request to trigger validation
 	responseC    chan *trainer.TrainResponse
 }
 
@@ -118,7 +132,7 @@ func (m *mpc) Train(req *pb.TrainRequest) (*pb.TrainResponse, error) {
 		return nil, errorx.New(errcodes.ErrCodeNotFound, "mpc is stopped")
 	}
 
-	if tarinResp == nil {
+	if tarinResp == nil || tarinResp.Resp == nil {
 		return &pb.TrainResponse{TaskID: req.TaskID}, nil
 	}
 
@@ -156,6 +170,26 @@ func (m *mpc) Predict(req *pb.PredictRequest) (*pb.PredictResponse, error) {
 	}
 	return predicResp.Resp, nil
 
+}
+
+// Validate 保存预测结果触发验证流程
+func (m *mpc) Validate(req *pb.ValidateRequest) error {
+	if err := m.isRunning(); err != nil {
+		return err
+	}
+
+	var tarinResp *trainer.TrainResponse
+	respC := make(chan *trainer.TrainResponse, 1)
+	select {
+	case m.trainC <- trainRequest{validRequest: req, responseC: respC}:
+		tarinResp = <-respC
+		if tarinResp != nil && tarinResp.Err != nil {
+			return tarinResp.Err
+		}
+	case <-m.doneC:
+		return errorx.New(errcodes.ErrCodeNotFound, "mpc is stopped")
+	}
+	return nil
 }
 
 // Stop performs any necessary termination of the Mpc-node.
@@ -259,7 +293,8 @@ func (m *mpc) run() {
 					tReq.responseC <- &trainer.TrainResponse{Err: err}
 					close(tReq.responseC)
 				}
-
+			} else if tReq.validRequest != nil { // to trigger validation
+				m.trainer.Validate(tReq.validRequest, tReq.responseC)
 			} else { // to train a model
 				m.trainer.Train(tReq.trainRequest, tReq.responseC)
 			}
@@ -310,36 +345,18 @@ type ModelHolder interface {
 
 // TrainCallBack contains some methods that would be called when finish training
 type TrainCallBack struct {
-	modelHolder ModelHolder
-	taskHandler Mpc
-}
-
-// SaveModel to persist a model
-func (tc *TrainCallBack) SaveModel(result *pbCom.TrainTaskResult) error {
-	return tc.modelHolder.SaveModel(result)
-}
-
-// StopTask stops a specific task of training or prediction
-// You'd better use it asynchronously to avoid deadlock
-func (tc *TrainCallBack) StopTask(stq *pbCom.StopTaskRequest) {
-	tc.taskHandler.StopTask(stq)
+	//modelHolder ModelHolder
+	ModelHolder
+	//taskHandler Mpc
+	Mpc
 }
 
 // PredictCallBack contains some methods would be called when finish prediction
 type PredictCallBack struct {
-	modelHolder ModelHolder
-	taskHandler Mpc
-}
-
-// SavePredictOut to persist predicting outcomes
-func (pc *PredictCallBack) SavePredictOut(result *pbCom.PredictTaskResult) error {
-	return pc.modelHolder.SavePredictOut(result)
-}
-
-// StopTask stops a specific task of training or prediction
-// You'd better use it asynchronously to avoid deadlock
-func (pc *PredictCallBack) StopTask(stq *pbCom.StopTaskRequest) {
-	pc.taskHandler.StopTask(stq)
+	//modelHolder
+	ModelHolder
+	//taskHandler Mpc
+	Mpc
 }
 
 // Config is used when start mpc
@@ -359,11 +376,19 @@ func newMpc(mh ModelHolder, p2p P2P, conf Config) *mpc {
 		trainC:   make(chan trainRequest),
 		predictC: make(chan predictRequest),
 	}
-	trainCallback := TrainCallBack{modelHolder: mh, taskHandler: m}
-	m.trainer = trainer.NewTrainer(conf.Address, rpcHandler, &trainCallback, conf.TrainTaskLimit)
+	trainCallback := TrainCallBack{ModelHolder: mh, Mpc: m}
+	m.trainer = trainer.NewTrainer(conf.Address, rpcHandler, &trainCallback, conf.TrainTaskLimit*21+600)
+	//there will be 10 more leaners running in parallel if one 10-fold cross validation is invoked
+	//there will be 20 more leaners running in parallel if one 10-fold cross validation is invoked together with live evaluation
+	//there will be 1 more leaners running in parallel if one live evaluation is invoked
+	//and, reserve 600 positions for LOO(one way to evaluate model)
 
-	predictCallBack := PredictCallBack{modelHolder: mh, taskHandler: m}
-	m.predictor = predictor.NewPredictor(conf.Address, rpcHandler, &predictCallBack, conf.PredictTaskLimit)
+	predictCallBack := PredictCallBack{ModelHolder: mh, Mpc: m}
+	m.predictor = predictor.NewPredictor(conf.Address, rpcHandler, &predictCallBack, conf.PredictTaskLimit+conf.TrainTaskLimit*21+600)
+	//there will be 10 more models running in parallel if one 10-fold cross validation is invoked
+	//there will be 20 more models running in parallel if one 10-fold cross validation is invoked together with live evaluation
+	//there will be 1 more model running in parallel if one live evaluation is invoked
+	//and, reserve 600 positions for LOO(one way to evaluate model)
 
 	return m
 }

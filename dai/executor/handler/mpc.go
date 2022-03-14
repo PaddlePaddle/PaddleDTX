@@ -348,13 +348,29 @@ func (m *MpcModelHandler) SaveModel(result *pbCom.TrainTaskResult) error {
 		m.updateTaskStatusAndStopLocalMpc(result.TaskID, result.ErrMsg, "")
 		return nil
 	}
+
+	// store model
 	r := bytes.NewReader(result.Model)
 	if _, err := m.Storage.ModelStorage.Write(r, result.TaskID); err != nil {
 		err := errorx.New(errorx.ErrCodeInternal, "failed to locally save task model")
 		m.updateTaskStatusAndStopLocalMpc(result.TaskID, err.Error(), "")
 		return err
 	}
-	logger.Debugf("success save model, taskId: %s", result.TaskID)
+	// store evaluation result,
+	// and keep going forward even if some errors happen
+	if result.EvalMetricScores != nil {
+		textEvalMetricScores, err := json.Marshal(result.EvalMetricScores)
+		if err == nil {
+			r := bytes.NewReader(textEvalMetricScores)
+			if _, errS := m.Storage.EvaluationStorage.Write(r, result.TaskID); errS != nil {
+				logger.Warnf("failed to locally save evaluation result: %s, taskId: %s, error: %s", string(textEvalMetricScores), result.TaskID, errS.Error())
+			}
+		} else {
+			logger.Warnf("failed to jsonMarshal evaluation resul, taskId: %s, error: %s", result.TaskID, err.Error())
+		}
+
+	}
+	logger.Debugf("successfully saved model, taskId: %s", result.TaskID)
 	m.updateTaskStatusAndStopLocalMpc(result.TaskID, "", "")
 	return nil
 }
@@ -401,7 +417,7 @@ func (m *MpcModelHandler) SavePredictOut(result *pbCom.PredictTaskResult) error 
 func (m *MpcModelHandler) getMpcStartTaskParam(task blockchain.FLTask) (*pbCom.StartTaskRequest, error) {
 	partParam, err := m.getTaskParticipantParam(task)
 	if err != nil {
-		return &pbCom.StartTaskRequest{}, err
+		return nil, err
 	}
 
 	// train params
@@ -420,6 +436,8 @@ func (m *MpcModelHandler) getMpcStartTaskParam(task blockchain.FLTask) (*pbCom.S
 			TaskType:    task.AlgoParam.TaskType,
 			TrainParams: trainParam,
 			ModelParams: modeParam,
+			EvalParams:  task.AlgoParam.EvalParams,
+			LivalParams: task.AlgoParam.LivalParams,
 		},
 	}
 

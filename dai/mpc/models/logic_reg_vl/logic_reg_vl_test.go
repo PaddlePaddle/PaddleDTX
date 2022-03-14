@@ -39,6 +39,15 @@ func (r *rpc) StepPredict(req *pb.PredictRequest, peerName string) (*pb.PredictR
 	return nil, errors.New("test response error")
 }
 
+func (r *rpc) StepPredictWithRetry(req *pb.PredictRequest, peerName string, times int, inteSec int64) (*pb.PredictResponse, error) {
+	r.reqC <- req
+	resp := <-r.respC
+	if resp != nil {
+		return resp, nil
+	}
+	return nil, errors.New("test response error")
+}
+
 type res struct {
 	success  bool
 	outcomes []byte

@@ -52,8 +52,8 @@ type process struct {
 	gradBytesForOther, gradBytesFromOther []byte
 	costBytesForOther, costBytesFromOther []byte
 
-	stopped      int8 // 0 means not decided, 1 means received Stopped, 2 means received NotStopped
-	otherStopped int8 // 0 means not received decision, 1 means received Stopped, 2 means received NotStopped
+	stopped      int8 // 0 means not decided, 1 means received `Stopped`, 2 means received `NotStopped`
+	otherStopped int8 // 0 means not received decision, 1 means received `Stopped`, 2 means received `NotStopped`
 
 	calLocalGradientAndCostTimes        int
 	calEncGradientAndCostTimes          int

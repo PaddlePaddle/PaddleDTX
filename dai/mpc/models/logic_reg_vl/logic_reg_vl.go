@@ -15,6 +15,7 @@ package logic_reg_vl
 
 import (
 	"sync"
+	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	"github.com/golang/protobuf/proto"
@@ -61,6 +62,11 @@ type PSI interface {
 // RpcHandler used to request remote mpc-node
 type RpcHandler interface {
 	StepPredict(req *pb.PredictRequest, peerName string) (*pb.PredictResponse, error)
+
+	// StepPredictWithRetry sends prediction message to remote mpc-node
+	// retries 2 times at most
+	// inteSec indicates the interval between retry requests, in seconds
+	StepPredictWithRetry(req *pb.PredictRequest, peerName string, times int, inteSec int64) (*pb.PredictResponse, error)
 }
 
 // ResultHandler handles final result which is successful or failed
@@ -318,7 +324,9 @@ func (model *Model) advance(message *pbLogicRegVl.PredictMessage) (*pb.PredictRe
 		}
 	}
 
-	logger.Infof("model[%s] finished advance. message %s", model.id, message.Type.String())
+	logger.WithFields(logrus.Fields{
+		"address": model.address,
+	}).Infof("model[%s] finished advance. message %s", model.id, message.Type.String())
 	return ret, nil
 }
 
@@ -355,6 +363,9 @@ func (model *Model) sendMessageWithRetry(message *pbLogicRegVl.PredictMessage, a
 	var m *pbLogicRegVl.PredictMessage
 	var err error
 	for i := 0; i < times; i++ {
+		if i > 0 {
+			time.Sleep(3 * time.Second)
+		}
 		m, err = model.sendMessage(message, address)
 		if err == nil {
 			break
