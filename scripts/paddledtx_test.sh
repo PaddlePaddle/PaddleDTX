@@ -306,8 +306,18 @@ function linearVlTrain() {
   do
   # Requester published linear training task
   # 计算需求方发布纵向线性训练任务
-  result=`docker exec -it executor1.node.com sh -c "./requester-cli task publish -p $PSI -a $VLLINALGO -f $VLLIN_TRAIN_FILES \
-  -l $VLLINLABEL --keyPath ./reqkeys -t train -n $VLLINTASKTRAINNAME -c $CONFIG --amplitude $AMPLITUDE -e executor1,executor2" | awk 'BEGIN{RS="\r";ORS="";}{print $0}'| awk '$1=$1'`
+  linearVlTrainCmd="./requester-cli task publish -p $PSI -a $VLLINALGO -f $VLLIN_TRAIN_FILES \
+  -l $VLLINLABEL --keyPath ./reqkeys -t train -n $VLLINTASKTRAINNAME -c $CONFIG --amplitude $AMPLITUDE -e executor1,executor2"
+   # whether to perform model evaluation
+  # 判断是否执行模型评估
+  if [ "$MODEL_EVALUATION" = true ]; then
+    linearVlTrainCmd="$linearVlTrainCmd --ev --evRule 1 "
+  fi
+  if [ "$LIVE_MODEL_EVALUATION" = true ]; then
+    linearVlTrainCmd="$linearVlTrainCmd --le"
+  fi
+
+  result=`docker exec -it executor1.node.com sh -c "$linearVlTrainCmd" | awk 'BEGIN{RS="\r";ORS="";}{print $0}'| awk '$1=$1'`
   checkOperateResult "$result"
   echo "======> Requester published linear train task: $result "
   taskid=${result##*: }
@@ -362,9 +372,18 @@ function logisticVlTrain() {
   do
   # Requester published logistic training task
   # 计算需求方发布纵向逻辑训练任务
-  result=`docker exec -it executor1.node.com sh -c "./requester-cli task publish -p $PSI -a $VLLOGALGO -f $VLLOG_TRAIN_FILES \
-  -l $VLLOGLABEL --keyPath ./reqkeys -t train -n $VLLOGTASKTRAINNAME -c $CONFIG --labelName $VLLOGLABELName -e executor1,executor2
-  " | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1'`
+  logisticVlTrainCmd="./requester-cli task publish -p $PSI -a $VLLOGALGO -f $VLLOG_TRAIN_FILES \
+  -l $VLLOGLABEL --keyPath ./reqkeys -t train -n $VLLOGTASKTRAINNAME -c $CONFIG --labelName $VLLOGLABELName -e executor1,executor2"
+  # whether to perform model evaluation
+  # 判断是否执行模型评估
+  if [ "$MODEL_EVALUATION" = true ]; then
+    logisticVlTrainCmd="$logisticVlTrainCmd --ev --evRule 1 "
+  fi
+  if [ "$LIVE_MODEL_EVALUATION" = true ]; then
+    logisticVlTrainCmd="$logisticVlTrainCmd --le"
+  fi
+  
+  result=`docker exec -it executor1.node.com sh -c "$logisticVlTrainCmd" | awk 'BEGIN{RS="\r";ORS="";}{print $0}' | awk '$1=$1'`
 
   checkOperateResult "$result"
   echo "======> Requester published logistic train task: $result "
@@ -515,6 +534,8 @@ function printHelp() {
   echo "      - 'tasklist' - list task in PaddleDTX"
   echo "      - 'gettaskbyid' - get task by id from PaddleDTX"
   echo "    -f <sample files> - linear or logistic sample files"
+  echo "    -e <model evaluation> - whether to perform model evaluation on the training task, default false, if select true, the evaluate rule is 'Cross Validation'"
+  echo "    -l <live model evaluation> - whether to perform live model evaluation, default false"
   echo "    -m <model task id> - finished train task ID from which obtain the model, required for predict task"
   echo "    -i <task id> - training or prediction task id"
   echo
@@ -535,12 +556,14 @@ VLLIN_PREDICT_FILES=""
 LINEAR_MODEL_TASKID=""
 VLLOG_TRAIN_FILES=""
 VLLOG_PREDICT_FILES=""
+MODEL_EVALUATION=false
+LIVE_MODEL_EVALUATION=false
 LOGISTIC_MODEL_TASKID=""
 TASKID=""
 
 action=$1
 shift
-while getopts "h?f:m:i:" opt; do
+while getopts "h?f:m:i:e:l:" opt; do
   case "$opt" in
   h | \?)
     printHelp
@@ -569,6 +592,12 @@ while getopts "h?f:m:i:" opt; do
       printHelp
       exit 0
     fi
+    ;;
+  e)
+    MODEL_EVALUATION=$OPTARG
+    ;;
+  l)
+    LIVE_MODEL_EVALUATION=$OPTARG
     ;;
   i)
     TASKID=$OPTARG
