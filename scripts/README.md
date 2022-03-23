@@ -27,8 +27,17 @@ Usage: ./paddledtx_test.sh {upload_sample_files | start_vl_linear_train | start_
 
 ### 2.2 启动纵向线性回归训练任务
 - vlLinTrainfiles 取值为步骤2.1获取到的 vertical linear train sample files
+- ### 2.2.1 发布纵向线性回归训练任务，不启动模型评估
 ```shell
 ./paddledtx_test.sh start_vl_linear_train -f $vlLinTrainfiles
+```
+- ### 2.2.2 发布纵向线性回归训练任务，启动模型评估
+```shell
+./paddledtx_test.sh start_vl_linear_train -f $vlLinTrainfiles -e true
+```
+- ### 2.2.3 发布纵向线性回归训练任务，启动动态模型评估
+```shell
+./paddledtx_test.sh start_vl_linear_train -f $vlLinTrainfiles -l true
 ```
 
 ### 2.3 启动纵向线性回归预测任务
@@ -41,8 +50,17 @@ Usage: ./paddledtx_test.sh {upload_sample_files | start_vl_linear_train | start_
 
 ### 2.4 启动纵向逻辑回归训练任务
 - vlLogTrainfiles 取值为步骤2.1获取到的 vertical logistic train sample files
+- ### 2.4.1 发布纵向逻辑回归训练任务，不启动模型评估
 ```shell
 ./paddledtx_test.sh start_vl_logistic_train -f $vlLogTrainfiles
+```
+- ### 2.4.2 发布纵向逻辑回归训练任务，启动模型评估
+```shell
+./paddledtx_test.sh start_vl_logistic_train -f $vlLogTrainfiles -e true
+```
+- ### 2.4.3 发布纵向逻辑回归训练任务，启动动态模型评估
+```shell
+./paddledtx_test.sh start_vl_logistic_train -f $vlLogTrainfiles -l true
 ```
 
 ### 2.5 启动纵向逻辑回归预测任务
