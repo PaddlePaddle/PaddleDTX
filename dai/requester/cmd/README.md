@@ -179,6 +179,13 @@ $  ./requester-cli task list  --keyPath ./keys
 |   --accuracy  |      accuracy    |    |    no, default is 10    |
 |   --description  |    -d      | task  description  |   no   |
 |   --batchSize  |    -b      |  size of samples for one round of training loop, |   no, default is 4   |
+|   --ev  |          | perform model evaluation |   no   |
+|   --evRule  |          | the way to evaluate model, 0 means 'Random Split', 1 means 'Cross Validation', 2 means 'Leave One Out' |   no, default is 0   |
+|   --folds  |          | number of folds, 5 or 10 supported, a optional parameter when perform model evaluation in the way of 'Cross Validation' |   no, default is 10   |
+|   --shuffle  |          | shuffle the samples before dividion when perform model evaluation in the way of 'Cross Validation' |   no   |
+|   --plo  |          | percentage to leave out as validation set when perform model evaluation in the way of 'Random Split' |   no, default is 30   |
+|   --le  |          | perform live model evaluation |   no   |
+|   --lplo  |          | percentage to leave out as validation set when perform live model evaluation |   no, default is 30   |
 
 ```shell
 $  ./requester-cli task publish -a "linear-vl" -l "MEDV" -k 14a54c188d0071bc1b161a50fe7eacb74dcd016993bb7ad0d5449f72a8780e21 -t "train" -n "房价预测任务" -d "it's a test" -p "id,id" -f "52357151-de44-445a-a137-9c79a33c12ed,21e44577-c57f-4c92-b97e-7213222062da" -e "executor1,executor2"
