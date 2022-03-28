@@ -112,7 +112,7 @@ enum CaseType {
 
 // BinaryClassCaseMetricScores contains the metric scores of binary classfication
 message BinaryClassCaseMetricScores {
-    CaseType caseType                           = 1;
+    CaseType caseType                              = 1;
     double avgAccuracy                             = 2; // average of accuracy
 	double avgPrecision                            = 3; // average of precision
 	double avgRecall                               = 4; // average of recall
@@ -134,10 +134,10 @@ message BinaryClassCaseMetricScores {
     map<int32, MetricsPerFold> metricsPerFold   = 7;
 }
 
-// BinaryClassCaseMetricScores contains the metric scores of regression
+// RegressionCaseMetricScores contains the metric scores of regression
 message RegressionCaseMetricScores {
     CaseType caseType           = 1;
-    map<int32, double> RMSEs    = 2; //scores of RMSE over all split folds
+    map<int32, double> RMSEs    = 2; // scores of RMSE (Root Mean Squard Error) over all split folds
     double meanRMSE             = 3; // Mean of RMSEs
     double stdDevRMSE           = 4; // Standard Deviation of RMSEs 
 }

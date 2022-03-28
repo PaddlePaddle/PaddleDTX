@@ -113,6 +113,14 @@ $ ./requester-cli task publish -a "linear-vl" -l "MEDV" --keyPath './keys' -t "t
 TaskID: fdc5b7e1-fc87-4e4b-86ee-b139a7721391
 ```
 
+如果希望执行模型评估，增加 '--ev'、'--evRule'等参数：
+
+```
+$ ./requester-cli task publish -a "linear-vl" -l "MEDV" --keyPath './keys' -t "train" -n "房价预测任务v3" -d "hahahha" -p "id,id" --conf ./testdata/executor/node1/conf/config.toml -f "01edba10-ef04-4096-a984-c81191262d03,21e5b591-9126-4df8-8b84-72a682a46fc1" -e "executor1,executor2"  --ev
+# 命令行返回
+TaskID: fdc5b7e1-fc87-4e4b-86ee-b139a7721391
+```
+
 命令行各参数说明如下：
 
 * -a: 训练使用的算法, 可选线性回归 'linear-vl' 或逻辑回归 'logistic-vl'
@@ -125,6 +133,8 @@ TaskID: fdc5b7e1-fc87-4e4b-86ee-b139a7721391
 * --conf: 使用的配置文件
 * -f: 训练使用的文件ID, 这里是一个列表, 指明了各个任务执行方需要使用的文件
 * -e: 任务执行节点名称, 和-f 一一对应, 执行节点执行任务时, 分别取对应位置的样本文件
+* --ev: 训练结束后，执行模型评估
+* --evRule: 模型评估方式，可选随机划分训练集 '0'、10折交叉验证 '1' 或者 Leave One Out '2', 默认取值'0'
 
 与 XuperDB 的使用方法一致，当使用 docker-compose 部署时需要进入容器执行命令或者使用 docker exec 命令，后续命令将不再赘述。
 
@@ -134,7 +144,7 @@ TaskID: fdc5b7e1-fc87-4e4b-86ee-b139a7721391
 
 ### 启动训练任务
 
-当所有的任务执行节点对任务进行确认后，需要计算需求方触发启动命令的执行，训练任务的执行结果是产出一个预测模型。
+当所有的任务执行节点对任务进行确认后，需要计算需求方触发启动命令的执行，训练任务的执行结果是产出一个预测模型。如果在发布训练任务的时候指定执行模型评估，训练任务结束后，训练样本中含有目标特征的一方会生成模型评估结果，并保存于 ./evalus 路径下。
 
 ```
 $ ./requester-cli task start --id fdc5b7e1-fc87-4e4b-86ee-b139a7721391 --keyPath './keys' --conf ./testdata/executor/node1/conf/config.toml
@@ -151,6 +161,7 @@ $ ./requester-cli task start --id fdc5b7e1-fc87-4e4b-86ee-b139a7721391 --keyPath
 
 ```
 $ ./requester-cli task publish -a "linear-vl" --keyPath './keys' -t "predict" -n "房价任务v3" -d "hahahha" -p "id,id" --conf ./testdata/executor/node1/conf/config.toml -f "01d3b812-4dd7-4deb-a48d-4437312a164a,e02b27a6-0057-4673-b7ec-408ad060c952" -i fdc5b7e1-fc87-4e4b-86ee-b139a7721391  -e "executor1,executor2"
+# 命令行返回
 TaskID: a7dfac43-fa51-423e-bd05-8e0965c708a8
 ```
 
