@@ -209,7 +209,7 @@ func init() {
 	publishCmd.Flags().BoolVar(&ev, "ev", false, "perform model evaluation")
 	publishCmd.Flags().Int32Var(&evRule, "evRule", 0, "the way to evaluate model, 0 means 'Random Split', 1 means 'Cross Validation', 2 means 'Leave One Out'")
 	publishCmd.Flags().Int32Var(&folds, "folds", 10, "number of folds, 5 or 10 supported, a optional parameter when perform model evaluation in the way of 'Cross Validation'")
-	publishCmd.Flags().BoolVar(&shuffle, "shuffle", false, "shuffle the samples before dividion when perform model evaluation in the way of 'Cross Validation'")
+	publishCmd.Flags().BoolVar(&shuffle, "shuffle", false, "shuffle the samples before division when perform model evaluation in the way of 'Cross Validation'")
 	publishCmd.Flags().Int32Var(&percentLO, "plo", 30, "percentage to leave out as validation set when perform model evaluation in the way of 'Random Split'")
 
 	// optional params about live evaluation
