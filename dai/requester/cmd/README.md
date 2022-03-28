@@ -182,7 +182,7 @@ $  ./requester-cli task list  --keyPath ./keys
 |   --ev  |          | perform model evaluation |   no   |
 |   --evRule  |          | the way to evaluate model, 0 means 'Random Split', 1 means 'Cross Validation', 2 means 'Leave One Out' |   no, default is 0   |
 |   --folds  |          | number of folds, 5 or 10 supported, a optional parameter when perform model evaluation in the way of 'Cross Validation' |   no, default is 10   |
-|   --shuffle  |          | shuffle the samples before dividion when perform model evaluation in the way of 'Cross Validation' |   no   |
+|   --shuffle  |          | shuffle the samples before division when perform model evaluation in the way of 'Cross Validation' |   no   |
 |   --plo  |          | percentage to leave out as validation set when perform model evaluation in the way of 'Random Split' |   no, default is 30   |
 |   --le  |          | perform live model evaluation |   no   |
 |   --lplo  |          | percentage to leave out as validation set when perform live model evaluation |   no, default is 30   |
