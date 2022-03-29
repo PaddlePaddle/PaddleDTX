@@ -1,4 +1,4 @@
-[DOC](https://paddledtx.readthedocs.io) | [English](./README.md) | 中文
+[DOC](https://paddledtx.readthedocs.io/zh_CN/v1.1.0) | [English](./README.md) | 中文
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 
