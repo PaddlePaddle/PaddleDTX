@@ -125,7 +125,7 @@ func (x *Xdata) GetNode(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	return shim.Success(resp.Payload)
 }
 
-// args = {id, sig}
+// NodeOffline args = {id, sig}
 func (x *Xdata) NodeOffline(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 1 {
 		return shim.Error("invalid arguments. expecting nodeID and signature")
@@ -133,7 +133,7 @@ func (x *Xdata) NodeOffline(stub shim.ChaincodeStubInterface, args []string) pb.
 	return x.setNodeOnlineStatus(stub, args, false)
 }
 
-// args = {id, sig}
+// NodeOnline args = {id, sig}
 func (x *Xdata) NodeOnline(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 1 {
 		return shim.Error("invalid arguments. expecting nodeID and signature")
@@ -316,7 +316,7 @@ func (x *Xdata) GetHeartbeatNum(stub shim.ChaincodeStubInterface, args []string)
 	return shim.Success([]byte(strconv.Itoa(len(hb))))
 }
 
-// ListFiles lists files from fabric
+// ListNodesExpireSlice lists expired slices from fabric
 func (x *Xdata) ListNodesExpireSlice(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 1 {
 		return shim.Error("incorrect arguments. expecting ListNodeSliceOptions")
@@ -354,7 +354,7 @@ func (x *Xdata) ListNodesExpireSlice(stub shim.ChaincodeStubInterface, args []st
 			return shim.Error(err.Error())
 		}
 
-		expireTime := getNodeSliceFileId([]byte(queryResponse.Key))
+		expireTime := getNodeSliceFileID([]byte(queryResponse.Key))
 		if (opt.Limit > 0 && int64(len(sl)) >= opt.Limit) || expireTime == 0 {
 			break
 		}

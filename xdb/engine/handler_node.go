@@ -41,9 +41,8 @@ func (e *Engine) GetNode(id []byte) (blockchain.Node, error) {
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return node, errorx.New(errorx.ErrCodeNotFound, "node not found")
-		} else {
-			return node, errorx.Wrap(err, "failed to read blockchain")
 		}
+		return node, errorx.Wrap(err, "failed to read blockchain")
 	}
 	return node, nil
 }
@@ -66,9 +65,8 @@ func (e *Engine) NodeOffline(opt types.NodeOfflineOptions) error {
 	if err := e.chain.NodeOffline(nodeOpts); err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return errorx.New(errorx.ErrCodeNotFound, "node not found")
-		} else {
-			return errorx.Wrap(err, "failed to read blockchain")
 		}
+		return errorx.Wrap(err, "failed to read blockchain")
 	}
 	return nil
 }
@@ -97,9 +95,8 @@ func (e *Engine) NodeOnline(opt types.NodeOnlineOptions) error {
 	if err := e.chain.NodeOnline(nodeOpts); err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return errorx.New(errorx.ErrCodeNotFound, "node not found")
-		} else {
-			return errorx.Wrap(err, "failed to read blockchain")
 		}
+		return errorx.Wrap(err, "failed to read blockchain")
 	}
 	return nil
 }
@@ -118,9 +115,8 @@ func (e *Engine) GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions)
 	if _, err := e.chain.GetNode(opt.Target); err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return "", errorx.New(errorx.ErrCodeNotFound, "node not found")
-		} else {
-			return "", errorx.Wrap(err, "failed to read blockchain")
 		}
+		return "", errorx.Wrap(err, "failed to read blockchain")
 	}
 	result, err := e.chain.GetSliceMigrateRecords(opt)
 	if err != nil {
@@ -138,9 +134,8 @@ func (e *Engine) GetHeartbeatNum(id []byte, ctime int64) (int, int, error) {
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return 0, 0, errorx.New(errorx.ErrCodeNotFound, "node not found")
-		} else {
-			return 0, 0, errorx.Wrap(err, "failed to read blockchain")
 		}
+		return 0, 0, errorx.Wrap(err, "failed to read blockchain")
 	}
 	if ctime != 0 && ctime < node.RegTime {
 		return 0, 0, errorx.New(errorx.ErrCodeNotFound, "invalid time, must greater than node register time")

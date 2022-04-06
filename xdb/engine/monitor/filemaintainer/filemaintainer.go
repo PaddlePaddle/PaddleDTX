@@ -40,10 +40,10 @@ var (
 )
 
 type Copier interface {
-	Push(ctx context.Context, id, sourceId string, r io.Reader, node *blockchain.Node) error
-	Pull(ctx context.Context, id, fileId string, node *blockchain.Node) (io.ReadCloser, error)
+	Push(ctx context.Context, id, sourceID string, r io.Reader, node *blockchain.Node) error
+	Pull(ctx context.Context, id, fileID string, node *blockchain.Node) (io.ReadCloser, error)
 	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc common.CommonEncryptor,
-		challengeAlgorithm, sourceId, fileId string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
+		challengeAlgorithm, sourceID, fileID string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
 }
 
 type Encryptor interface {

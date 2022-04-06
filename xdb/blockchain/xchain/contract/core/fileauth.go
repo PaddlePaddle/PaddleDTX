@@ -222,13 +222,13 @@ func (x *Xdata) ListFileAuthApplications(ctx code.Context) code.Response {
 // GetAuthApplicationByID query authorization application detail by authID
 func (x *Xdata) GetAuthApplicationByID(ctx code.Context) code.Response {
 	// get id
-	fileAuthId, ok := ctx.Args()["id"]
+	fileAuthID, ok := ctx.Args()["id"]
 	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param: fileAuthId"))
+		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param: fileAuthID"))
 	}
 
 	// get authorization application detail by index_fileauth
-	index := packFileAuthIndex(string(fileAuthId))
+	index := packFileAuthIndex(string(fileAuthID))
 	s, err := ctx.GetObject([]byte(index))
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeNotFound, "fileAuthApplication not found"))

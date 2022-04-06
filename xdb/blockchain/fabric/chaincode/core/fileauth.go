@@ -239,7 +239,7 @@ func (x *Xdata) ListFileAuthApplications(stub shim.ChaincodeStubInterface, args 
 // GetAuthApplicationByID query authorization application detail by authID
 func (x *Xdata) GetAuthApplicationByID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 1 {
-		return shim.Error("invalid arguments. missing param: fileAuthId")
+		return shim.Error("invalid arguments. missing param: fileAuthID")
 	}
 
 	// get authorization application detail by index_fileauth

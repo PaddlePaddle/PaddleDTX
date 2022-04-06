@@ -136,7 +136,7 @@ func newFileMaintainer(conf *config.MonitorConf, opt *NewEngineOption, interval 
 // Start starts Monitor
 func (m *Monitor) Start(ctx context.Context) error {
 	if m.challengingMonitor != nil {
-		serType := ctx.Value("server-type").(string)
+		serType := config.GetServerType()
 		switch serType {
 		case config.NodeTypeDataOwner:
 			m.challengingMonitor.StartChallengeRequest(ctx)

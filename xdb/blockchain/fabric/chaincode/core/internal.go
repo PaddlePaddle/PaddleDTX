@@ -81,10 +81,10 @@ func packNodeSliceFilter(target string) (string, []string) {
 	return prefixNodeFileSlice, []string{target}
 }
 
-// example: string(key) = \x00 index_fslice/ 0 node_id 0 1625039335453720000 0 fileid11 0
-func getNodeSliceFileId(key []byte) int64 {
-	str_arr := strings.Split(string(key), string(minUnicodeRuneValue))
-	expireTime, err := strconv.ParseInt(str_arr[3], 10, 64)
+// getNodeSliceFileID example: string(key) = \x00 index_fslice/ 0 node_id 0 1625039335453720000 0 fileid11 0
+func getNodeSliceFileID(key []byte) int64 {
+	strArr := strings.Split(string(key), string(minUnicodeRuneValue))
+	expireTime, err := strconv.ParseInt(strArr[3], 10, 64)
 	if err != nil {
 		return 0
 	}
@@ -103,8 +103,8 @@ func packNodeSliceMigrateFilter(nodeID string) (string, []string) {
 }
 
 func getNodeSliceMigrateTime(key []byte) int64 {
-	str_arr := strings.Split(string(key), string(minUnicodeRuneValue))
-	expireTime, err := strconv.ParseInt(str_arr[3], 10, 64)
+	strArr := strings.Split(string(key), string(minUnicodeRuneValue))
+	expireTime, err := strconv.ParseInt(strArr[3], 10, 64)
 	if err != nil {
 		return 0
 	}
@@ -155,19 +155,19 @@ func packFileAuthIndex(id string) string {
 	return createCompositeKey(prefixFileAuthIndex, []string{id})
 }
 
-func packFileAuthApplierIndex(applier []byte, authId string, createTime int64) string {
-	attributes := []string{fmt.Sprintf("%x", applier), fmt.Sprintf("%d", subByInt64Max(createTime)), authId}
+func packFileAuthApplierIndex(applier []byte, authID string, createTime int64) string {
+	attributes := []string{fmt.Sprintf("%x", applier), fmt.Sprintf("%d", subByInt64Max(createTime)), authID}
 	return createCompositeKey(prefixFileAuthApplierIndex, attributes)
 }
 
-func packFileAuthAuthorizerIndex(authorizer []byte, authId string, createTime int64) string {
-	attributes := []string{fmt.Sprintf("%x", authorizer), fmt.Sprintf("%d", subByInt64Max(createTime)), authId}
+func packFileAuthAuthorizerIndex(authorizer []byte, authID string, createTime int64) string {
+	attributes := []string{fmt.Sprintf("%x", authorizer), fmt.Sprintf("%d", subByInt64Max(createTime)), authID}
 	return createCompositeKey(prefixFileAuthAuthorizerIndex, attributes)
 }
 
 // packApplierAndAuthorizerIndex define the contract key for applier and authorizer file authorization application
-func packApplierAndAuthorizerIndex(applier, authorizer []byte, authId string, createTime int64) string {
-	attributes := []string{fmt.Sprintf("%x", applier), fmt.Sprintf("%x", authorizer), fmt.Sprintf("%d", subByInt64Max(createTime)), authId}
+func packApplierAndAuthorizerIndex(applier, authorizer []byte, authID string, createTime int64) string {
+	attributes := []string{fmt.Sprintf("%x", applier), fmt.Sprintf("%x", authorizer), fmt.Sprintf("%d", subByInt64Max(createTime)), authID}
 	return createCompositeKey(prefixFileAuthListIndex, attributes)
 }
 

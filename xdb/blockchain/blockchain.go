@@ -238,7 +238,7 @@ type NodeOperateOptions struct {
 }
 
 type UpdateExptimeOptions struct {
-	FileId        string
+	FileID        string
 	NewExpireTime int64
 	CurrentTime   int64
 	Signature     []byte
@@ -363,7 +363,7 @@ type ConfirmFileAuthOptions struct {
 	Signature []byte // authorizer's signature
 }
 
-// ConfirmFileAuthOptions parameters for authorizers or appliers to query the list of file authorization application
+// ListFileAuthOptions parameters for authorizers or appliers to query the list of file authorization application
 type ListFileAuthOptions struct {
 	Applier    []byte // applier's public key
 	Authorizer []byte // authorizer's public key

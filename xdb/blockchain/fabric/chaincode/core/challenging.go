@@ -113,7 +113,7 @@ func (x *Xdata) ChallengeRequest(stub shim.ChaincodeStubInterface, args []string
 	// judge if id exists
 	index := packChallengeIndex(opt.ChallengeID)
 	if resp := x.getValue(stub, []string{index}); len(resp.Payload) != 0 {
-		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated ChallengeId").Error())
+		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated ChallengeID").Error())
 	}
 
 	// make challenge
@@ -156,20 +156,20 @@ func (x *Xdata) ChallengeRequest(stub shim.ChaincodeStubInterface, args []string
 	// set challengeID-challenge on chain
 	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
-			"failed to set ChallengeId-Challenge on chain: %s", resp.Message).Error())
+			"failed to set ChallengeID-Challenge on chain: %s", resp.Message).Error())
 	}
 
 	// set index40owner-challengeID on chain
 	index4Owner := packChallengeIndex4Owner(&c)
 	if resp := x.setValue(stub, []string{index4Owner, c.ID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
-			"failed to set index40owner-ChallengeId on chain: %s", resp.Message).Error())
+			"failed to set index40owner-ChallengeID on chain: %s", resp.Message).Error())
 	}
 	// set index4Target-challengeID on chain
 	index4Target := packChallengeIndex4Target(&c)
 	if resp := x.setValue(stub, []string{index4Target, c.ID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
-			"failed to set index4Target-ChallengeId on chain: %s", resp.Message).Error())
+			"failed to set index4Target-ChallengeID on chain: %s", resp.Message).Error())
 	}
 
 	return shim.Success([]byte("requested"))
@@ -265,7 +265,7 @@ func (x *Xdata) ChallengeAnswer(stub shim.ChaincodeStubInterface, args []string)
 	// update challengeID-challenge on chain
 	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
-			"failed to update ChallengeId-Challenge on chain: %s", resp.Message).Error())
+			"failed to update ChallengeID-Challenge on chain: %s", resp.Message).Error())
 	}
 
 	if c.Status == blockchain.ChallengeProved {
@@ -274,9 +274,9 @@ func (x *Xdata) ChallengeAnswer(stub shim.ChaincodeStubInterface, args []string)
 	return shim.Success([]byte(verifyErr.Error()))
 }
 
-// GetChallengeById query challenge result
+// GetChallengeByID query challenge result
 // args = {id}
-func (x *Xdata) GetChallengeById(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (x *Xdata) GetChallengeByID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 1 {
 		return shim.Error("incorrect arguments. expecting ChallengeID")
 	}

@@ -76,10 +76,10 @@ type Challenger interface {
 //  then push them onto new Storage Nodes.
 type Copier interface {
 	Select(slice slicer.Slice, nodes blockchain.NodeHs, opt *copier.SelectOptions) (copier.LocatedSlice, error)
-	Push(ctx context.Context, id, sourceId string, r io.Reader, node *blockchain.Node) error
-	Pull(ctx context.Context, id, fileId string, node *blockchain.Node) (io.ReadCloser, error)
+	Push(ctx context.Context, id, sourceID string, r io.Reader, node *blockchain.Node) error
+	Pull(ctx context.Context, id, fileID string, node *blockchain.Node) (io.ReadCloser, error)
 	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc common.CommonEncryptor,
-		challengeAlgorithm, sourceId, fileId string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
+		challengeAlgorithm, sourceID, fileID string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
 }
 
 // Blockchain defines some contract methods
@@ -121,7 +121,7 @@ type Blockchain interface {
 	ListChallengeRequests(opt *blockchain.ListChallengeOptions) ([]blockchain.Challenge, error)
 	ChallengeRequest(opt *blockchain.ChallengeRequestOptions) error
 	ChallengeAnswer(opt *blockchain.ChallengeAnswerOptions) ([]byte, error)
-	GetChallengeById(id string) (blockchain.Challenge, error)
+	GetChallengeByID(id string) (blockchain.Challenge, error)
 }
 
 // Storage stores files locally

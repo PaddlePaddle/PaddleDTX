@@ -71,7 +71,7 @@ var getMigrateRecordsCmd = &cobra.Command{
 		}
 		for _, v := range resp {
 			cTime := time.Unix(0, int64(v["ctime"].(float64))).Format(timeTemplate)
-			fmt.Printf("\nFileId: %s, SliceId: %s, migrateTime: %s\n", v["fileId"], v["sliceId"], cTime)
+			fmt.Printf("\nfileID: %s, SliceID: %s, migrateTime: %s\n", v["fileID"], v["sliceID"], cTime)
 		}
 		fmt.Printf("\nslice migrate total number: %d\n\n", len(resp))
 	},

@@ -82,14 +82,14 @@ func (x *XChain) ChallengeAnswer(opt *blockchain.ChallengeAnswerOptions) ([]byte
 	return resp, nil
 }
 
-// GetChallengeById gets a challenge by ID
-func (x *XChain) GetChallengeById(id string) (blockchain.Challenge, error) {
+// GetChallengeByID gets a challenge by id
+func (x *XChain) GetChallengeByID(id string) (blockchain.Challenge, error) {
 
 	var c blockchain.Challenge
 	args := map[string]string{
 		"id": id,
 	}
-	mName := "GetChallengeById"
+	mName := "GetChallengeByID"
 	s, err := x.QueryContract(args, mName)
 	if err != nil {
 		return c, err

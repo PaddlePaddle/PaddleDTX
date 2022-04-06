@@ -86,9 +86,9 @@ function fileList() {
   ./xdb-cli files list --host http://dataowner.node.com:80 -n $NAMESPACE"
 }
 
-# getFileById get file info by file ID from xdb network
+# getFileByID get file info by file id from xdb network
 # 根据文件ID获取文件详情
-function getFileById() {
+function getFileByID() {
   paramCheck "$FILEID" "FileId cannot be empty"
   docker exec -it dataowner.node.com sh -c " 
   ./xdb-cli files getbyid --host http://dataowner.node.com:80 -i $FILEID"
@@ -168,7 +168,7 @@ filelist)
   fileList $@
   ;;
 getfilebyid)
-  getFileById $@
+  getFileByID $@
   ;;
 *)
   printHelp

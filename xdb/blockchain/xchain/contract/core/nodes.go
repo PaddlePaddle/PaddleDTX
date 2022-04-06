@@ -317,7 +317,7 @@ func (x *Xdata) GetHeartbeatNum(ctx code.Context) code.Response {
 	return code.OK([]byte(strconv.Itoa(len(hb))))
 }
 
-// ListFiles lists expired files from xchain
+// ListNodesExpireSlice lists expired slices from xchain
 func (x *Xdata) ListNodesExpireSlice(ctx code.Context) code.Response {
 	// get opt
 	s, ok := ctx.Args()["opt"]
@@ -348,7 +348,7 @@ func (x *Xdata) ListNodesExpireSlice(ctx code.Context) code.Response {
 	// iterate iter
 	var sl []string
 	for iter.Next() {
-		_, expireTime := getNodeSliceFileId(iter.Key())
+		_, expireTime := getNodeSliceFileID(iter.Key())
 		if (opt.Limit > 0 && int64(len(sl)) >= opt.Limit) || expireTime == 0 {
 			break
 		}

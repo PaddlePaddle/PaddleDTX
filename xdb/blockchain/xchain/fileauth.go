@@ -42,7 +42,7 @@ func (x *XChain) ConfirmFileAuthApplication(opt *blockchain.ConfirmFileAuthOptio
 	return x.setFileAuthConfirmStatus(opt, true)
 }
 
-// ConfirmFileAuthApplication dataOwner node rejects the applier's file authorization application
+// RejectFileAuthApplication dataOwner node rejects the applier's file authorization application
 // and gives the reason for the rejection
 func (x *XChain) RejectFileAuthApplication(opt *blockchain.ConfirmFileAuthOptions) error {
 	return x.setFileAuthConfirmStatus(opt, false)

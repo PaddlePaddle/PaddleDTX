@@ -35,7 +35,7 @@ type SelectOptions struct {
 
 // ReplicaExpOptions contains some options for expanding replicas.
 type ReplicaExpOptions struct {
-	SliceId       string                       // expand sliceID of file
+	SliceID       string                       // expand sliceID of file
 	PrivateKey    []byte                       // used for signature
 	SelectedNodes blockchain.Nodes             // slice exist nodes list
 	NewReplica    int                          // new replica number

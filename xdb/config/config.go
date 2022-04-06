@@ -52,7 +52,7 @@ type XchainConf struct {
 
 type FabricConf struct {
 	ConfigFile string
-	ChannelId  string
+	ChannelID  string
 	Chaincode  string
 	UserName   string
 	OrgName    string

@@ -146,14 +146,13 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 								m.challenger, file, nodesMap, ns.Replica, healthNodes, interval, l); err != nil {
 								l.WithField("file_id", file.ID).WithError(err).Error("failed to migrate file")
 								return
+							}
+							l.WithField("file_id", file.ID).Info("file migrated success expand")
+							ef, err := m.blockchain.GetFileByID(file.ID)
+							if err != nil {
+								l.WithField("file_id", file.ID).Info("failed to get file after expansion")
 							} else {
-								l.WithField("file_id", file.ID).Info("file migrated success expand")
-								ef, err := m.blockchain.GetFileByID(file.ID)
-								if err != nil {
-									l.WithField("file_id", file.ID).Info("failed to get file after expansion")
-								} else {
-									file.Slices = ef.Slices
-								}
+								file.Slices = ef.Slices
 							}
 						}
 
@@ -268,7 +267,7 @@ func (m *FileMaintainer) migrate(ctx context.Context) {
 func (m FileMaintainer) migrateSliceToNewNode(ctx context.Context, slice blockchain.PublicSliceMeta,
 	nodeSliceMap map[string]blockchain.PublicSliceMeta, healthNodes blockchain.NodeHs,
 	healthNodesMap map[string]blockchain.NodeH, selectedNodes map[string][]string, fileID string,
-	slices []blockchain.PublicSliceMeta, challengeAlgorithm, sourceId string) ([]blockchain.PublicSliceMeta,
+	slices []blockchain.PublicSliceMeta, challengeAlgorithm, sourceID string) ([]blockchain.PublicSliceMeta,
 	encryptor.EncryptedSlice, map[string][]string, error) {
 
 	var newMigrateEnSlice encryptor.EncryptedSlice
@@ -317,7 +316,7 @@ func (m FileMaintainer) migrateSliceToNewNode(ctx context.Context, slice blockch
 		}).Debug("migrate slice")
 
 		// push to new node
-		if es, err := common.EncAndPush(ctx, m.copier, m.encryptor, plaintext, slice.ID, sourceId, fileID, &node); err == nil {
+		if es, err := common.EncAndPush(ctx, m.copier, m.encryptor, plaintext, slice.ID, sourceID, fileID, &node); err == nil {
 			l.WithFields(logrus.Fields{
 				"slice_id":    slice.ID,
 				"old_node":    string(slice.NodeID),

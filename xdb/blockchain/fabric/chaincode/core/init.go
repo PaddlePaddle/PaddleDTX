@@ -92,8 +92,8 @@ func (x *Xdata) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return x.ChallengeRequest(stub, args)
 	case "ChallengeAnswer":
 		return x.ChallengeAnswer(stub, args)
-	case "GetChallengeById":
-		return x.GetChallengeById(stub, args)
+	case "GetChallengeByID":
+		return x.GetChallengeByID(stub, args)
 	case "GetChallengeNum":
 		return x.GetChallengeNum(stub, args)
 	default:

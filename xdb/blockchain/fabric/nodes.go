@@ -132,7 +132,7 @@ func (f *Fabric) GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions)
 	return string(sm), nil
 }
 
-// ListFiles lists expired slices from fabric
+// ListNodesExpireSlice lists expired slices from fabric
 func (f *Fabric) ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error) {
 	var sliceL []string
 

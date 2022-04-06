@@ -42,9 +42,8 @@ func (e *Engine) ListFiles(opt types.ListFileOptions) (
 	if _, err := e.chain.GetNsByName(owner[:], opt.Namespace); err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return nil, errorx.New(errorx.ErrCodeNotFound, "ns not found")
-		} else {
-			return nil, errorx.Wrap(err, "failed to get ns from blockchain")
 		}
+		return nil, errorx.Wrap(err, "failed to get ns from blockchain")
 	}
 	bcopt := blockchain.ListFileOptions{
 		Owner:       owner,
@@ -71,9 +70,8 @@ func (e *Engine) ListExpiredFiles(opt types.ListFileOptions) (
 	if _, err := e.chain.GetNsByName(owner[:], opt.Namespace); err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return nil, errorx.New(errorx.ErrCodeNotFound, "ns not found")
-		} else {
-			return nil, errorx.Wrap(err, "failed to get ns from blockchain")
 		}
+		return nil, errorx.Wrap(err, "failed to get ns from blockchain")
 	}
 
 	bcopt := blockchain.ListFileOptions{
@@ -98,9 +96,8 @@ func (e *Engine) GetFileByID(ctx context.Context, id string) (hfile blockchain.F
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return hfile, err
-		} else {
-			return hfile, errorx.Wrap(err, "failed to read blockchain")
 		}
+		return hfile, errorx.Wrap(err, "failed to read blockchain")
 	}
 
 	// get replica from chain
@@ -131,9 +128,8 @@ func (e *Engine) GetFileByName(ctx context.Context, pubkey, ns, name string) (
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return hfile, err
-		} else {
-			return hfile, errorx.Wrap(err, "failed to read blockchain")
 		}
+		return hfile, errorx.Wrap(err, "failed to read blockchain")
 	}
 
 	// get replica from chain
@@ -185,7 +181,7 @@ func (e *Engine) UpdateFileExpireTime(ctx context.Context, opt types.UpdateFileE
 	}
 
 	uopt := &blockchain.UpdateExptimeOptions{
-		FileId:        opt.FileID,
+		FileID:        opt.FileID,
 		NewExpireTime: opt.ExpireTime,
 		CurrentTime:   opt.CurrentTime,
 		Signature:     sig[:],
@@ -194,15 +190,13 @@ func (e *Engine) UpdateFileExpireTime(ctx context.Context, opt types.UpdateFileE
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return err
-		} else {
-			return errorx.Wrap(err, "failed to update file on blockchain")
 		}
-	} else {
-		logger.WithFields(logrus.Fields{
-			"file_id":     opt.FileID,
-			"expire_time": time.Unix(0, opt.ExpireTime).Format("2006-01-02 15:04:05"),
-		}).Info("updated file expire time")
+		return errorx.Wrap(err, "failed to update file on blockchain")
 	}
+	logger.WithFields(logrus.Fields{
+		"file_id":     opt.FileID,
+		"expire_time": time.Unix(0, opt.ExpireTime).Format("2006-01-02 15:04:05"),
+	}).Info("updated file expire time")
 
 	// add new challenge material
 	startTime := file.ExpireTime
@@ -263,9 +257,8 @@ func (e *Engine) AddFileNs(opt types.AddNsOptions) (err error) {
 	if err := e.chain.AddFileNs(ans); err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return err
-		} else {
-			return errorx.Wrap(err, "failed to add file ns on blockchain")
 		}
+		return errorx.Wrap(err, "failed to add file ns on blockchain")
 	}
 	return nil
 }
@@ -417,9 +410,8 @@ func (e *Engine) ListFileAuths(opt types.ListFileAuthOptions) (fileAuths blockch
 		if err != nil {
 			if errorx.Is(err, errorx.ErrCodeNotFound) {
 				return fileAuths, err
-			} else {
-				return fileAuths, errorx.Wrap(err, "failed to read blockchain")
 			}
+			return fileAuths, errorx.Wrap(err, "failed to read blockchain")
 		}
 	}
 	bcopt := blockchain.ListFileAuthOptions{
@@ -498,9 +490,9 @@ func (e *Engine) ConfirmAuth(opt types.ConfirmAuthOptions) error {
 }
 
 // GetAuthKey get the authorization key for file decryption
-func (e *Engine) getAuthKey(fileId string, applier []byte, expireTime int64) ([]byte, error) {
+func (e *Engine) getAuthKey(fileID string, applier []byte, expireTime int64) ([]byte, error) {
 	// Query file details
-	file, err := e.chain.GetFileByID(fileId)
+	file, err := e.chain.GetFileByID(fileID)
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to get file from blockchain")
 	}
@@ -510,7 +502,7 @@ func (e *Engine) getAuthKey(fileId string, applier []byte, expireTime int64) ([]
 	}
 	authKey := make(map[string]interface{})
 	// Get the first-level derived key
-	firstEncSecret := e.encryptor.GetKey(fileId, "", []byte{})
+	firstEncSecret := e.encryptor.GetKey(fileID, "", []byte{})
 	authKey["firstEncSecret"] = firstEncSecret
 
 	// Get the second-level derived key
@@ -519,7 +511,7 @@ func (e *Engine) getAuthKey(fileId string, applier []byte, expireTime int64) ([]
 	for sliceID, targetPools := range slicesPool {
 		secondEncSecret[sliceID] = make(map[string]interface{})
 		for _, slice := range targetPools {
-			secondEncSecret[sliceID][string(slice.NodeID)] = e.encryptor.GetKey(fileId, sliceID, slice.NodeID)
+			secondEncSecret[sliceID][string(slice.NodeID)] = e.encryptor.GetKey(fileID, sliceID, slice.NodeID)
 		}
 	}
 	authKey["secondEncSecret"] = secondEncSecret
@@ -549,22 +541,20 @@ func (e *Engine) GetAuthByID(id string) (fileAuth blockchain.FileAuthApplication
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return fileAuth, errorx.New(errorx.ErrCodeNotFound, "authorization application not found")
-		} else {
-			return fileAuth, errorx.Wrap(err, "failed to read blockchain")
 		}
+		return fileAuth, errorx.Wrap(err, "failed to read blockchain")
 	}
 	return fileAuth, nil
 }
 
-// GetChallengeById gets a challenge by ID
-func (e *Engine) GetChallengeById(id string) (challenge blockchain.Challenge, err error) {
-	challenge, err = e.chain.GetChallengeById(id)
+// GetChallengeByID gets a challenge by id
+func (e *Engine) GetChallengeByID(id string) (challenge blockchain.Challenge, err error) {
+	challenge, err = e.chain.GetChallengeByID(id)
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return challenge, errorx.New(errorx.ErrCodeNotFound, "challenge not found")
-		} else {
-			return challenge, errorx.Wrap(err, "failed to read blockchain")
 		}
+		return challenge, errorx.Wrap(err, "failed to read blockchain")
 	}
 	return challenge, nil
 }
@@ -575,17 +565,15 @@ func (e *Engine) GetChallenges(opt blockchain.ListChallengeOptions) (challenges 
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return challenges, errorx.New(errorx.ErrCodeNotFound, "node not found")
-		} else {
-			return challenges, errorx.Wrap(err, "failed to read blockchain")
 		}
+		return challenges, errorx.Wrap(err, "failed to read blockchain")
 	}
 	challenges, err = e.chain.ListChallengeRequests(&opt)
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return challenges, errorx.New(errorx.ErrCodeNotFound, "challenge not found")
-		} else {
-			return challenges, errorx.Wrap(err, "failed to read blockchain")
 		}
+		return challenges, errorx.Wrap(err, "failed to read blockchain")
 	}
 	return challenges, nil
 }
