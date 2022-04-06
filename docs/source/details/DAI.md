@@ -41,12 +41,12 @@ K 折交叉验证高效利用数据，计算成本适度，是最基本最常用
 
 ```proto3
 message BinaryClassCaseMetricScores {
-    CaseType caseType                              = 1;
-    double avgAccuracy                             = 2; // Accuracy 的平均值
-	double avgPrecision                            = 3; // Precision 的平均值
-	double avgRecall                               = 4; // Recall 的平均值
-	double avgF1Score                              = 5; // F1Score 的平均值
-	double avgAUC                                  = 6; // AUC 的平均值
+    CaseType    caseType                                = 1;
+    double      avgAccuracy                             = 2; // Accuracy 的平均值
+    double      avgPrecision                            = 3; // Precision 的平均值
+    double      avgRecall                               = 4; // Recall 的平均值
+    double      avgF1Score                              = 5; // F1Score 的平均值
+    double      avgAUC                                  = 6; // AUC 的平均值
 
     message Point {
         // ROC曲线上的一个点，表示为 [FPR, TPR, threshold]([x,y,threshold])
@@ -92,24 +92,24 @@ Evaluator 接口定义：
 
 ```golang
 type Evaluator interface {
-	// Start 启动模型评估
+    // Start 启动模型评估
     // 1、划分数据集, 采用 Random Split、Cross Validation、Leave One Out 中的一种方式
-	// 2、实例化 Learners, 启动模型训练
-	// fileRows 是经过样本对齐后的训练集
-	Start(fileRows [][]string) error
+    // 2、实例化 Learners, 启动模型训练
+    // fileRows 是经过样本对齐后的训练集
+    Start(fileRows [][]string) error
 
-	// Stop 关闭模型评估, 清理数据
-	Stop()
+    // Stop 关闭模型评估, 清理数据
+    Stop()
 
-	// SaveModel 当 Learner 训练结束后, 调用该方法保存模型
+    // SaveModel 当 Learner 训练结束后, 调用该方法保存模型
     // 如果成功训练出模型，触发实例化 Model, 启动预测过程
-	SaveModel(*pbCom.TrainTaskResult) error
+    SaveModel(*pbCom.TrainTaskResult) error
 
-	// SavePredictOut 当 Model 预测结束后，调用该方法保存预测结果
-	// 1、保存预测结果
+    // SavePredictOut 当 Model 预测结束后，调用该方法保存预测结果
+    // 1、保存预测结果
     // 2、如果全部预测结束, 计算评估指标
     // 3、通知模型评估结束，并返回评估结果
-	SavePredictOut(*pbCom.PredictTaskResult) error
+    SavePredictOut(*pbCom.PredictTaskResult) error
 }
 ```
 
@@ -138,24 +138,24 @@ LiveEvaluator 接口定义：
 
 ```golang
 type LiveEvaluator interface {
-	// Trigger 触发模型评估
+    // Trigger 触发模型评估
     // 参数包含的消息分为两类：
     // 1 启动评估流程，参数中会携带训练集、暂停轮数（pause round），该消息触发初始化 1 个 Learner 并启动训练
     // 2 继续评估流程，该消息会触发继续训练直至到达 pause round，参数中会携带暂停轮数（pause round）
-	Trigger(*pb.LiveEvaluationTriggerMsg) error
+    Trigger(*pb.LiveEvaluationTriggerMsg) error
 
-	// Stop 关闭模型评估, 清理数据
-	Stop()
+    // Stop 关闭模型评估, 清理数据
+    Stop()
 
-	// SaveModel 当 Learner 训练暂停后, 调用该方法保存模型
+    // SaveModel 当 Learner 训练暂停后, 调用该方法保存模型
     // 实例化 Model, 启动预测过程
-	SaveModel(*pbCom.TrainTaskResult) error
+    SaveModel(*pbCom.TrainTaskResult) error
 
-	// SavePredictOut 当 Model 预测结束后，调用该方法保存预测结果
-	// 1、保存预测结果
+    // SavePredictOut 当 Model 预测结束后，调用该方法保存预测结果
+    // 1、保存预测结果
     // 2、计算评估指标
     // 3、向可视化模块提交指标值
-	SavePredictOut(*pbCom.PredictTaskResult) error
+    SavePredictOut(*pbCom.PredictTaskResult) error
 }
 ```
 
