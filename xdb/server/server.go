@@ -43,7 +43,7 @@ type Handler interface {
 	ListFileNs(opt etype.ListNsOptions) ([]blockchain.Namespace, error)
 	GetNsByName(ctx context.Context, pubkey, name string) (blockchain.NamespaceH, error)
 	GetFileSysHealth(ctx context.Context, pubkey string) (blockchain.FileSysHealth, error)
-	GetChallengeById(id string) (blockchain.Challenge, error)
+	GetChallengeByID(id string) (blockchain.Challenge, error)
 	GetChallenges(opt blockchain.ListChallengeOptions) ([]blockchain.Challenge, error)
 	// The Storage node uses Push() or Pull() to store or provide ciphertext slices
 	Push(etype.PushOptions, io.Reader) (etype.PushResponse, error)
@@ -129,7 +129,7 @@ func (s *Server) setRoute(serverType string) (err error) {
 		nodeParty.Get("/gethbnum", s.getHeartbeatNum)
 
 		challParty := v1.Party("/challenge")
-		challParty.Get("/getbyid", s.getChallengeById)
+		challParty.Get("/getbyid", s.getChallengeByID)
 		challParty.Get("/toprove", s.getToProveChallenges)
 		challParty.Get("/proved", s.getProvedChallenges)
 		challParty.Get("/failed", s.getFailedChallenges)
@@ -144,7 +144,7 @@ func (s *Server) setRoute(serverType string) (err error) {
 
 // Serve runs and blocks current routine
 func (s *Server) Serve(ctx context.Context) error {
-	if err := s.setRoute(ctx.Value("server-type").(string)); err != nil {
+	if err := s.setRoute(config.GetServerType()); err != nil {
 		return err
 	}
 

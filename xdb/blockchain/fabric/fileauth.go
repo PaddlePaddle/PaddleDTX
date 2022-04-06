@@ -38,7 +38,7 @@ func (f *Fabric) ConfirmFileAuthApplication(opt *blockchain.ConfirmFileAuthOptio
 	return f.setFileAuthConfirmStatus(opt, true)
 }
 
-// ConfirmFileAuthApplication dataOwner node rejects the applier's file authorization application
+// RejectFileAuthApplication dataOwner node rejects the applier's file authorization application
 // and gives the reason for the rejection
 func (f *Fabric) RejectFileAuthApplication(opt *blockchain.ConfirmFileAuthOptions) error {
 	return f.setFileAuthConfirmStatus(opt, false)

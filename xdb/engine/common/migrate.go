@@ -33,9 +33,9 @@ import (
 
 // PullAndDec pull a slice from healthy node and decrypt
 func PullAndDec(ctx context.Context, copier CommonCopier, encrypt CommonEncryptor,
-	slice blockchain.PublicSliceMeta, node *blockchain.Node, fileId string) ([]byte, error) {
+	slice blockchain.PublicSliceMeta, node *blockchain.Node, fileID string) ([]byte, error) {
 
-	r, err := copier.Pull(ctx, slice.ID, fileId, node)
+	r, err := copier.Pull(ctx, slice.ID, fileID, node)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func PullAndDec(ctx context.Context, copier CommonCopier, encrypt CommonEncrypto
 
 	// decrypt the slice
 	decOpt := encryptor.RecoverOptions{
-		FileID:  fileId,
+		FileID:  fileID,
 		SliceID: slice.ID,
 		NodeID:  node.ID,
 	}
@@ -105,7 +105,7 @@ func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp CommonCo
 			continue
 		}
 		opt := &copier.ReplicaExpOptions{
-			SliceId:       sid,
+			SliceID:       sid,
 			SelectedNodes: snode,
 			NewReplica:    replica,
 			NodesList:     healthNodes,

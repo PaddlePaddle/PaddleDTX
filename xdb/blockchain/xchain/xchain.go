@@ -92,15 +92,13 @@ func (x *XChain) InvokeContract(args map[string]string, mName string) ([]byte, e
 			}
 		}
 		return nil, errorx.ParseAndWrap(err, "failed to PreInvokeNativeContract")
-	} else {
-		// invoke contract
-		if _, err := nativeContract.PostNativeContract(preSelectUTXOResponse); err != nil {
-			return nil, errorx.NewCode(err, errorx.ErrCodeInternal,
-				"PostNativeContract failed, err: %v", err)
-		} else {
-			return preSelectUTXOResponse.GetResponse().GetResponses()[0].GetBody(), nil
-		}
 	}
+	// invoke contract
+	if _, err := nativeContract.PostNativeContract(preSelectUTXOResponse); err != nil {
+		return nil, errorx.NewCode(err, errorx.ErrCodeInternal,
+			"PostNativeContract failed, err: %v", err)
+	}
+	return preSelectUTXOResponse.GetResponse().GetResponses()[0].GetBody(), nil
 }
 
 // QueryContract queries the contract

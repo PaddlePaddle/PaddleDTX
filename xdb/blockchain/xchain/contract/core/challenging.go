@@ -105,7 +105,7 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 	// judge if id exists
 	index := packChallengeIndex(opt.ChallengeID)
 	if _, err := ctx.GetObject([]byte(index)); err == nil {
-		return code.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated ChallengeId"))
+		return code.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated ChallengeID"))
 	}
 
 	// make challenge
@@ -148,20 +148,20 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 	// set challengeID-challenge on xchain
 	if err = ctx.PutObject([]byte(index), s); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
-			"failed to set ChallengeId-Challenge on xchain"))
+			"failed to set ChallengeID-Challenge on xchain"))
 	}
 
 	// set index40owner-challengeID on chain
 	index4Owner := packChallengeIndex4Owner(&c)
 	if err = ctx.PutObject([]byte(index4Owner), []byte(c.ID)); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
-			"failed to set index40owner-ChallengeId on xchain"))
+			"failed to set index40owner-ChallengeID on xchain"))
 	}
 	// set index4Target-challengeID on chain
 	index4Target := packChallengeIndex4Target(&c)
 	if err = ctx.PutObject([]byte(index4Target), []byte(c.ID)); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
-			"failed to set index4Target-ChallengeId on xchain"))
+			"failed to set index4Target-ChallengeID on xchain"))
 	}
 
 	return code.OK([]byte("requested"))
@@ -259,7 +259,7 @@ func (x *Xdata) ChallengeAnswer(ctx code.Context) code.Response {
 	// update challengeID-challenge on xchain
 	if err = ctx.PutObject([]byte(index), s); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
-			"failed to update ChallengeId-Challenge on xchain"))
+			"failed to update ChallengeID-Challenge on xchain"))
 	}
 
 	if c.Status == blockchain.ChallengeProved {
@@ -268,8 +268,8 @@ func (x *Xdata) ChallengeAnswer(ctx code.Context) code.Response {
 	return code.OK([]byte(verifyErr.Error()))
 }
 
-// GetChallengeById queries challenge result
-func (x *Xdata) GetChallengeById(ctx code.Context) code.Response {
+// GetChallengeByID queries challenge result
+func (x *Xdata) GetChallengeByID(ctx code.Context) code.Response {
 	// get id
 	id, ok := ctx.Args()["id"]
 	if !ok {

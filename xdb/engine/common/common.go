@@ -30,9 +30,9 @@ var xchainClient = new(fl_crypto.XchainCryptoClient)
 
 // CommonCopier defines slice copier when migrating a file
 type CommonCopier interface {
-	Push(ctx context.Context, id, sourceId string, r io.Reader, node *blockchain.Node) error
-	Pull(ctx context.Context, id, fileId string, node *blockchain.Node) (io.ReadCloser, error)
-	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc CommonEncryptor, ca, sourceId, fileId string) (
+	Push(ctx context.Context, id, sourceID string, r io.Reader, node *blockchain.Node) error
+	Pull(ctx context.Context, id, fileID string, node *blockchain.Node) (io.ReadCloser, error)
+	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc CommonEncryptor, ca, sourceID, fileID string) (
 		[]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
 }
 

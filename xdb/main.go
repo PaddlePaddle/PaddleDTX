@@ -71,7 +71,6 @@ func main() {
 	logrus.SetLevel(level)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ctx = context.WithValue(ctx, "server-type", config.GetServerType())
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, os.Kill, syscall.SIGTERM)

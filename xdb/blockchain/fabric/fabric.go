@@ -48,7 +48,7 @@ func New(conf *conf.FabricConf) (*Fabric, error) {
 	if len(conf.ConfigFile) == 0 {
 		return nil, errorx.New(errorx.ErrCodeConfig, "missing fabric configuration file")
 	}
-	if len(conf.ChannelId) == 0 {
+	if len(conf.ChannelID) == 0 {
 		return nil, errorx.New(errorx.ErrCodeConfig, "missing channel id")
 	}
 	if len(conf.Chaincode) == 0 {
@@ -69,7 +69,7 @@ func New(conf *conf.FabricConf) (*Fabric, error) {
 
 	fabricConfig := &Config{
 		ConfigFile:  conf.ConfigFile,
-		ChannelID:   conf.ChannelId,
+		ChannelID:   conf.ChannelID,
 		ChaincodeID: conf.Chaincode,
 		UserName:    conf.UserName,
 		OrgName:     conf.OrgName,
@@ -85,7 +85,7 @@ func New(conf *conf.FabricConf) (*Fabric, error) {
 
 	// initiate channelClient
 	clientContext := sdk.ChannelContext(
-		conf.ChannelId,
+		conf.ChannelID,
 		fabsdk.WithUser(conf.UserName),
 		fabsdk.WithOrg(conf.OrgName))
 	channelClient, err := channel.New(clientContext)

@@ -82,7 +82,7 @@ func (x *Xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 	filenameIndex := packFileNameIndex(f.Owner, f.Namespace, f.Name)
 
 	if resp := x.getValue(stub, []string{filenameIndex}); len(resp.Payload) != 0 {
-		fc, err := x.getFileById(stub, string(resp.Payload))
+		fc, err := x.getFileByID(stub, string(resp.Payload))
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -131,8 +131,8 @@ func (x *Xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 	for _, slice := range f.Slices {
 		nodeSlice[string(slice.NodeID)] = append(nodeSlice[string(slice.NodeID)], slice.ID)
 	}
-	for nodeId, sliceL := range nodeSlice {
-		prefixNodeFileSlice := packNodeSliceIndex(nodeId, f)
+	for nodeID, sliceL := range nodeSlice {
+		prefixNodeFileSlice := packNodeSliceIndex(nodeID, f)
 		if resp := x.setValue(stub, []string{prefixNodeFileSlice, strings.Join(sliceL, ",")}); resp.Status == shim.ERROR {
 			return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 				"failed to set index-id on chain: %s", resp.Message).Error())
@@ -383,7 +383,7 @@ func (x *Xdata) UpdateFileExpireTime(stub shim.ChaincodeStubInterface, args []st
 			"failed to unmarshal UpdateExptimeOptions").Error())
 	}
 	//get file from id
-	f, err := x.getFileById(stub, opt.FileId)
+	f, err := x.getFileByID(stub, opt.FileID)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -396,7 +396,7 @@ func (x *Xdata) UpdateFileExpireTime(stub shim.ChaincodeStubInterface, args []st
 	}
 
 	// verify sig
-	m := fmt.Sprintf("%s,%d,%d", opt.FileId, opt.NewExpireTime, opt.CurrentTime)
+	m := fmt.Sprintf("%s,%d,%d", opt.FileID, opt.NewExpireTime, opt.CurrentTime)
 	err = x.checkSign(opt.Signature, f.Owner, []byte(m))
 	if err != nil {
 		return shim.Error(err.Error())
@@ -424,9 +424,9 @@ func (x *Xdata) SliceMigrateRecord(stub shim.ChaincodeStubInterface, args []stri
 
 	// get id
 	nodeID := []byte(args[0])
-	// get fileId
+	// get fileID
 	fid := args[1]
-	// get sliceId
+	// get sliceID
 	sid := args[2]
 	// get timestamp
 	ctime, err := strconv.ParseInt(args[4], 10, 64)
@@ -435,7 +435,7 @@ func (x *Xdata) SliceMigrateRecord(stub shim.ChaincodeStubInterface, args []stri
 	}
 
 	//get file from id
-	f, err := x.getFileById(stub, fid)
+	f, err := x.getFileByID(stub, fid)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -449,8 +449,8 @@ func (x *Xdata) SliceMigrateRecord(stub shim.ChaincodeStubInterface, args []stri
 
 	hindex := packNodeSliceMigrateIndex(string(nodeID), ctime)
 	fs := map[string]interface{}{
-		"fileId":  fid,
-		"sliceId": sid,
+		"fileID":  fid,
+		"sliceID": sid,
 	}
 	b, err := json.Marshal(fs)
 	if err != nil {
@@ -497,7 +497,7 @@ func (x *Xdata) ListFiles(stub shim.ChaincodeStubInterface, args []string) pb.Re
 		if opt.Limit > 0 && int64(len(fs)) >= opt.Limit {
 			break
 		}
-		f, err := x.getFileById(stub, string(queryResponse.Value))
+		f, err := x.getFileByID(stub, string(queryResponse.Value))
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -548,7 +548,7 @@ func (x *Xdata) ListExpiredFiles(stub shim.ChaincodeStubInterface, args []string
 		if opt.Limit > 0 && int64(len(fs)) >= opt.Limit {
 			break
 		}
-		f, err := x.getFileById(stub, string(queryResponse.Value))
+		f, err := x.getFileByID(stub, string(queryResponse.Value))
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -644,7 +644,7 @@ func (x *Xdata) GetNsByName(stub shim.ChaincodeStubInterface, args []string) pb.
 	return shim.Success(resp.Payload)
 }
 
-func (x *Xdata) getFileById(stub shim.ChaincodeStubInterface, fileID string) (f blockchain.File, err error) {
+func (x *Xdata) getFileByID(stub shim.ChaincodeStubInterface, fileID string) (f blockchain.File, err error) {
 	resp := x.getValue(stub, []string{fileID})
 	if len(resp.Payload) == 0 {
 		return f, errorx.NewCode(err, errorx.ErrCodeNotFound, "file[%s] not found", fileID)

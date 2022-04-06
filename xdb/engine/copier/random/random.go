@@ -112,9 +112,9 @@ func (m *RandomCopier) Select(slice slicer.Slice, nodes blockchain.NodeHs, opt *
 }
 
 // Push pushes slices onto Storage Node
-func (m *RandomCopier) Push(ctx context.Context, id, sourceId string, r io.Reader, node *blockchain.Node) error {
+func (m *RandomCopier) Push(ctx context.Context, id, sourceID string, r io.Reader, node *blockchain.Node) error {
 	// Todo add signature when pushing slices into storage nodes
-	url := fmt.Sprintf("http://%s/v1/slice/push?slice_id=%s&source_id=%s", node.Address, id, sourceId)
+	url := fmt.Sprintf("http://%s/v1/slice/push?slice_id=%s&source_id=%s", node.Address, id, sourceID)
 
 	var resp etype.PushResponse
 	if err := http.PostResponse(ctx, url, r, &resp); err != nil {
@@ -124,16 +124,16 @@ func (m *RandomCopier) Push(ctx context.Context, id, sourceId string, r io.Reade
 	return nil
 }
 
-func (m *RandomCopier) Pull(ctx context.Context, id, fileId string, node *blockchain.Node) (io.ReadCloser, error) {
+func (m *RandomCopier) Pull(ctx context.Context, id, fileID string, node *blockchain.Node) (io.ReadCloser, error) {
 	// Add signature when pulling slices from storage nodes
 	timestamp := time.Now().UnixNano()
-	msg := fmt.Sprintf("%s,%s,%d", id, fileId, timestamp)
+	msg := fmt.Sprintf("%s,%s,%d", id, fileID, timestamp)
 	sig, err := ecdsa.Sign(m.privateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to sign file pull")
 	}
 	url := fmt.Sprintf("http://%s/v1/slice/pull?slice_id=%s&file_id=%s&timestamp=%d&signature=%s",
-		node.Address, id, fileId, timestamp, sig.String())
+		node.Address, id, fileID, timestamp, sig.String())
 
 	r, err := http.Get(ctx, url)
 	if err != nil {
@@ -147,7 +147,7 @@ func (m *RandomCopier) Pull(ctx context.Context, id, fileId string, node *blockc
 //  pull slices from original nodes and decrypt and re-encrypt those slices,
 //  then push them onto new Storage Nodes.
 func (m *RandomCopier) ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions,
-	enc common.CommonEncryptor, challengeAlgorithm, sourceId, fileId string) (
+	enc common.CommonEncryptor, challengeAlgorithm, sourceID, fileID string) (
 	nSlice []blockchain.PublicSliceMeta, eSlices []encryptor.EncryptedSlice, err error) {
 	// 1 get more proper storage nodes
 	nNodes, err := getOptionalNode(opt.SelectedNodes, opt.NodesList)
@@ -156,7 +156,7 @@ func (m *RandomCopier) ReplicaExpansion(ctx context.Context, opt *copier.Replica
 	}
 
 	// 2 pull slices from original nodes and decrypt those slices
-	plainText := m.pullSlice(ctx, opt.SelectedNodes, opt.SliceMetas, opt.SliceId, fileId, enc)
+	plainText := m.pullSlice(ctx, opt.SelectedNodes, opt.SliceMetas, opt.SliceID, fileID, enc)
 	if len(plainText) == 0 {
 		return nSlice, eSlices, errorx.New(errorx.ErrCodeInternal, "slice pull from all healthy nodes error")
 	}
@@ -166,7 +166,7 @@ func (m *RandomCopier) ReplicaExpansion(ctx context.Context, opt *copier.Replica
 	for i := 0; i < sliceExpandNum; i++ {
 		pushRes := false
 		for _, n := range nNodes {
-			es, err := common.EncAndPush(ctx, m, enc, plainText, opt.SliceId, sourceId, fileId, &n)
+			es, err := common.EncAndPush(ctx, m, enc, plainText, opt.SliceID, sourceID, fileID, &n)
 
 			if err != nil {
 				logger.WithFields(logrus.Fields{
@@ -218,9 +218,9 @@ func getOptionalNode(selectedNodes blockchain.Nodes, allNodes blockchain.NodeHs)
 
 // pullSlice pull slices from selected Storage Nodes
 func (m *RandomCopier) pullSlice(ctx context.Context, selectedNodes blockchain.Nodes,
-	sliceMetas []blockchain.PublicSliceMeta, sliceId, fileID string, enc common.CommonEncryptor) (plainText []byte) {
+	sliceMetas []blockchain.PublicSliceMeta, sliceID, fileID string, enc common.CommonEncryptor) (plainText []byte) {
 	for _, n := range selectedNodes {
-		sm := getSliceMetaById(sliceMetas, sliceId, string(n.ID))
+		sm := getSliceMetaByID(sliceMetas, sliceID, string(n.ID))
 		plainText, err := common.PullAndDec(ctx, m, enc, sm, &n, fileID)
 
 		if err != nil {
@@ -232,28 +232,28 @@ func (m *RandomCopier) pullSlice(ctx context.Context, selectedNodes blockchain.N
 	return plainText
 }
 
-func getSliceMetaById(sliceMetas []blockchain.PublicSliceMeta, sliceId, nodeId string) (metas blockchain.PublicSliceMeta) {
+func getSliceMetaByID(sliceMetas []blockchain.PublicSliceMeta, sliceID, nodeID string) (metas blockchain.PublicSliceMeta) {
 	for _, slice := range sliceMetas {
-		if slice.ID == sliceId && string(slice.NodeID) == nodeId {
+		if slice.ID == sliceID && string(slice.NodeID) == nodeID {
 			return slice
 		}
 	}
 	return metas
 }
 
-func getNodeSliceIdx(sliceMetas []blockchain.PublicSliceMeta, nodeId string) int {
+func getNodeSliceIdx(sliceMetas []blockchain.PublicSliceMeta, nodeID string) int {
 	sliceIdxMap := make(map[string]int)
 	for _, s := range sliceMetas {
 		// denote slice index for each node (for pairing based challenge)
-		if string(s.NodeID) == nodeId {
-			_, ok := sliceIdxMap[nodeId]
-			if !ok || (ok && s.SliceIdx > sliceIdxMap[nodeId]) {
-				sliceIdxMap[nodeId] = s.SliceIdx
+		if string(s.NodeID) == nodeID {
+			_, ok := sliceIdxMap[nodeID]
+			if !ok || (ok && s.SliceIdx > sliceIdxMap[nodeID]) {
+				sliceIdxMap[nodeID] = s.SliceIdx
 			}
 		}
 	}
 	if len(sliceIdxMap) == 0 {
 		return 1
 	}
-	return sliceIdxMap[nodeId] + 1
+	return sliceIdxMap[nodeID] + 1
 }

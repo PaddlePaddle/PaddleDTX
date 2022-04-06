@@ -79,7 +79,7 @@ func (x *Xdata) PublishFile(ctx code.Context) code.Response {
 	// judge if filenameIndex exists
 	filenameIndex := packFileNameIndex(f.Owner, f.Namespace, f.Name)
 	if id, err := ctx.GetObject([]byte(filenameIndex)); err == nil {
-		fc, err := x.getFileById(ctx, id)
+		fc, err := x.getFileByID(ctx, id)
 		if err != nil {
 			return code.Error(err)
 		}
@@ -123,8 +123,8 @@ func (x *Xdata) PublishFile(ctx code.Context) code.Response {
 	for _, slice := range f.Slices {
 		nodeSice[string(slice.NodeID)] = append(nodeSice[string(slice.NodeID)], slice.ID)
 	}
-	for nodeId, sliceL := range nodeSice {
-		prefixNodeFileSlice := packNodeSliceIndex(nodeId, f)
+	for nodeID, sliceL := range nodeSice {
+		prefixNodeFileSlice := packNodeSliceIndex(nodeID, f)
 		if err := ctx.PutObject([]byte(prefixNodeFileSlice), []byte(strings.Join(sliceL, ","))); err != nil {
 			return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain, "failed to set index-id on chain"))
 		}
@@ -368,7 +368,7 @@ func (x *Xdata) UpdateFileExpireTime(ctx code.Context) code.Response {
 			"failed to unmarshal UpdateExptimeOptions"))
 	}
 	// get file from id
-	f, err := x.getFileById(ctx, []byte(opt.FileId))
+	f, err := x.getFileByID(ctx, []byte(opt.FileID))
 	if err != nil {
 		return code.Error(err)
 	}
@@ -381,7 +381,7 @@ func (x *Xdata) UpdateFileExpireTime(ctx code.Context) code.Response {
 	}
 
 	// verify sig
-	m := fmt.Sprintf("%s,%d,%d", opt.FileId, opt.NewExpireTime, opt.CurrentTime)
+	m := fmt.Sprintf("%s,%d,%d", opt.FileID, opt.NewExpireTime, opt.CurrentTime)
 	err = x.checkSign(opt.Signature, f.Owner, []byte(m))
 	if err != nil {
 		return code.Error(err)
@@ -403,17 +403,17 @@ func (x *Xdata) UpdateFileExpireTime(ctx code.Context) code.Response {
 // SliceMigrateRecord is used by node to slice migration record
 func (x *Xdata) SliceMigrateRecord(ctx code.Context) code.Response {
 	// get id
-	nodeID, ok := ctx.Args()["nodeId"]
+	nodeID, ok := ctx.Args()["nodeID"]
 	if !ok {
 		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:id"))
 	}
-	// get fileId
-	fid, ok := ctx.Args()["fileId"]
+	// get fileID
+	fid, ok := ctx.Args()["fileID"]
 	if !ok {
 		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:id"))
 	}
-	// get sliceId
-	sid, ok := ctx.Args()["sliceId"]
+	// get sliceID
+	sid, ok := ctx.Args()["sliceID"]
 	if !ok {
 		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:id"))
 	}
@@ -422,7 +422,7 @@ func (x *Xdata) SliceMigrateRecord(ctx code.Context) code.Response {
 		return code.Error(err)
 	}
 	// get file from id
-	file, err := x.getFileById(ctx, fid)
+	file, err := x.getFileByID(ctx, fid)
 	if err != nil {
 		return code.Error(err)
 	}
@@ -440,8 +440,8 @@ func (x *Xdata) SliceMigrateRecord(ctx code.Context) code.Response {
 
 	hindex := packNodeSliceMigrateIndex(string(nodeID), ctime)
 	fs := map[string]interface{}{
-		"fileId":  string(fid),
-		"sliceId": string(sid),
+		"fileID":  string(fid),
+		"sliceID": string(sid),
 	}
 	b, err := json.Marshal(fs)
 	if err != nil {
@@ -480,7 +480,7 @@ func (x *Xdata) ListFiles(ctx code.Context) code.Response {
 		if opt.Limit > 0 && int64(len(fs)) >= opt.Limit {
 			break
 		}
-		f, err := x.getFileById(ctx, iter.Value())
+		f, err := x.getFileByID(ctx, iter.Value())
 		if err != nil {
 			return code.Error(err)
 		}
@@ -524,7 +524,7 @@ func (x *Xdata) ListExpiredFiles(ctx code.Context) code.Response {
 		if opt.Limit > 0 && int64(len(fs)) >= opt.Limit {
 			break
 		}
-		f, err := x.getFileById(ctx, iter.Value())
+		f, err := x.getFileByID(ctx, iter.Value())
 		if err != nil {
 			return code.Error(err)
 		}
@@ -623,7 +623,7 @@ func (x *Xdata) getCtxTime(ctx code.Context, timeName string) (int64, error) {
 	return ptime, nil
 }
 
-func (x *Xdata) getFileById(ctx code.Context, fileID []byte) (f blockchain.File, err error) {
+func (x *Xdata) getFileByID(ctx code.Context, fileID []byte) (f blockchain.File, err error) {
 	s, err := ctx.GetObject(fileID)
 	if err != nil {
 		return f, errorx.NewCode(err, errorx.ErrCodeNotFound,

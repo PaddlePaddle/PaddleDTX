@@ -156,7 +156,7 @@ func (x *XChain) GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions)
 	return string(sm), nil
 }
 
-// ListFiles lists expired slices from xchain
+// ListNodesExpireSlice lists expired slices from xchain
 func (x *XChain) ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error) {
 	var sliceL []string
 

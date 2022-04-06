@@ -173,10 +173,7 @@ func AddFileNewMerkleChallenge(ctx context.Context, challenger CommonChallenger,
 	if len(file.Slices) != len(challengingMaterial) {
 		return errorx.New(errorx.ErrCodeInternal, "failed to add new merkle challenges, slices number and challenge material number not equal")
 	}
-	if err := SaveMerkleChallenger(challenger, challengingMaterial); err != nil {
-		return err
-	}
-	return nil
+	return SaveMerkleChallenger(challenger, challengingMaterial)
 }
 
 // AddSlicesNewMerkleChallenge add merkle challenges for a storage node when slice migrates to new node

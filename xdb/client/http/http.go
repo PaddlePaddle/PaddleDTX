@@ -285,7 +285,7 @@ type ListNsOptions struct {
 	Limit     int64
 }
 
-// Define parameters for authorizers or appliers to query the list of file authorization application
+// ListFileAuthOptions define parameters for authorizers or appliers to query the list of file authorization application
 type ListFileAuthOptions struct {
 	Owner     string
 	Applier   string
@@ -296,7 +296,7 @@ type ListFileAuthOptions struct {
 	Limit     int64
 }
 
-// Define parameters for authorizers to confirm the file authorization application
+// ConfirmAuthOptions define parameters for authorizers to confirm the file authorization application
 type ConfirmAuthOptions struct {
 	PrivateKey   string
 	AuthID       string
@@ -509,7 +509,7 @@ func (c *Client) GetFileSysHealth(ctx context.Context, owner string) (blockchain
 	return fh, nil
 }
 
-// GetAuthCmd get file authorization application detail by authID
+// GetAuth get file authorization application detail by authID
 func (c *Client) GetAuth(ctx context.Context, authID string) (blockchain.FileAuthApplication, error) {
 	url := c.baseAddr
 	joinPath(&url, "file", "getauthbyid")

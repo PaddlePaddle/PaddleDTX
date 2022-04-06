@@ -158,9 +158,9 @@ func (x *XChain) UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions)
 // SliceMigrateRecord is used by node to slice migration record
 func (x *XChain) SliceMigrateRecord(id, sig []byte, fid, sid string, ctime int64) error {
 	args := map[string]string{
-		"nodeId":      string(id),
-		"fileId":      fid,
-		"sliceId":     sid,
+		"nodeID":      string(id),
+		"fileID":      fid,
+		"sliceID":     sid,
 		"signature":   string(sig),
 		"currentTime": strconv.FormatInt(ctime, 10),
 	}

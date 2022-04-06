@@ -86,7 +86,7 @@ func (se *SoftEncryptor) Encrypt(r io.Reader, opt *encryptor.EncryptOptions) (
 	return es, nil
 }
 
-// Encrypt derive key using nodeID and slice ID, then decrypt content using AES-GCM
+// Recover derive key using nodeID and slice ID, then decrypt content using AES-GCM
 func (se *SoftEncryptor) Recover(r io.Reader, opt *encryptor.RecoverOptions) (
 	[]byte, error) {
 	ciphertext, err := ioutil.ReadAll(r)

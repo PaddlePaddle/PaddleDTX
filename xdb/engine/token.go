@@ -61,7 +61,7 @@ func (e *Engine) getPubKey(pubKeyStr string) (pubKey []byte, err error) {
 func (e *Engine) verifyUserID(userID string) error {
 	userKeyFileName := hash.HashUsingSha256([]byte(userID))
 	if ok, err := file.IsFileExisted(file.AuthKeyFilePath, hex.EncodeToString(userKeyFileName)); ok {
-		logger.Info("userId:", userID, ok, err)
+		logger.Info("userID:", userID, ok, err)
 		return nil
 	}
 	return e.verifyUserIDIsLocalNodeID(userID)

@@ -70,15 +70,15 @@ func packNodeSliceFilter(target string) string {
 	return fmt.Sprintf("%s/%s/", prefixNodeFileSlice, target)
 }
 
-// getNodeSliceFileId return fileID and file's expireTime by contract key
-// Example: string(key) = index_fslice/nodeID/expireTime/fileId
-func getNodeSliceFileId(key []byte) (string, int64) {
-	str_arr := strings.Split(string(key), "/")
-	expireTime, err := strconv.ParseInt(str_arr[2], 10, 64)
+// getNodeSliceFileID return fileID and file's expireTime by contract key
+// Example: string(key) = index_fslice/nodeID/expireTime/fileID
+func getNodeSliceFileID(key []byte) (string, int64) {
+	strArr := strings.Split(string(key), "/")
+	expireTime, err := strconv.ParseInt(strArr[2], 10, 64)
 	if err != nil {
 		return "", 0
 	}
-	return str_arr[len(str_arr)-1], expireTime
+	return strArr[len(strArr)-1], expireTime
 }
 
 func packNodeSliceMigrateIndex(target string, ctime int64) string {
@@ -92,8 +92,8 @@ func packNodeSliceMigrateFilter(target string) string {
 // getNodeSliceMigrateTime return slice's migrateTime by contract key
 // Example: string(key) = index_slicemigrate/nodeID/migrateTime
 func getNodeSliceMigrateTime(key []byte) int64 {
-	str_arr := strings.Split(string(key), "/")
-	expireTime, err := strconv.ParseInt(str_arr[2], 10, 64)
+	strArr := strings.Split(string(key), "/")
+	expireTime, err := strconv.ParseInt(strArr[2], 10, 64)
 	if err != nil {
 		return 0
 	}
@@ -133,17 +133,17 @@ func packFileAuthIndex(id string) string {
 	return fmt.Sprintf("%s/%s", prefixFileAuthIndex, id)
 }
 
-func packFileAuthApplierIndex(applier []byte, authId string, createTime int64) string {
-	return fmt.Sprintf("%s/%x/%d/%s", prefixFileAuthApplierIndex, applier, subByInt64Max(createTime), authId)
+func packFileAuthApplierIndex(applier []byte, authID string, createTime int64) string {
+	return fmt.Sprintf("%s/%x/%d/%s", prefixFileAuthApplierIndex, applier, subByInt64Max(createTime), authID)
 }
 
-func packFileAuthAuthorizerIndex(authorizer []byte, authId string, createTime int64) string {
-	return fmt.Sprintf("%s/%x/%d/%s", prefixFileAuthAuthorizerIndex, authorizer, subByInt64Max(createTime), authId)
+func packFileAuthAuthorizerIndex(authorizer []byte, authID string, createTime int64) string {
+	return fmt.Sprintf("%s/%x/%d/%s", prefixFileAuthAuthorizerIndex, authorizer, subByInt64Max(createTime), authID)
 }
 
 // packApplierAndAuthorizerIndex define the contract key for applier and authorizer file authorization application
-func packApplierAndAuthorizerIndex(applier, authorizer []byte, authId string, createTime int64) string {
-	return fmt.Sprintf("%s/%x/%x/%d/%s", prefixFileAuthListIndex, applier, authorizer, subByInt64Max(createTime), authId)
+func packApplierAndAuthorizerIndex(applier, authorizer []byte, authID string, createTime int64) string {
+	return fmt.Sprintf("%s/%x/%x/%d/%s", prefixFileAuthListIndex, applier, authorizer, subByInt64Max(createTime), authID)
 }
 
 // packFileAuthFilter get the contract key for the authorization list of iterative query

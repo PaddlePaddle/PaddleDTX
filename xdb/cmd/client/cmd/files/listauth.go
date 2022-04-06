@@ -26,7 +26,6 @@ import (
 
 var (
 	applier string
-	fileId  string
 	status  string
 )
 
@@ -62,7 +61,7 @@ var fileAuthsListCmd = &cobra.Command{
 			Owner:     owner,
 			Status:    status,
 			Applier:   applier,
-			FileID:    fileId,
+			FileID:    fileID,
 			TimeStart: startTime,
 			TimeEnd:   endTime.UnixNano(),
 			Limit:     limit,
@@ -95,7 +94,7 @@ func init() {
 
 	fileAuthsListCmd.Flags().StringVarP(&applier, "applier", "a", "", "applier's public key")
 	fileAuthsListCmd.Flags().StringVarP(&owner, "owner", "o", "", "file owner")
-	fileAuthsListCmd.Flags().StringVarP(&fileId, "fileID", "f", "", "file ID")
+	fileAuthsListCmd.Flags().StringVarP(&fileID, "fileID", "f", "", "file ID")
 	fileAuthsListCmd.Flags().StringVar(&status, "status", "", "status of file authorization application, example 'Unapproved, Approved or Rejected'")
 	fileAuthsListCmd.Flags().StringVarP(&start, "start", "s", "", "authorization applications publish after startTime, example '2022-06-10 12:00:00'")
 	fileAuthsListCmd.Flags().StringVarP(&end, "end", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate),

@@ -69,10 +69,10 @@ func (f *Fabric) ChallengeAnswer(opt *blockchain.ChallengeAnswerOptions) ([]byte
 	return resp, nil
 }
 
-// GetChallengeById gets a challenge by ID
-func (f *Fabric) GetChallengeById(id string) (blockchain.Challenge, error) {
+// GetChallengeByID gets a challenge by id
+func (f *Fabric) GetChallengeByID(id string) (blockchain.Challenge, error) {
 	var c blockchain.Challenge
-	s, err := f.QueryContract([][]byte{[]byte(id)}, "GetChallengeById")
+	s, err := f.QueryContract([][]byte{[]byte(id)}, "GetChallengeByID")
 	if err != nil {
 		return c, err
 	}

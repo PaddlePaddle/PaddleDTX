@@ -485,10 +485,10 @@ func (s *Server) getAuthByID(ictx iris.Context) {
 	responseJSON(ictx, resp)
 }
 
-// getChallengeById get challenge by challenge id
-func (s *Server) getChallengeById(ictx iris.Context) {
+// getChallengeByID get challenge by challenge id
+func (s *Server) getChallengeByID(ictx iris.Context) {
 	id := ictx.URLParam("id")
-	resp, err := s.handler.GetChallengeById(id)
+	resp, err := s.handler.GetChallengeByID(id)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to get challenge by id"))
 		return
