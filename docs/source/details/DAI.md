@@ -39,7 +39,7 @@ K 折交叉验证高效利用数据，计算成本适度，是最基本最常用
 ### 评估指标
 分类问题相关的指标：
 
-```proto3
+```
 message BinaryClassCaseMetricScores {
     CaseType    caseType                                = 1;
     double      avgAccuracy                             = 2; // Accuracy 的平均值
@@ -68,7 +68,7 @@ message BinaryClassCaseMetricScores {
 
 回归问题相关的指标：
 
-```proto3
+```
 message RegressionCaseMetricScores {
     CaseType caseType           = 1;
     map<int32, double> RMSEs    = 2; // 每次 “训练-预测” 完成后，计算得到的 RMSE (Root Mean Squard Error) 
@@ -90,7 +90,7 @@ message RegressionCaseMetricScores {
 
 Evaluator 接口定义：
 
-```golang
+```
 type Evaluator interface {
     // Start 启动模型评估
     // 1、划分数据集, 采用 Random Split、Cross Validation、Leave One Out 中的一种方式
@@ -136,7 +136,7 @@ type Evaluator interface {
 
 LiveEvaluator 接口定义：
 
-```golang
+```
 type LiveEvaluator interface {
     // Trigger 触发模型评估
     // 参数包含的消息分为两类：
