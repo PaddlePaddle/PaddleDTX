@@ -1,10 +1,8 @@
 # The type of the running node, can be set with 'dataOwner' or 'storage'.
-# The type of the running node, can be set with 'dataOwner' or 'storage'.
 type = "storage"
 
 #########################################################################
 #
-#  [storage] defines features of the node as a storage.
 #  [storage] defines features of a storage node.
 #
 #########################################################################
