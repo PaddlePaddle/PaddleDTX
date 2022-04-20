@@ -121,7 +121,10 @@ func packFileNsListFilter(owner []byte) string {
 }
 
 func packFileNameFilter(owner []byte, ns string) string {
-	filter := prefixFilenameListIndex + "/" + fmt.Sprintf("%x/", owner)
+	filter := prefixFilenameListIndex + "/"
+	if len(owner) > 0 {
+		filter += fmt.Sprintf("%x/", owner)
+	}
 	if len(ns) > 0 {
 		filter += fmt.Sprintf("%s/", ns)
 	}

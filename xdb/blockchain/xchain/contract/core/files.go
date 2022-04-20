@@ -484,7 +484,7 @@ func (x *Xdata) ListFiles(ctx code.Context) code.Response {
 		if err != nil {
 			return code.Error(err)
 		}
-		if f.PublishTime < opt.TimeStart || f.PublishTime > opt.TimeEnd || f.ExpireTime <= opt.CurrentTime {
+		if f.PublishTime < opt.TimeStart || (opt.TimeEnd > 0 && f.PublishTime > opt.TimeEnd) || f.ExpireTime <= opt.CurrentTime {
 			continue
 		}
 		fs = append(fs, f)
@@ -528,7 +528,7 @@ func (x *Xdata) ListExpiredFiles(ctx code.Context) code.Response {
 		if err != nil {
 			return code.Error(err)
 		}
-		if f.PublishTime < opt.TimeStart || f.PublishTime > opt.TimeEnd {
+		if f.PublishTime < opt.TimeStart || (opt.TimeEnd > 0 && f.PublishTime > opt.TimeEnd) {
 			continue
 		}
 		if f.ExpireTime < opt.CurrentTime-blockchain.FileRetainPeriod.Nanoseconds() || f.ExpireTime > opt.CurrentTime {
@@ -576,7 +576,7 @@ func (x *Xdata) ListFileNs(ctx code.Context) code.Response {
 			return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 				"failed to unmarshal namespaces"))
 		}
-		if ns.CreateTime < opt.TimeStart || ns.CreateTime > opt.TimeEnd {
+		if ns.CreateTime < opt.TimeStart || (opt.TimeEnd > 0 && ns.CreateTime > opt.TimeEnd) {
 			continue
 		}
 		nss = append(nss, ns)

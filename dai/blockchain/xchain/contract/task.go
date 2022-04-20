@@ -108,7 +108,6 @@ func (x *Xdata) ListTask(ctx code.Context) code.Response {
 	prefix := packFlTaskFilter(opt.PubKey)
 	iter := ctx.NewIterator(code.PrefixRange([]byte(prefix)))
 	defer iter.Close()
-
 	for iter.Next() {
 		if opt.Limit > 0 && int64(len(tasks)) >= opt.Limit {
 			break
@@ -117,7 +116,7 @@ func (x *Xdata) ListTask(ctx code.Context) code.Response {
 		if err != nil {
 			return code.Error(err)
 		}
-		if t.PublishTime < opt.TimeStart || t.PublishTime > opt.TimeEnd ||
+		if t.PublishTime < opt.TimeStart || (opt.TimeEnd > 0 && t.PublishTime > opt.TimeEnd) ||
 			(opt.Status != "" && t.Status != opt.Status) {
 			continue
 		}

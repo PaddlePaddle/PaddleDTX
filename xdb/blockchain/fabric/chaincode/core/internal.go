@@ -143,7 +143,9 @@ func packFileNsListFilter(owner []byte) (prefix string, attr []string) {
 
 func packFileNameFilter(owner []byte, ns string) (prefix string, attr []string) {
 	prefix = prefixFilenameListIndex
-	attr = []string{fmt.Sprintf("%x", owner)}
+	if len(owner) > 0 {
+		attr = []string{fmt.Sprintf("%x", owner)}
+	}
 	if len(ns) > 0 {
 		attr = append(attr, ns)
 	}
