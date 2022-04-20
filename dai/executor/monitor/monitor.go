@@ -65,8 +65,8 @@ type TaskMonitor struct {
 	Blockchain Blockchain // task contract invoke
 	MpcHandler MpcHandler
 
-	doneLoopReqC  chan struct{} // DoneLoopReqC closed when loop breaks
-	doneRetryReqC chan struct{} // DoneRetryReqD closed when processing task retry end
+	doneLoopReqC  chan struct{} // doneLoopReqC closed when loop breaks
+	doneRetryReqC chan struct{} // doneRetryReqC closed when processing task retry end
 }
 
 // StartTaskLoopRequest starts timed task which will block until receive Stop signal

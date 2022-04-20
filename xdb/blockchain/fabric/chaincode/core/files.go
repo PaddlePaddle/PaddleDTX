@@ -501,7 +501,7 @@ func (x *Xdata) ListFiles(stub shim.ChaincodeStubInterface, args []string) pb.Re
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		if f.PublishTime < opt.TimeStart || f.PublishTime > opt.TimeEnd || f.ExpireTime <= opt.CurrentTime {
+		if f.PublishTime < opt.TimeStart || (opt.TimeEnd > 0 && f.PublishTime > opt.TimeEnd) || f.ExpireTime <= opt.CurrentTime {
 			continue
 		}
 		fs = append(fs, f)
@@ -553,7 +553,7 @@ func (x *Xdata) ListExpiredFiles(stub shim.ChaincodeStubInterface, args []string
 			return shim.Error(err.Error())
 		}
 
-		if f.PublishTime < opt.TimeStart || f.PublishTime > opt.TimeEnd {
+		if f.PublishTime < opt.TimeStart || (opt.TimeEnd > 0 && f.PublishTime > opt.TimeEnd) {
 			continue
 		}
 		if f.ExpireTime < opt.CurrentTime-blockchain.FileRetainPeriod.Nanoseconds() || f.ExpireTime > opt.CurrentTime {
@@ -608,7 +608,7 @@ func (x *Xdata) ListFileNs(stub shim.ChaincodeStubInterface, args []string) pb.R
 			return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 				"failed to unmarshal namespaces").Error())
 		}
-		if ns.CreateTime < opt.TimeStart || ns.CreateTime > opt.TimeEnd {
+		if ns.CreateTime < opt.TimeStart || (opt.TimeEnd > 0 && ns.CreateTime > opt.TimeEnd) {
 			continue
 		}
 		nss = append(nss, ns)
