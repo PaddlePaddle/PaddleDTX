@@ -69,4 +69,3 @@ publicAddress = "10.144.94.17:8122"
 [log]
 level = "debug"
 path = "./logs"
-
