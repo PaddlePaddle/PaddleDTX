@@ -65,7 +65,7 @@ PaddleDTX的四类节点（数据持有节点、存储节点、任务执行节�
 
 ## Distributed AI
 ### 1. 任务执行节点
-如下为任务执行节点对外提供的API接口，接口参数说明参考 [input.go](https://github.com/PaddlePaddle/PaddleDTX/xdb/server/types/input.go)：
+如下为任务执行节点对外提供的API接口，接口参数说明参考 [task.proto](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/protos/task/task.proto)：
 #### 1.1 任务操作
 
 ``` proto linenums="1"
