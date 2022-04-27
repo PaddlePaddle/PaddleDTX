@@ -1,0 +1,115 @@
+site_name: "PaddleDTX"
+site_description: "可信分布式AI 区块链网络 去中心化存储"
+docs_dir: source
+theme:
+  name: 'material'
+  logo: _static/logo.png
+  favicon: _static/logo.png
+  # custom_dir: source
+  # 404 page
+  # static_templates:
+  #   - 404.html
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to dark mode
+    - scheme: slate
+      primary: "indigo"
+      accent: "grey" 
+      toggle:
+        icon: material/brightness-7
+        name: Switch to light mode
+  language: zh
+  features:
+    - navigation.instant
+    - navigation.top
+    - toc.integrate
+  font:
+    text: Lora
+    code: Roboto Mono
+repo_url: https://github.com/PaddlePaddle/PaddleDTX
+repo_name: PaddlePaddle/PaddleDTX
+edit_uri: tree/master/docs/source/
+nav:
+  - index.md
+  - 整体介绍:
+    - 基本概念: 'introduction/concepts.md'
+    - 系统介绍: 'introduction/introduction.md'
+  - 快速入门:
+    - 快速安装: 'quickstart/quickstart.md'
+    - 源码安装: 'quickstart/compile-install.md'
+    - docker安装: 'quickstart/docker-install.md'
+    - 客户端工具: 'quickstart/client.md' 
+  - 系统详解:
+    - 部署架构: 'details/framework.md'
+    - Distributed AI: 'details/DAI.md'
+    - XuperDB: 'details/XuperDB.md' 
+    - Crypto: 'details/crypto.md'
+  - 进阶使用:
+    - Distributed AI:
+      - 节点配置: 'tutorial/dai-config.md'
+      - 命令行操作: 'tutorial/dai-cmd.md'
+    - XuperDB:
+      - 节点配置: 'tutorial/xdb-config.md'
+      - 命令行操作: 'tutorial/xdb-cmd.md'
+  - 开发手册:
+    - NetWorks : 'development/networks.md'
+    - HTTP API: 'development/api.md'
+    - GRPC API: 'development/rpc.md'
+    - Crypto: 'development/crypto.md'
+  - 应用案例:
+    - 线性回归 : 'projectcases/linear.md'
+    - 逻辑回归: 'projectcases/logistic.md'
+    # - 决策树: 'projectcases/decision-trees.md'
+    # - 神经网络: 'projectcases/dnn-paddlefl.md'
+  - 贡献指南: 'others/team.md'
+  - 更多资料:
+    - 开源版本: 'others/changelog.md'
+    - 正在进行中: 'others/ongoing.md'
+    - 视频教程: 'others/video.md'
+    - 参考资料: 'others/reference.md'
+  - 常见问题: 'others/issues.md'
+extra:
+  # version:
+  #   provider: mike
+  alternate:
+    - name: 中文
+      link: /
+      lang: zh
+    - name: English
+      link: https://github.com/PaddlePaddle/PaddleDTX/tree/master/README.md
+      lang: en
+  # generator: false
+copyright: Copyright &copy; 2022 Baidu PaddleDTX
+# Extensions
+markdown_extensions:
+  - def_list
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:materialx.emoji.twemoji
+  - attr_list
+  - md_in_html
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+extra_css:
+  - stylesheets/extra.css
