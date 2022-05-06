@@ -15,19 +15,19 @@ package errorx
 
 // error code list
 const (
-	ErrCodeInternal = "XDAT0001" // internal error
-	ErrCodeParam    = "XDAT0002" // parameter error
-	ErrCodeConfig   = "XDAT0003" // configuration error
-	ErrCodeNotFound = "XDAT0004" // target not found
-	ErrCodeEncoding = "XDAT0005" // encoding error
+	ErrCodeInternal = "10001" // internal error
+	ErrCodeParam    = "10002" // parameter error
+	ErrCodeConfig   = "10003" // configuration error
+	ErrCodeNotFound = "10004" // target not found
+	ErrCodeEncoding = "10005" // encoding error
 
-	ErrCodeNotAuthorized = "XDAT0006" // not authorized
-	ErrCodeAlreadyExists = "XDAT0007" // duplicate item
-	ErrCodeBadSignature  = "XDAT0008" // signature verification failed
-	ErrCodeCrypto        = "XDAT0009" // cryptography computation error
-	ErrCodeExpired       = "XDAT0010" // target expired
+	ErrCodeNotAuthorized = "10006" // not authorized
+	ErrCodeAlreadyExists = "10007" // duplicate item
+	ErrCodeBadSignature  = "10008" // signature verification failed
+	ErrCodeCrypto        = "10009" // cryptography computation error
+	ErrCodeExpired       = "10010" // target expired
 
-	ErrCodeReadBlockchain  = "XDAT0011" // errors occurred when reading data from blockchain
-	ErrCodeWriteBlockchain = "XDAT0012" // errors occurred when writing data to blockchain
-	ErrCodeAlreadyUpdate   = "XDAT0013" // duplicate updating error
+	ErrCodeReadBlockchain  = "10011" // errors occurred when reading data from blockchain
+	ErrCodeWriteBlockchain = "10012" // errors occurred when writing data to blockchain
+	ErrCodeAlreadyUpdate   = "10013" // duplicate updating error
 )
