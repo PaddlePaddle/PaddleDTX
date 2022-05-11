@@ -7,7 +7,7 @@ PaddleDTX提供了可信分布式AI网络的 **标准通信协议**，计算需�
     DAI使用的XuperChain网络，其提供了多语言版本的SDK（JS，Golang，C#，Java，Python），这里以Golang为例来介绍一下基于XuperChain的可信分布式AI合约调用流程。
 	合约调用源码可参考 [计算需求节点](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/requester/client/client.go)。
 
-#### 1. PublishTask
+#### 1.PublishTask
 合约方法PublishTask用于发布计算任务：
 ``` go linenums="1"
 // PublishFLTaskOptions contains parameters for publishing tasks
@@ -35,12 +35,59 @@ message FLTask {
 	int64 endTime = 12;
 }
 ```
-#### 2. ListTask
+#### 2.ListTask
+ListTask用于查询计算任务列表：
+``` go linenums="1"
+// ListFLTaskOptions contains parameters for listing tasks
+// support listing tasks a requester published or tasks an executor involved
+type ListFLTaskOptions struct {
+	PubKey    []byte // requester or executor's public key
+	Status    string // task status
+	TimeStart int64  // task publish time period, only task published after TimeStart and before TimeEnd will be listed
+	TimeEnd   int64  
+	Limit     int64  // limit number of tasks in list request, default 'all'
+}
+```
+#### 3.GetTaskByID
+通过任务ID查询任务详情，合约参数为id。
 
+#### 4.StartTask
+StartTask用于启动已确认的任务列表，合约参数taskId、signature。
+
+#### 5.ListExecutorNodes
+ListExecutorNodes用于查询区块链网络中的任务执行节点列表。
+
+#### 6.GetExecutorNodeByID
+通过任务执行节点公钥查询节点详情，合约参数为id。
 
 ### 任务执行节点
+#### 1.下载预测结果
+通过ListExecutorNodes查询到任务执行节点列表后，调用GRPC/HTTP API请求拥有标签方的任务执行节点下载预测结果：
+``` go linenums="1"
+service Task {
+	// GetPredictResult is provided by Executor server for Executor client to get prediction result.
+    rpc GetPredictResult(TaskRequest) returns (PredictResponse) {
+        option (google.api.http) = {
+            post : "/v1/task/predictres/get"
+            body : "*"
+        };
+    }
+}
 
-TODO...
+// TaskRequest is message sent between Executors to request to start a task. 
+message TaskRequest {
+    bytes pubKey = 1;
+    string taskID = 2;
+    bytes signature = 4;
+}
+
+// PredictResponse is a message received from Executor 
+message PredictResponse {
+    string taskID = 1;
+    bytes payload = 2; 
+}
+
+```
 
 <br>
 
