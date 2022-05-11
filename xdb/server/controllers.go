@@ -279,6 +279,10 @@ func (s *Server) listExpiredFiles(ictx iris.Context) {
 // getFileByID get file by id
 func (s *Server) getFileByID(ictx iris.Context) {
 	id := ictx.URLParam("id")
+	if id == "" {
+		responseError(ictx, errorx.New(errorx.ErrCodeParam, "bad params:id is empty"))
+		return
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ictx.OnConnectionClose(func(iris.Context) { cancel() })
@@ -477,6 +481,10 @@ func (s *Server) confirmAuth(ictx iris.Context) {
 // getAuthByID query authorization application detail by authID
 func (s *Server) getAuthByID(ictx iris.Context) {
 	id := ictx.URLParam("authID")
+	if id == "" {
+		responseError(ictx, errorx.New(errorx.ErrCodeParam, "bad params:authID is empty"))
+		return
+	}
 	resp, err := s.handler.GetAuthByID(id)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to get file authorization application by authID"))
@@ -488,6 +496,10 @@ func (s *Server) getAuthByID(ictx iris.Context) {
 // getChallengeByID get challenge by challenge id
 func (s *Server) getChallengeByID(ictx iris.Context) {
 	id := ictx.URLParam("id")
+	if id == "" {
+		responseError(ictx, errorx.New(errorx.ErrCodeParam, "bad params:id is empty"))
+		return
+	}
 	resp, err := s.handler.GetChallengeByID(id)
 	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to get challenge by id"))

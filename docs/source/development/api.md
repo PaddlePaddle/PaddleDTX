@@ -101,6 +101,27 @@ service Task {
 ## 区块链节点
 DAI底链使用的是的Xuperchain，其提供了http_gateway，用于转发用户的HTTP请求，启动说明参考 [http_gateway](https://github.com/xuperchain/xuperchain/tree/v3.9/core/gateway)，支持的API接口参考 [xchain.proto](https://github.com/xuperchain/xuperchain/blob/v3.9/core/pb/xchain.proto)。
 
+## 响应状态码
+当请求成功，HTTP API返回code值为"0"，否则请求失败，失败的code值列表说明如下：
+``` go linenums="1"
+// error code list
+const (
+	ErrCodeInternal = "10001" // internal error
+	ErrCodeParam    = "10002" // parameter error
+	ErrCodeConfig   = "10003" // configuration error
+	ErrCodeNotFound = "10004" // target not found
+	ErrCodeEncoding = "10005" // encoding error
 
+	ErrCodeNotAuthorized = "10006" // not authorized
+	ErrCodeAlreadyExists = "10007" // duplicate item
+	ErrCodeBadSignature  = "10008" // signature verification failed
+	ErrCodeCrypto        = "10009" // cryptography computation error
+	ErrCodeExpired       = "10010" // target expired
+
+	ErrCodeReadBlockchain  = "10011" // errors occurred when reading data from blockchain
+	ErrCodeWriteBlockchain = "10012" // errors occurred when writing data to blockchain
+	ErrCodeAlreadyUpdate   = "10013" // duplicate updating error
+)
+```
 
 <br>
