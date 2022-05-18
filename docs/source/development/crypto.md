@@ -17,9 +17,27 @@ import (
     "github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 )
-// message待签名信息，不同请求的签名message不同
-sig, err := ecdsa.Sign(privkey, hash.HashUsingSha256(message))
+// message为待签名信息，不同请求的签名message不同
+// privkey为节点身份的账户私钥
+signature, err := ecdsa.Sign(privkey, hash.HashUsingSha256(message))
 ```
+
+### 签名规则
+签名是通过标准SHA2-256算法对数据计算哈希，待签名数据为字段按字母a-z排序处理后拼接的结果，如下载预测结果参数：
+```
+{
+    "taskID": "e6ebf3c9-d1af-4381-8656-844405fc9c18", 
+    "pubKey":"RjfvefFLA2ztWbdkCLDYhFOsnluqUjqGiQqlR+rD46D0o8AFF48CHBsGDZFvQggsGOHVdQXNqu7xBnKeZEL05Q=="
+}
+```
+则生成签名的字符串：
+```
+message = "pubKey=RjfvefFLA2ztWbdkCLDYhFOsnluqUjqGiQqlR+rD46D0o8AFF48CHBsGDZFvQggsGOHVdQXNqu7xBnKeZEL05Q==&taskID=e6ebf3c9-d1af-4381-8656-844405fc9c18"
+signature = hash.HashUsingSha256([]byte(message))
+```
+	
+DAI合约调用参数参考 [任务操作](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/blockchain/blockchain.go)，
+XuperDB&DAI HTTP/GRPC API接口调用参数参考 [接口说明](./api.md)
 
 
 <br>

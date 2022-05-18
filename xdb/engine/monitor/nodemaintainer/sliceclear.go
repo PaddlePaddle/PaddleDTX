@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
@@ -122,6 +122,8 @@ func (m *NodeMaintainer) sliceClear(ctx context.Context) {
 	}
 }
 
+// getExpireRangeTime used to query expired slices in the startTime-endTime
+// clearKey stores the time of the last query
 func (m *NodeMaintainer) getExpireRangeTime(clearKey string, latestTime, regTime int64) (int64, int64, error) {
 	var startTime, endTime int64
 	exist, _ := m.sliceStorage.Exist(clearKey)
@@ -144,11 +146,13 @@ func (m *NodeMaintainer) getExpireRangeTime(clearKey string, latestTime, regTime
 	return startTime, endTime, nil
 }
 
+// getClearKey used to convert public key to uuid and return suid
 func (m *NodeMaintainer) getClearKey(pubkey ecdsa.PublicKey) string {
 	suid := fmt.Sprintf("%x-%x-%x-%x-%x", pubkey[0:4], pubkey[4:6], pubkey[6:8], pubkey[8:10], pubkey[10:16])
 	return suid
 }
 
+// getEndExpireTime gets the endTime of past the file retention period
 func (m *NodeMaintainer) getEndExpireTime(startTime, latestTime int64) (endTime int64) {
 	interH := m.fileRetainInterval.Nanoseconds()
 	if latestTime-interH < startTime {
