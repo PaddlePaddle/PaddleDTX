@@ -1,0 +1,47 @@
+version: "3"
+
+services:
+
+  ipfs_host_0:
+    container_name: ipfs_host_0
+    image: ipfs/go-ipfs:latest
+    networks:
+       - blockchain_network
+    restart: always
+    volumes:
+      - ./ipfs_data_0:/data/ipfs                
+    ports:
+      - 4001:4001
+      - 8080:8080
+      - 5001:5001
+
+  ipfs_host_1:
+    container_name: ipfs_host_1
+    image: ipfs/go-ipfs:latest
+    networks:
+       - blockchain_network
+    restart: always
+    volumes:
+      - ./ipfs_data_1:/data/ipfs                
+    
+  ipfs_host_2:
+    container_name: ipfs_host_2
+    image: ipfs/go-ipfs:latest
+    networks:
+       - blockchain_network
+    restart: always
+    volumes:
+      - ./ipfs_data_2:/data/ipfs
+
+  ipfs_host_3:
+    container_name: ipfs_host_3
+    image: ipfs/go-ipfs:latest
+    networks:
+       - blockchain_network
+    restart: always
+    volumes:
+      - ./ipfs_data_3:/data/ipfs
+
+networks:
+  blockchain_network:
+    external: true
