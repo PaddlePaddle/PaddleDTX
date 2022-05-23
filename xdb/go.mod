@@ -13,6 +13,10 @@ require (
 	github.com/hyperledger/fabric v1.4.4
 	github.com/hyperledger/fabric-amcl v0.0.0-20200424173818-327c9e2cf77a // indirect
 	github.com/hyperledger/fabric-sdk-go v1.0.0-beta1
+	github.com/ipfs/go-cid v0.0.7
+	github.com/ipfs/go-ipfs-api v0.3.0
+	github.com/ipfs/go-ipfs-files v0.1.1
+	github.com/ipfs/go-ipfs-util v0.0.2
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/kataras/iris/v12 v12.2.0-alpha2.0.20210413181054-382e7c14cbd3
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible

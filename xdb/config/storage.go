@@ -23,13 +23,24 @@ type StorageConf struct {
 	Blockchain *BlockchainConf
 	Monitor    *MonitorConf
 	Mode       *StorageModeConf
+	Prover     *ProverConf
 }
 
 type StorageModeConf struct {
 	Type  string
 	Local *LocalConf
+	Ipfs  *IPFSConf
+}
+
+type ProverConf struct {
+	LocalRoot string
 }
 
 type LocalConf struct {
 	RootPath string
+}
+
+type IPFSConf struct {
+	Hosts   []string
+	Timeout int64
 }

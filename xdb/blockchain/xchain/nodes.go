@@ -157,12 +157,15 @@ func (x *XChain) GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions)
 }
 
 // ListNodesExpireSlice lists expired slices from xchain
-func (x *XChain) ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error) {
+// returns a list of sliceID(first value of [2]string) and its StorageIndex(second value of [2]string)
+func (x *XChain) ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([][2]string, error) {
 	var sliceL []string
+
+	sliceID2StorIndex := make([][2]string, 0)
 
 	opts, err := json.Marshal(*opt)
 	if err != nil {
-		return sliceL, errorx.NewCode(err, errorx.ErrCodeInternal,
+		return sliceID2StorIndex, errorx.NewCode(err, errorx.ErrCodeInternal,
 			"failed to marshal ListFileOptions")
 	}
 	args := map[string]string{
@@ -171,15 +174,25 @@ func (x *XChain) ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]s
 	mName := "ListNodesExpireSlice"
 	s, err := x.QueryContract(args, mName)
 	if err != nil {
-		return sliceL, err
+		return sliceID2StorIndex, err
 	}
 	if err = json.Unmarshal(s, &sliceL); err != nil {
-		return sliceL, errorx.NewCode(err, errorx.ErrCodeInternal,
+		return sliceID2StorIndex, errorx.NewCode(err, errorx.ErrCodeInternal,
 			"failed to unmarshal Files")
 	}
 	// convert ['a,d','b,c'] to ['a','d','b','c']
 	arrs := strings.Join(sliceL, ",")
-	return strings.Split(arrs, ","), nil
+	allSlices := strings.Split(arrs, ",")
+
+	for _, oneS := range allSlices {
+		si := strings.SplitN(oneS, ":", 2)
+		if len(si) < 2 {
+			continue
+		}
+
+		sliceID2StorIndex = append(sliceID2StorIndex, [2]string{si[0], si[1]})
+	}
+	return sliceID2StorIndex, nil
 }
 
 // GetNodeHealth gets node health status

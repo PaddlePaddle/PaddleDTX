@@ -21,18 +21,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
 )
 
 var storage *Storage
 
 func TestMain(m *testing.M) {
 	os.RemoveAll("slices")
-	conf := &config.LocalConf{
-		RootPath: "slices",
-	}
-	stor, err := New(conf)
+	rootPath := "slices"
+	stor, err := New(rootPath)
 	if err != nil {
 		log.Panic(err)
 	}

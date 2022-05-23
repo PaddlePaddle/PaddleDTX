@@ -35,7 +35,7 @@ import (
 func PullAndDec(ctx context.Context, copier CommonCopier, encrypt CommonEncryptor,
 	slice blockchain.PublicSliceMeta, node *blockchain.Node, fileID string) ([]byte, error) {
 
-	r, err := copier.Pull(ctx, slice.ID, fileID, node)
+	r, err := copier.Pull(ctx, slice.ID, slice.StorIndex, fileID, node)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +67,9 @@ func PullAndDec(ctx context.Context, copier CommonCopier, encrypt CommonEncrypto
 }
 
 // EncAndPush encrypt a slice and push to specified storage node
+// returns `EncryptedSlice` for the specified storage node and `Storage Index` returned by the specified storage node
 func EncAndPush(ctx context.Context, copier CommonCopier, encrypt CommonEncryptor,
-	plaintext []byte, sliceID, sourceID, fileID string, node *blockchain.Node) (encryptor.EncryptedSlice, error) {
+	plaintext []byte, sliceID, sourceID, fileID string, node *blockchain.Node) (encryptor.EncryptedSlice, string, error) {
 
 	encOpt := encryptor.EncryptOptions{
 		FileID:  fileID,
@@ -77,9 +78,11 @@ func EncAndPush(ctx context.Context, copier CommonCopier, encrypt CommonEncrypto
 	}
 	es, err := encrypt.Encrypt(bytes.NewReader(plaintext), &encOpt)
 	if err != nil {
-		return es, err
+		return es, "", err
 	}
-	return es, copier.Push(ctx, es.SliceID, sourceID, bytes.NewReader(es.CipherText), node)
+
+	storIndex, err := copier.Push(ctx, es.SliceID, sourceID, bytes.NewReader(es.CipherText), node)
+	return es, storIndex, err
 }
 
 // ExpandFileSlices expand each slice to specific replica

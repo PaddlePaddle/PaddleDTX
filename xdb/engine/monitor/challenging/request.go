@@ -135,11 +135,11 @@ func (c *ChallengingMonitor) doPairingChallengeRequest(challengeAlgorithm string
 	// find slice idx list for selected node
 	// get map from sliceIdx to sliceID
 	var sliceList []int
-	sliceMap := make(map[int]string)
+	sliceMap := make(map[int]blockchain.PublicSliceMeta)
 	for _, slice := range fileSelected.Slices {
 		if reflect.DeepEqual(slice.NodeID, nodeSelected) {
 			sliceList = append(sliceList, slice.SliceIdx)
-			sliceMap[slice.SliceIdx] = slice.ID
+			sliceMap[slice.SliceIdx] = slice
 		}
 	}
 
@@ -152,8 +152,11 @@ func (c *ChallengingMonitor) doPairingChallengeRequest(challengeAlgorithm string
 
 	// get sliceID for each idx
 	var sliceIDs []string
+	var storIndexes []string
 	for _, idx := range indices {
-		sliceIDs = append(sliceIDs, sliceMap[int(new(big.Int).SetBytes(idx).Int64())])
+		slice := sliceMap[int(new(big.Int).SetBytes(idx).Int64())]
+		sliceIDs = append(sliceIDs, slice.ID)
+		storIndexes = append(storIndexes, slice.StorIndex)
 	}
 	if len(sliceIDs) == 0 {
 		l.Warn("failed GenerateChallenge, sliceIDs is empty")
@@ -167,6 +170,7 @@ func (c *ChallengingMonitor) doPairingChallengeRequest(challengeAlgorithm string
 		TargetNode:         sliceSelected.NodeID,
 		FileID:             fileSelected.ID,
 		SliceIDs:           sliceIDs,
+		SliceStorIndexes:   storIndexes,
 		ChallengeTime:      time.Now().UnixNano(),
 		Indices:            indices,
 		Vs:                 vs,
@@ -245,6 +249,7 @@ func (c *ChallengingMonitor) doMerkleChallengeRequest(challengeAlgorithm string,
 		TargetNode:         sliceSelected.NodeID,
 		FileID:             fileSelected.ID,
 		SliceID:            sliceSelected.ID,
+		SliceStorIndex:     sliceSelected.StorIndex,
 		Ranges:             branges,
 		ChallengeTime:      timestamp,
 		HashOfProof:        hashOfProof,

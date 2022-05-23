@@ -34,19 +34,20 @@ import (
 // slices meta, used to pull slices from storage nodes
 // slices structure, ensure the file can be recovered in a correct slice order
 func (e *Engine) packChainFile(fileID, challengeAlgorithm string, opt types.WriteOptions, originalSlices slicer.SliceMetas,
-	originalLen int, encryptedSlices []encryptor.EncryptedSlice, pairingConf types.PairingChallengeConf) (blockchain.File, error) {
+	originalLen int, encryptedSlices []encryptor.EncryptedSlice, storIndexes []string, pairingConf types.PairingChallengeConf) (blockchain.File, error) {
 
 	sliceIdxMap := make(map[string]int)
 	chainSlices := make([]blockchain.PublicSliceMeta, 0, len(originalSlices))
 
 	// encryptedSlices in random order
-	randEncSlices := rearrangeEncSlices(encryptedSlices)
-	for _, s := range randEncSlices { // dis-ordered
+	randEncSlices, randStorIndexes := rearrangeEncSlices(encryptedSlices, storIndexes)
+	for i, s := range randEncSlices { // dis-ordered
 		sps := blockchain.PublicSliceMeta{
 			ID:         s.SliceID,
 			Length:     s.Length,
 			NodeID:     s.NodeID,
 			CipherHash: s.CipherHash,
+			StorIndex:  randStorIndexes[i],
 		}
 		if challengeAlgorithm == types.PairingChallengeAlgorithm {
 			// denote slice index for each node (for pairing based challenge)
@@ -142,12 +143,13 @@ func calculateMerkleRoot(slices slicer.SliceMetas) []byte {
 }
 
 // rearrangeEncSlices arrange encrypted slices in random order
-func rearrangeEncSlices(encryptedSlices []encryptor.EncryptedSlice) []encryptor.EncryptedSlice {
+func rearrangeEncSlices(encryptedSlices []encryptor.EncryptedSlice, storeIndexes []string) ([]encryptor.EncryptedSlice, []string) {
 	num := len(encryptedSlices)
 	for i := 0; i < num; i++ {
 		j, _ := rand.Int(rand.Reader, big.NewInt(int64(num)))
 		k, _ := rand.Int(rand.Reader, big.NewInt(int64(num)))
 		encryptedSlices[j.Int64()], encryptedSlices[k.Int64()] = encryptedSlices[k.Int64()], encryptedSlices[j.Int64()]
+		storeIndexes[j.Int64()], storeIndexes[k.Int64()] = storeIndexes[k.Int64()], storeIndexes[j.Int64()]
 	}
-	return encryptedSlices
+	return encryptedSlices, storeIndexes
 }

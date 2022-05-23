@@ -96,15 +96,21 @@ func (s *Server) push(ictx iris.Context) {
 	}
 	// if sliceID has suffix, like 'sigmas', the pushed content is not a slice
 	// currently, pairing based challenge material sigmas is supported
-	if strings.TrimSuffix(opt.SliceID, common.ChallengeFileSuffix) != opt.SliceID {
+	sID := strings.TrimSuffix(opt.SliceID, common.ChallengeFileSuffix)
+	if sID != opt.SliceID {
 		opt.NotASlice = true
+		opt.SliceID = sID
 	}
-	if _, err := s.handler.Push(opt, ictx.Request().Body); err != nil {
+
+	result, err := s.handler.Push(opt, ictx.Request().Body)
+	if err != nil {
 		responseError(ictx, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to push slice"))
 		return
 	}
 
-	resp := types.PushResponse{}
+	resp := types.PushResponse{
+		SliceStorIndex: result.SliceStorIndex,
+	}
 	responseJSON(ictx, resp)
 }
 
@@ -112,10 +118,20 @@ func (s *Server) push(ictx iris.Context) {
 func (s *Server) pull(ictx iris.Context) {
 	opt := etype.PullOptions{
 		SliceID:   ictx.URLParam("slice_id"),
+		StorIndex: ictx.URLParam("slice_stor_index"),
 		FileID:    ictx.URLParam("file_id"),
 		Timestamp: ictx.URLParamInt64Default("timestamp", 0),
 		Signature: ictx.URLParam("signature"),
 	}
+
+	// if sliceID has suffix, like 'sigmas', the pushed content is not a slice
+	// currently, pairing based challenge material sigmas is supported
+	sID := strings.TrimSuffix(opt.SliceID, common.ChallengeFileSuffix)
+	if sID != opt.SliceID {
+		opt.NotASlice = true
+		opt.SliceID = sID
+	}
+
 	if ictx.URLParam("pubkey") != "" {
 		pubkey, err := ecdsa.DecodePublicKeyFromString(ictx.URLParam("pubkey"))
 		if err != nil {

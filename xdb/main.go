@@ -41,7 +41,9 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/peer"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/server"
-	localstorage "github.com/PaddlePaddle/PaddleDTX/xdb/storage/local"
+	storage "github.com/PaddlePaddle/PaddleDTX/xdb/storage"
+	ipfs_storage "github.com/PaddlePaddle/PaddleDTX/xdb/storage/ipfs"
+	local_storage "github.com/PaddlePaddle/PaddleDTX/xdb/storage/local"
 )
 
 var (
@@ -135,7 +137,8 @@ func getStorageEngine(localNode peer.Local, blockchain engine.Blockchain, conf *
 		LocalNode: localNode,
 		Chain:     blockchain,
 	}
-	engineOption.Storage = mustGetStorage(conf)
+	engineOption.SliceStor = mustGetSliceStorage(conf)
+	engineOption.ProveStor = mustGetProveStorage(conf)
 	engine, err := engine.NewEngine(conf.Monitor, &engineOption)
 	if err != nil {
 		appExit(err)
@@ -233,20 +236,35 @@ func mustGetCopier(conf *config.DataOwnerCopierConf, signer ecdsa.PrivateKey) en
 	return c
 }
 
-// mustGetStorage initiates local storage
-func mustGetStorage(conf *config.StorageConf) engine.Storage {
+// mustGetStorage initiates storage to store encrypted slices
+func mustGetSliceStorage(conf *config.StorageConf) engine.SliceStorage {
 
-	var s engine.Storage
+	var s storage.BasicStorage
+	var err error
 	storageType := conf.Mode.Type
 	switch storageType {
 	case "local":
-		var err error
-		s, err = localstorage.New(conf.Mode.Local)
+		s, err = local_storage.NewV2(conf.Mode.Local.RootPath)
 		if err != nil {
-			appExit(fmt.Errorf("failed to create storage, err: %v", err))
+			appExit(fmt.Errorf("failed to create local storage, err: %v", err))
+		}
+	case "ipfs":
+		s, err = ipfs_storage.New(conf.Mode.Ipfs.Hosts, time.Millisecond*time.Duration(conf.Mode.Ipfs.Timeout))
+		if err != nil {
+			appExit(fmt.Errorf("failed to create ipfs storage, err: %v", err))
 		}
 	default:
 		appExit(errors.New("invalid storage type: " + storageType))
+	}
+
+	return storage.NewStorage(s)
+}
+
+// mustGetProveStorage initiates local storage to store intermediate data of space-time proof
+func mustGetProveStorage(conf *config.StorageConf) engine.ProveStorage {
+	s, err := local_storage.New(conf.Prover.LocalRoot)
+	if err != nil {
+		appExit(fmt.Errorf("failed to create local storage, err: %v", err))
 	}
 
 	return s

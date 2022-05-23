@@ -44,12 +44,26 @@ publicAddress = "10.144.94.17:8122"
         userName = "Admin"
         orgName = "org1"
 
-# The storage mode used by the storage node, currently only supports local file system.
+# Prover answers challenges from DataOwner to prove that the node is storing the slices
+[storage.prover]
+    # local storage path to keep temporary data
+    localRoot = "/root/xdb/data/prove"
+
+# The storage mode used by the storage node, currently supports local file system and IPFS.
 [storage.mode]
+    # Denotes what mode you choose, `local` or `ipfs`. 
     type = "local"
     [storage.mode.local]
         # Location of file fragments
         rootPath = "/root/xdb/data/slices"
+    [storage.mode.ipfs]
+        # Denotes peers in IPFS cluster
+        hosts = [
+            "127.0.0.1:5001",
+            "127.0.0.1:5002"
+        ]
+        # The timeout for requesting IPFS, in milliseconds
+        timeout = 5000
 
 # The monitor will query new tasks in blockchain regularly, and trigger the task handler's operations
 [storage.monitor]
