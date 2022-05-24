@@ -104,9 +104,11 @@ type PushOptions struct {
 type PullOptions struct {
 	Pubkey    []byte // file owner public key or applier's public key, applier has usage requirements for files
 	SliceID   string
+	StorIndex string
 	FileID    string
 	Timestamp int64
 	Signature string
+	NotASlice bool // denote if pushed content is not a slice, current pairing based challenge sigmas is supported
 }
 
 // NodeOfflineOptions options for setting storage node with offline status on blockchain

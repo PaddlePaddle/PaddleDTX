@@ -76,8 +76,8 @@ type Challenger interface {
 //  then push them onto new Storage Nodes.
 type Copier interface {
 	Select(slice slicer.Slice, nodes blockchain.NodeHs, opt *copier.SelectOptions) (copier.LocatedSlice, error)
-	Push(ctx context.Context, id, sourceID string, r io.Reader, node *blockchain.Node) error
-	Pull(ctx context.Context, id, fileID string, node *blockchain.Node) (io.ReadCloser, error)
+	Push(ctx context.Context, id, sourceID string, r io.Reader, node *blockchain.Node) (string, error)
+	Pull(ctx context.Context, id, storIndex, fileID string, node *blockchain.Node) (io.ReadCloser, error)
 	ReplicaExpansion(ctx context.Context, opt *copier.ReplicaExpOptions, enc common.CommonEncryptor,
 		challengeAlgorithm, sourceID, fileID string) ([]blockchain.PublicSliceMeta, []encryptor.EncryptedSlice, error)
 }
@@ -96,7 +96,7 @@ type Blockchain interface {
 	Heartbeat(id, sig []byte, timestamp int64) error
 	GetHeartbeatNum(id []byte, timestamp int64) (int, error)
 	GetNodeHealth(id []byte) (string, error)
-	ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error)
+	ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([][2]string, error)
 	GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error)
 
 	// The following contract methods are used by dataOwner node
@@ -124,8 +124,18 @@ type Blockchain interface {
 	GetChallengeByID(id string) (blockchain.Challenge, error)
 }
 
-// Storage stores files locally
-type Storage interface {
+// SliceStorage stores slices
+type SliceStorage interface {
+	Save(key string, value io.Reader) (string, error)
+	Load(key string, index string) (io.ReadCloser, error)
+	Exist(key string, index string) (bool, error)
+	Delete(key string, index string) error
+	LoadStr(key string, index string) (string, error)
+}
+
+// ProveStorage is local storage
+// to keep temporary data during time and space proof process
+type ProveStorage interface {
 	Save(key string, value io.Reader) error
 	Load(key string) (io.ReadCloser, error)
 	Delete(key string) (bool, error)
@@ -135,12 +145,13 @@ type Storage interface {
 }
 
 type Engine struct {
-	slicer     Slicer
-	encryptor  Encryptor
-	challenger Challenger
-	chain      Blockchain
-	copier     Copier
-	storage    Storage
+	slicer       Slicer
+	encryptor    Encryptor
+	challenger   Challenger
+	chain        Blockchain
+	copier       Copier
+	proveStorage ProveStorage
+	sliceStorage SliceStorage
 
 	monitor *Monitor
 }
@@ -154,7 +165,8 @@ type NewEngineOption struct {
 	Challenger Challenger
 	Chain      Blockchain
 	Copier     Copier
-	Storage    Storage
+	ProveStor  ProveStorage
+	SliceStor  SliceStorage
 }
 
 // NewEngine initiates Engine by the node's configuration file
@@ -164,13 +176,14 @@ func NewEngine(conf *config.MonitorConf, opt *NewEngineOption) (*Engine, error) 
 		return nil, errorx.Wrap(err, "failed to create monitor")
 	}
 	e := &Engine{
-		slicer:     opt.Slicer,
-		encryptor:  opt.Encryptor,
-		challenger: opt.Challenger,
-		chain:      opt.Chain,
-		copier:     opt.Copier,
-		storage:    opt.Storage,
-		monitor:    monitor,
+		slicer:       opt.Slicer,
+		encryptor:    opt.Encryptor,
+		challenger:   opt.Challenger,
+		chain:        opt.Chain,
+		copier:       opt.Copier,
+		proveStorage: opt.ProveStor,
+		sliceStorage: opt.SliceStor,
+		monitor:      monitor,
 	}
 	return e, nil
 }

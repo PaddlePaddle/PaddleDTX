@@ -48,6 +48,10 @@ type ChallengeDB interface {
 }
 
 type SliceStorage interface {
+	Load(key string, index string) (io.ReadCloser, error)
+}
+
+type ProveStorage interface {
 	Load(key string) (io.ReadCloser, error)
 }
 
@@ -66,6 +70,7 @@ type NewChallengingMonitorOptions struct {
 	Blockchain   Blockchain
 	ChallengeDB  ChallengeDB
 	SliceStorage SliceStorage
+	ProveStorage ProveStorage
 }
 
 // ChallengingMonitor's main work is to publish challenge requests if local node is dataOwner-node,
@@ -79,6 +84,7 @@ type ChallengingMonitor struct {
 	blockchain   Blockchain
 	challengeDB  ChallengeDB
 	sliceStorage SliceStorage
+	proveStorage ProveStorage
 
 	doneLoopReqC chan struct{} //will be closed when LoopRequest breaks
 	doneLoopAnsC chan struct{} //will be closed when LoopAnswer breaks
@@ -102,6 +108,7 @@ func New(conf *config.MonitorConf, opt *NewChallengingMonitorOptions) (*Challeng
 		blockchain:   opt.Blockchain,
 		challengeDB:  opt.ChallengeDB,
 		sliceStorage: opt.SliceStorage,
+		proveStorage: opt.ProveStorage,
 	}
 
 	return cm, nil

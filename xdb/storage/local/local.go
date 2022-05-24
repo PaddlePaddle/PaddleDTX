@@ -18,13 +18,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/google/uuid"
 
-	"github.com/PaddlePaddle/PaddleDTX/xdb/config"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	s "github.com/PaddlePaddle/PaddleDTX/xdb/storage"
 )
 
 const (
@@ -36,10 +34,9 @@ type Storage struct {
 	RootPath string
 }
 
-// New creates Storage with given configuration
+// New creates Storage with given configuration(local path)
 // returns error if any mistake occured, and process should cease
-func New(conf *config.LocalConf) (*Storage, error) {
-	rootPath := conf.RootPath
+func New(rootPath string) (*Storage, error) {
 	if len(rootPath) == 0 {
 		rootPath = defaultRootPath
 	}
@@ -182,10 +179,76 @@ func (s *Storage) LoadStr(key string) (string, error) {
 	return string(content), nil
 }
 
+// storageV2 stores files locally
+// 实现 BasicStorage 接口
+// 对于'本地存储' key 和 index 是一样的，是同一个
+type storageV2 struct {
+	Storage
+}
+
+// New creates Storage with given configuration
+// returns error if any mistake occured, and process should cease
+func NewV2(rootPath string) (s.BasicStorage, error) {
+	s, err := New(rootPath)
+	if err != nil {
+		return nil, err
+	}
+	return &storageV2{*s}, nil
+}
+
+// Save saves target to local
+func (s *storageV2) Save(key string, value io.Reader) (string, error) {
+	err := s.Storage.Save(key, value)
+	if err != nil {
+		return "", err
+	}
+	return key, nil
+}
+
+// Load retrieves a target from local
+func (s *storageV2) Load(key string, index string) (io.ReadCloser, error) {
+	if key != index {
+		return nil, errorx.New(errorx.ErrCodeParam, "invalid key or index: %s, %s", key, index)
+	}
+	f, err := s.Storage.Load(key)
+	return f, err
+}
+
+// Exist checks if target exists in local
+func (s *storageV2) Exist(key string, index string) (bool, error) {
+	if key != index {
+		return false, errorx.New(errorx.ErrCodeParam, "invalid key or index: %s, %s", key, index)
+	}
+	return s.Storage.Exist(key)
+}
+
+// Delete deletes a target from local by key
+func (s *storageV2) Delete(key string, index string) error {
+	if key != index {
+		return errorx.New(errorx.ErrCodeParam, "invalid key or index: %s, %s", key, index)
+	}
+
+	_, err := s.Storage.Delete(key)
+
+	return err
+}
+
+// Update updates a target in local
+func (s *storageV2) Update(key string, index string, value io.Reader) (string, error) {
+	if key != index {
+		return "", errorx.New(errorx.ErrCodeParam, "invalid key or index: %s, %s", key, index)
+	}
+
+	err := s.Storage.SaveAndUpdate(key, value)
+	if err != nil {
+		return "", err
+	}
+
+	return index, nil
+}
+
 func isValidKey(key string) bool {
 	// we know the key(slice id) is a uuid, use uuid.Parse to defend path attacking
-	// for pairing based challenge, key might be like 'uuid_sigmas'
-	prefix := strings.TrimSuffix(key, common.ChallengeFileSuffix)
-	_, err := uuid.Parse(prefix)
+	_, err := uuid.Parse(key)
 	return err == nil
 }

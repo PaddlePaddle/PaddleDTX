@@ -121,7 +121,7 @@ func (x *Xdata) PublishFile(ctx code.Context) code.Response {
 	// set node-sliceID-expireTime on chain
 	nodeSice := make(map[string][]string)
 	for _, slice := range f.Slices {
-		nodeSice[string(slice.NodeID)] = append(nodeSice[string(slice.NodeID)], slice.ID)
+		nodeSice[string(slice.NodeID)] = append(nodeSice[string(slice.NodeID)], slice.ID+":"+slice.StorIndex)
 	}
 	for nodeID, sliceL := range nodeSice {
 		prefixNodeFileSlice := packNodeSliceIndex(nodeID, f)

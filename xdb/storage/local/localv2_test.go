@@ -16,35 +16,30 @@ package local
 import (
 	"bytes"
 	"io/ioutil"
-	"log"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	s "github.com/PaddlePaddle/PaddleDTX/xdb/storage"
 )
 
-var storage *Storage
+var localStorage s.Storage
+var key string = "1b369c87-2503-434a-9db1-2dac8e78a12a"
+var index string
 
-func TestMain(m *testing.M) {
-	os.RemoveAll("slices")
-	rootPath := "slices"
-	stor, err := New(rootPath)
-	if err != nil {
-		log.Panic(err)
-	}
-	storage = stor
-	m.Run()
-	os.RemoveAll("slices")
-}
+func TestSaveV2(t *testing.T) {
+	localStorage = s.NewStorage(&storageV2{*storage})
 
-func TestSave(t *testing.T) {
 	content := "test file content"
-	err := storage.Save("18f168b6-2ef2-491e-8b26-4aa6df18378a", bytes.NewReader([]byte(content)))
+	ind, err := localStorage.Save(key, bytes.NewReader([]byte(content)))
 	require.NoError(t, err)
+
+	index = ind
+	t.Logf("Saved data. Index: %s", index)
 }
 
-func TestLoad(t *testing.T) {
-	f, err := storage.Load("18f168b6-2ef2-491e-8b26-4aa6df18378a")
+func TestLoadV2(t *testing.T) {
+	f, err := localStorage.Load(key, index)
 	require.NoError(t, err)
 	b, err := ioutil.ReadAll(f)
 	f.Close()
@@ -52,32 +47,33 @@ func TestLoad(t *testing.T) {
 	require.Equal(t, "test file content", string(b))
 }
 
-func TestExist(t *testing.T) {
-	ex, err := storage.Exist("18f168b6-2ef2-491e-8b26-4aa6df18378a")
+func TestExistV2(t *testing.T) {
+	ex, err := localStorage.Exist(key, index)
 	require.NoError(t, err)
 	require.Equal(t, true, ex)
 }
 
-func TestDelete(t *testing.T) {
-	ex, err := storage.Delete("18f168b6-2ef2-491e-8b26-4aa6df18378a")
+func TestLoadStrV2(t *testing.T) {
+	str, err := localStorage.LoadStr(key, index)
 	require.NoError(t, err)
-	require.Equal(t, true, ex)
+
+	require.Equal(t, "test file content", str)
 }
 
-func TestSaveAndUpdate(t *testing.T) {
-	reader := bytes.NewReader([]byte("1244"))
-	err := storage.SaveAndUpdate("18f168b6-2ef2-491e-8b26-4aa6df18378a", reader)
+func UpdateV2(t *testing.T) {
+	reader := bytes.NewReader([]byte("I love China!"))
+	ind, err := localStorage.Update(key, index, reader)
 	require.NoError(t, err)
-	f, err := storage.Load("18f168b6-2ef2-491e-8b26-4aa6df18378a")
+	index = ind
+	f, err := localStorage.Load(key, index)
 	require.NoError(t, err)
 	b, err := ioutil.ReadAll(f)
 	f.Close()
 	require.NoError(t, err)
-	require.Equal(t, "1244", string(b))
+	require.Equal(t, "I love China!", string(b))
 }
 
-func TestLoadStr(t *testing.T) {
-	s, err := storage.LoadStr("18f168b6-2ef2-491e-8b26-4aa6df18378a")
+func TestDeleteV2(t *testing.T) {
+	err := localStorage.Delete(key, index)
 	require.NoError(t, err)
-	require.Equal(t, "1244", s)
 }

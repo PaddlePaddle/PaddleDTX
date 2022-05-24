@@ -112,7 +112,7 @@ func getNodeSliceMigrateTime(key []byte) int64 {
 }
 
 func packFileNameIndex(owner []byte, ns, name string) string {
-	//return fmt.Sprintf("%s/%x/%s/%s", prefixFilenameIndex, owner, ns,  name)
+	//return fmt.Sprintf("%s/%x/%s/%s", prefixFilenameIndex, owner, ns, name)
 	attributes := []string{fmt.Sprintf("%x", owner), ns, name}
 	return createCompositeKey(prefixFilenameIndex, attributes)
 }

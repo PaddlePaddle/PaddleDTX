@@ -30,7 +30,7 @@ TMP_CONF_NAME="testdatatmp"
 CONTRACT_NAME=xdb01
 # Network type, support xchain and fabric
 # 网络类型, 支持xchain和fabric, default xchain
-BLOCKCHAIN_TYPE=${2-"xchain"}
+BLOCKCHAIN_TYPE="xchain"
 
 # Configuration items required for xchain network startup
 # User's blockchain account address, used invoke contract 
@@ -38,6 +38,11 @@ BLOCKCHAIN_TYPE=${2-"xchain"}
 ADDRESS_PATH=../$TMP_CONF_NAME/blockchain/xchain/user
 CONTRACT_ACCOUNT=1111111111111111
 TRANSFER_AMOUNT=110009887797
+
+#The storage mode used by the storage node, 
+#currently supports local file system (denoted with `local`) and IPFS (denoted with `ipfs`).
+# 底层存储引擎，本地存储（local）或者IPFS（ipfs）
+STORAGE_MODE_TYPE="local"
 
 # Configuration items required for fabric network startup
 # Timeout duration - the duration the CLI should wait for a response from
@@ -73,9 +78,10 @@ function start() {
 # startXchain start xchain network with docker compose
 # 通过docker-compose启动区块链网络
 function startXchain() {
+
   # 1. Start xchain network
   # 1. 启动区块链网络
-  print_blue "==========> Xchain network start ..."
+  print_blue "==========> Xchain network starts ..."
   docker-compose -f ../$TMP_CONF_NAME/blockchain/xchain/docker-compose.yml up -d
   sleep 6
 
@@ -182,6 +188,13 @@ function startFabric() {
 # startXdb start Xdb network with docker compose
 # 通过docker-compose启动去中心化存储网络
 function startXdb() {
+  if [ $STORAGE_MODE_TYPE = "ipfs" ]; then
+      print_blue "==========> IPFS network starts ..."
+      docker-compose -f ../$TMP_CONF_NAME/ipfs/docker-compose.yml up -d
+      sleep 6
+  fi
+  
+
   print_blue "==========> Xdb network start ..."
   docker-compose -p xdb -f ../$TMP_CONF_NAME/xdb/docker-compose.yml up -d
   sleep 6
@@ -310,6 +323,10 @@ function stop() {
     print_blue "==========> Stop xchain network ..."
     docker-compose -f ../$TMP_CONF_NAME/blockchain/xchain/docker-compose.yml down
   fi
+
+  print_blue "==========> Stop IPFS network ..."
+  docker-compose -f ../$TMP_CONF_NAME/ipfs/docker-compose.yml down
+
   # Delete temporary profiles by container
   # 通过容器方式删除临时配置文件, 避免因为文件权限问题导致的删除失败
   docker run -it --rm \
@@ -370,6 +387,22 @@ function print_red() {
 }
 
 action=$1
+shift
+while getopts "b:s:" opt; do
+  case "$opt" in
+  b)
+    if [ $OPTARG = "fabric" ]; then
+      BLOCKCHAIN_TYPE=$OPTARG
+    fi
+    ;;
+  s) 
+    if [ $OPTARG = "ipfs" ]; then
+      STORAGE_MODE_TYPE=$OPTARG
+    fi
+    ;;
+  esac
+done
+
 case $action in
 start)
   start $@

@@ -52,12 +52,13 @@ const (
 // finishWritenSlice encrypted slice info
 // contains slice digest and encrypted ciphertext
 type finishWritenSlice struct {
-	eSlice encryptor.EncryptedSlice
+	eSlice    encryptor.EncryptedSlice
+	storIndex string //storage index of a slice, returned by `Storage Node`
 }
 
 // Write upload a file and push file slices to storage nodes
 // The detailed steps are as follows:
-// 1. parameters check, the file is not allowed upload repeatedly
+// 1. check parameters, the file is not allowed upload repeatedly
 // 2. first file encryption
 // 3. divide the file into multiple slices by a fixed size and generate copies
 // 4. second encryption of ciphertext slices
@@ -163,8 +164,10 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	failedQueue := make(chan encryptor.EncryptedSlice, 10)
 	go e.distributeRoutine(ctx, nodesMap, encryptedSliceQueue, finishedQueue, failedQueue, opt.User)
 	var finishedEncSlices []encryptor.EncryptedSlice
+	var storIndexes []string
 	for m := range finishedQueue {
 		finishedEncSlices = append(finishedEncSlices, m.eSlice)
+		storIndexes = append(storIndexes, m.storIndex)
 	}
 
 	// retry push
@@ -177,6 +180,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	e.retryRoutine(ctx, failedSlices, finishedQueue2, failedQueue2, nodesMap, opt.User)
 	for m := range finishedQueue2 {
 		finishedEncSlices = append(finishedEncSlices, m.eSlice)
+		storIndexes = append(storIndexes, m.storIndex)
 	}
 	var failedTwice []encryptor.EncryptedSlice
 	for m := range failedQueue2 {
@@ -197,17 +201,20 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	}
 
 	// all pushed slice info
-	finishedEncSlices = append(finishedEncSlices, finishedQueue3...)
+	for _, m := range finishedQueue3 {
+		finishedEncSlices = append(finishedEncSlices, m.eSlice)
+		storIndexes = append(storIndexes, m.storIndex)
+	}
 
 	// generate and save merkle challenge material for each slice and storage node
 	if ca == types.MerkleChallengeAlgorithm {
-		if err := e.generateAndSaveMerkle(ctx, finishedEncSlices, fileID.String(), opt.ExpireTime); err != nil {
+		if err := e.generateAndSaveMerkle(finishedEncSlices, fileID.String(), opt.ExpireTime); err != nil {
 			return resp, err
 		}
 	}
 
 	// Write meta info to blockchain
-	chainFile, err := e.packChainFile(fileID.String(), ca, opt, sliceMetas, originalLen, finishedEncSlices, pairingConf)
+	chainFile, err := e.packChainFile(fileID.String(), ca, opt, sliceMetas, originalLen, finishedEncSlices, storIndexes, pairingConf)
 	if err != nil {
 		return resp, errorx.Wrap(err, "failed to pack chain file")
 	}
@@ -390,7 +397,8 @@ func (e *Engine) distributeRoutine(ctx context.Context, nodes map[string]blockch
 				// push slice
 				node := nodes[string(es.NodeID)]
 				dataReader := bytes.NewReader(es.CipherText)
-				if err := e.copier.Push(ctx, es.SliceID, owner, dataReader, &node); err != nil {
+				sIdx, err := e.copier.Push(ctx, es.SliceID, owner, dataReader, &node)
+				if err != nil {
 					logger.WithError(err).Errorf("failed to push to: %v, slice: %s", node, es.SliceID)
 					failedQueue <- es
 					continue
@@ -401,7 +409,8 @@ func (e *Engine) distributeRoutine(ctx context.Context, nodes map[string]blockch
 				}).Debug("slice pushed")
 
 				finishedQueue <- finishWritenSlice{
-					eSlice: es,
+					eSlice:    es,
+					storIndex: sIdx,
 				}
 			}
 		}()
@@ -433,14 +442,15 @@ func (e *Engine) retryRoutine(ctx context.Context, failedSlices []encryptor.Encr
 			for time.Now().Unix() < endTime {
 				select {
 				case <-ticker.C:
-					if err := e.copier.Push(ctx, es.SliceID, owner, dataReader, &node); err == nil {
+					if sIdx, err := e.copier.Push(ctx, es.SliceID, owner, dataReader, &node); err == nil {
 						logger.WithFields(logrus.Fields{
 							"target_node": node.Name,
 							"address":     node.Address,
 						}).Debug("slice pushed")
 
 						finishedQueue <- finishWritenSlice{
-							eSlice: es,
+							eSlice:    es,
+							storIndex: sIdx,
 						}
 						return
 					} else {
@@ -463,9 +473,9 @@ func (e *Engine) retryRoutine(ctx context.Context, failedSlices []encryptor.Encr
 
 // pushToOtherNode re-push failed slice to another node
 func (e *Engine) pushToOtherNode(ctx context.Context, owner, fileID string, failedSlices []encryptor.EncryptedSlice,
-	finishedEncSlices []encryptor.EncryptedSlice, nodes blockchain.NodeHs, onErr func(error)) []encryptor.EncryptedSlice {
+	finishedEncSlices []encryptor.EncryptedSlice, nodes blockchain.NodeHs, onErr func(error)) []finishWritenSlice {
 
-	var finishedSlices []encryptor.EncryptedSlice
+	var finishedSlices []finishWritenSlice
 	alreadySelected := make(map[string][]string)
 	for _, slice := range finishedEncSlices {
 		alreadySelected[slice.SliceID] = append(alreadySelected[slice.SliceID], string(slice.NodeID))
@@ -517,13 +527,13 @@ func (e *Engine) pushToOtherNode(ctx context.Context, owner, fileID string, fail
 			}
 
 			// push to new node
-			if err := e.copier.Push(ctx, es.SliceID, owner, bytes.NewReader(es.CipherText), &node); err == nil {
+			if sIdx, err := e.copier.Push(ctx, es.SliceID, owner, bytes.NewReader(es.CipherText), &node); err == nil {
 				logger.WithFields(logrus.Fields{
 					"slice_id":    es.SliceID,
 					"target_node": string(node.ID),
 				}).Debug("slice re-pushed")
 
-				finishedSlices = append(finishedSlices, es)
+				finishedSlices = append(finishedSlices, finishWritenSlice{eSlice: es, storIndex: sIdx})
 				done = true
 				break
 			} else {
@@ -544,7 +554,7 @@ func (e *Engine) pushToOtherNode(ctx context.Context, owner, fileID string, fail
 }
 
 // generateAndSaveMerkle file owner generates and saves merkle challenges to local
-func (e *Engine) generateAndSaveMerkle(ctx context.Context, finishedEncSlices []encryptor.EncryptedSlice,
+func (e *Engine) generateAndSaveMerkle(finishedEncSlices []encryptor.EncryptedSlice,
 	fileID string, expireTime int64) error {
 	var isSaveErr error
 	wg := sync.WaitGroup{}

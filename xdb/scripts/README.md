@@ -4,19 +4,20 @@
 Usage: ./network_up.sh { start | stop | restart }
 
 ### 1.1 服务启动
-- blockchainType, 网络类型, 取值xchain或fabric，默认xchain网络
+- blockchainType，网络类型，取值xchain或fabric，默认xchain网络
+- storageModeType，底层存储引擎，本地存储为 local，IPFS 为 ipfs，默认为 local
 ```shell
-./network_up.sh start $blockchainType
+./network_up.sh start -b $blockchainType -s $storageModeType
 ```
 
 ### 1.2 服务停止
 ```shell
-./network_up.sh stop $blockchainType
+./network_up.sh stop -b $blockchainType
 ```
 
 ### 1.3 服务重启
 ```shell
-./network_up.sh restart $blockchainType
+./network_up.sh restart -b $blockchainType -s $storageModeType
 ```
 
 ## 二、文件上传和下载 [./xdb_test.sh]

@@ -129,7 +129,7 @@ func (x *Xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 	// set node-sliceID-expireTime on chain
 	nodeSlice := make(map[string][]string)
 	for _, slice := range f.Slices {
-		nodeSlice[string(slice.NodeID)] = append(nodeSlice[string(slice.NodeID)], slice.ID)
+		nodeSlice[string(slice.NodeID)] = append(nodeSlice[string(slice.NodeID)], slice.ID+":"+slice.StorIndex)
 	}
 	for nodeID, sliceL := range nodeSlice {
 		prefixNodeFileSlice := packNodeSliceIndex(nodeID, f)

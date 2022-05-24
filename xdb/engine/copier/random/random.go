@@ -112,33 +112,45 @@ func (m *RandomCopier) Select(slice slicer.Slice, nodes blockchain.NodeHs, opt *
 }
 
 // Push pushes slices onto Storage Node
-func (m *RandomCopier) Push(ctx context.Context, id, sourceID string, r io.Reader, node *blockchain.Node) error {
+// returns storage index of slice
+func (m *RandomCopier) Push(ctx context.Context, id, sourceID string, r io.Reader, node *blockchain.Node) (string, error) {
 	// Todo add signature when pushing slices into storage nodes
 	url := fmt.Sprintf("http://%s/v1/slice/push?slice_id=%s&source_id=%s", node.Address, id, sourceID)
 
 	var resp etype.PushResponse
 	if err := http.PostResponse(ctx, url, r, &resp); err != nil {
-		return errorx.Wrap(err, "failed to do post")
+		return "", errorx.Wrap(err, "failed to do post")
 	}
 
-	return nil
+	logger.WithFields(logrus.Fields{
+		"SliceId":        id,
+		"SliceStorIndex": resp.SliceStorIndex,
+	}).Debug("successfully pushed")
+
+	return resp.SliceStorIndex, nil
 }
 
-func (m *RandomCopier) Pull(ctx context.Context, id, fileID string, node *blockchain.Node) (io.ReadCloser, error) {
+// Pull pulls slice from storage no
+func (m *RandomCopier) Pull(ctx context.Context, id, storIndex, fileID string, node *blockchain.Node) (io.ReadCloser, error) {
 	// Add signature when pulling slices from storage nodes
 	timestamp := time.Now().UnixNano()
-	msg := fmt.Sprintf("%s,%s,%d", id, fileID, timestamp)
+	msg := fmt.Sprintf("%s,%s,%s,%d", id, storIndex, fileID, timestamp)
 	sig, err := ecdsa.Sign(m.privateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to sign file pull")
 	}
-	url := fmt.Sprintf("http://%s/v1/slice/pull?slice_id=%s&file_id=%s&timestamp=%d&signature=%s",
-		node.Address, id, fileID, timestamp, sig.String())
+	url := fmt.Sprintf("http://%s/v1/slice/pull?slice_id=%s&slice_stor_index=%s&file_id=%s&timestamp=%d&signature=%s",
+		node.Address, id, storIndex, fileID, timestamp, sig.String())
 
 	r, err := http.Get(ctx, url)
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to do get")
 	}
+
+	logger.WithFields(logrus.Fields{
+		"SliceId":        id,
+		"SliceStorIndex": storIndex,
+	}).Debug("successfully pulled")
 
 	return r, nil
 }
@@ -166,7 +178,7 @@ func (m *RandomCopier) ReplicaExpansion(ctx context.Context, opt *copier.Replica
 	for i := 0; i < sliceExpandNum; i++ {
 		pushRes := false
 		for _, n := range nNodes {
-			es, err := common.EncAndPush(ctx, m, enc, plainText, opt.SliceID, sourceID, fileID, &n)
+			es, storIndex, err := common.EncAndPush(ctx, m, enc, plainText, opt.SliceID, sourceID, fileID, &n)
 
 			if err != nil {
 				logger.WithFields(logrus.Fields{
@@ -180,6 +192,7 @@ func (m *RandomCopier) ReplicaExpansion(ctx context.Context, opt *copier.Replica
 				CipherHash: es.CipherHash,
 				Length:     es.Length,
 				NodeID:     es.NodeID,
+				StorIndex:  storIndex,
 			}
 			if challengeAlgorithm == types.PairingChallengeAlgorithm {
 				// 4 gets SliceIdx

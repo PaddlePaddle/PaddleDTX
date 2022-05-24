@@ -13,9 +13,13 @@
 
 package types
 
-// WriteResponse response of uploading a file, only task id
+// WriteResponse is response of uploading a file, only task id
 type WriteResponse struct {
 	FileID string `json:"file_id"`
 }
 
-type PushResponse struct{}
+// PushResponse is response of receiving a slice
+//  SliceStorIndex is storage index of a slice
+type PushResponse struct {
+	SliceStorIndex string `json:"slice_stor_index"`
+}

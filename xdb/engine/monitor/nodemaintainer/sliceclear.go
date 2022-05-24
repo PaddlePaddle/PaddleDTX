@@ -25,7 +25,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
-	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
@@ -83,21 +82,28 @@ func (m *NodeMaintainer) sliceClear(ctx context.Context) {
 		}
 		var deleteSlices []string
 		var deleteContentErr, deleteSigmasErr error
-		var deleteContent, deleteSigmas = true, true
+		var deleteContent, deleteSigmas bool
 		for _, slice := range sliceList {
+			sliceID := slice[0]
+			sliceStorIndex := slice[1]
 			// if slice exists, remove it
-			sliceSigmas := common.GetSliceSigmasID(slice)
-			if exist, _ := m.sliceStorage.Exist(slice); exist {
-				deleteContent, deleteContentErr = m.sliceStorage.Delete(slice)
+			sliceSigmas := sliceID
+			if exist, _ := m.sliceStorage.Exist(sliceID, sliceStorIndex); exist {
+				deleteContentErr = m.sliceStorage.Delete(sliceID, sliceStorIndex)
+				if deleteContentErr == nil {
+					deleteContent = true
+				} else {
+					deleteContent = false
+				}
 			}
 			// delete pairing based challenge material if exists
-			if exist, _ := m.sliceStorage.Exist(sliceSigmas); exist {
-				deleteSigmas, deleteSigmasErr = m.sliceStorage.Delete(sliceSigmas)
+			if exist, _ := m.proveStorage.Exist(sliceSigmas); exist {
+				deleteSigmas, deleteSigmasErr = m.proveStorage.Delete(sliceSigmas)
 			}
 			if !deleteContent || !deleteSigmas {
 				break
 			}
-			deleteSlices = append(deleteSlices, slice)
+			deleteSlices = append(deleteSlices, sliceID)
 		}
 		if deleteContentErr != nil {
 			l.WithError(deleteContentErr).Warn("failed to delete node slice")
@@ -109,7 +115,7 @@ func (m *NodeMaintainer) sliceClear(ctx context.Context) {
 		}
 
 		r := bytes.NewBufferString(strconv.FormatInt(endTime, 10))
-		if err := m.sliceStorage.SaveAndUpdate(clearKey, r); err != nil {
+		if err := m.proveStorage.SaveAndUpdate(clearKey, r); err != nil {
 			l.WithError(err).Warn("failed to update clear slice time ")
 		}
 
@@ -126,16 +132,16 @@ func (m *NodeMaintainer) sliceClear(ctx context.Context) {
 // clearKey stores the time of the last query
 func (m *NodeMaintainer) getExpireRangeTime(clearKey string, latestTime, regTime int64) (int64, int64, error) {
 	var startTime, endTime int64
-	exist, _ := m.sliceStorage.Exist(clearKey)
+	exist, _ := m.proveStorage.Exist(clearKey)
 	if !exist {
 		r := bytes.NewBufferString(strconv.FormatInt(regTime, 10))
-		if err := m.sliceStorage.SaveAndUpdate(clearKey, r); err != nil {
+		if err := m.proveStorage.SaveAndUpdate(clearKey, r); err != nil {
 			return 0, 0, errorx.Wrap(err, "failed to save and update slice")
 		}
 		endTime = m.getEndExpireTime(regTime, latestTime)
 		return regTime, endTime, nil
 	}
-	ftime, err := m.sliceStorage.LoadStr(clearKey)
+	ftime, err := m.proveStorage.LoadStr(clearKey)
 	if err != nil {
 		return 0, 0, errorx.Wrap(err, "failed to load expire time")
 	}

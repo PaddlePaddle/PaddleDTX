@@ -38,14 +38,21 @@ type Blockchain interface {
 	GetNode(id []byte) (blockchain.Node, error)
 	NodeOnline(opt *blockchain.NodeOperateOptions) error
 	Heartbeat(id, sig []byte, timestamp int64) error
-	ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([]string, error)
+	ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([][2]string, error)
+}
+type SliceStorage interface {
+	Load(key string, index string) (io.ReadCloser, error)
+	Exist(key string, index string) (bool, error)
+	Delete(key string, index string) error
+	LoadStr(key string, index string) (string, error)
 }
 
-type SliceStorage interface {
+// ProveStorage is Storage interface used in `Replication Holding Proof` process
+type ProveStorage interface {
+	Save(key string, value io.Reader) error
 	Load(key string) (io.ReadCloser, error)
 	Delete(key string) (bool, error)
 	Exist(key string) (bool, error)
-
 	LoadStr(key string) (string, error)
 	SaveAndUpdate(key string, value io.Reader) error
 }
@@ -56,6 +63,7 @@ type NewNodeMaintainerOptions struct {
 	Blockchain Blockchain
 
 	SliceStorage SliceStorage
+	ProveStorage ProveStorage
 }
 
 // NodeMaintainer runs if local node is storage-node, and its main work is to clean expired encrypted slices
@@ -66,6 +74,7 @@ type NodeMaintainer struct {
 	blockchain Blockchain
 
 	sliceStorage SliceStorage
+	proveStorage ProveStorage
 
 	heartbeatInterval  time.Duration
 	fileClearInterval  time.Duration
@@ -92,6 +101,7 @@ func New(conf *config.MonitorConf, opt *NewNodeMaintainerOptions) (*NodeMaintain
 		localNode:          opt.LocalNode,
 		blockchain:         opt.Blockchain,
 		sliceStorage:       opt.SliceStorage,
+		proveStorage:       opt.ProveStorage,
 		heartbeatInterval:  heartbeatInterval,
 		fileClearInterval:  fileClearInterval,
 		fileRetainInterval: blockchain.FileRetainPeriod,

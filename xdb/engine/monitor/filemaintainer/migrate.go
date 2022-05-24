@@ -316,7 +316,7 @@ func (m FileMaintainer) migrateSliceToNewNode(ctx context.Context, slice blockch
 		}).Debug("migrate slice")
 
 		// push to new node
-		if es, err := common.EncAndPush(ctx, m.copier, m.encryptor, plaintext, slice.ID, sourceID, fileID, &node); err == nil {
+		if es, storIndex, err := common.EncAndPush(ctx, m.copier, m.encryptor, plaintext, slice.ID, sourceID, fileID, &node); err == nil {
 			l.WithFields(logrus.Fields{
 				"slice_id":    slice.ID,
 				"old_node":    string(slice.NodeID),
@@ -329,7 +329,7 @@ func (m FileMaintainer) migrateSliceToNewNode(ctx context.Context, slice blockch
 			m.migrateRecordOnChain(string(slice.NodeID), fileID, slice.ID)
 			if challengeAlgorithm == types.PairingChallengeAlgorithm {
 				// rearrange file slices, remove bad slice and insert new slice with new index
-				slices, err = m.rearrangeSlices(slices, slice.ID, string(slice.NodeID), string(es.NodeID), es.CipherText)
+				slices, err = m.rearrangeSlices(slices, slice.ID, storIndex, string(slice.NodeID), string(es.NodeID), es.CipherText)
 				if err != nil {
 					l.WithFields(logrus.Fields{
 						"slice_id": slice.ID,
@@ -345,6 +345,7 @@ func (m FileMaintainer) migrateSliceToNewNode(ctx context.Context, slice blockch
 					CipherHash: es.EncryptedSliceMeta.CipherHash,
 					Length:     es.EncryptedSliceMeta.Length,
 					NodeID:     es.EncryptedSliceMeta.NodeID,
+					StorIndex:  storIndex,
 				}
 				slices = append(slices, newMigrateSlice)
 				slices = removeSlice(slices, slice)
@@ -376,7 +377,7 @@ func nodeSliceMap(sliceMetas []blockchain.PublicSliceMeta, sliceID string) map[s
 }
 
 // rearrangeSlices update slices in file structure saved on blockchain
-func (m FileMaintainer) rearrangeSlices(oldSlices []blockchain.PublicSliceMeta, sliceID, badNode,
+func (m FileMaintainer) rearrangeSlices(oldSlices []blockchain.PublicSliceMeta, sliceID, storIndex, badNode,
 	newNode string, ciphertext []byte) ([]blockchain.PublicSliceMeta, error) {
 
 	var badSlice blockchain.PublicSliceMeta
@@ -404,6 +405,7 @@ func (m FileMaintainer) rearrangeSlices(oldSlices []blockchain.PublicSliceMeta, 
 		Length:     uint64(len(ciphertext)),
 		NodeID:     []byte(newNode),
 		SliceIdx:   newNodeLargestIdx + 1,
+		StorIndex:  storIndex,
 	}
 	newSlices = append(newSlices, newNodeSlice)
 	return newSlices, nil

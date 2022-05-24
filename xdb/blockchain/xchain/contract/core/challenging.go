@@ -124,6 +124,7 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 			return code.Error(err)
 		}
 		c.SliceIDs = opt.SliceIDs
+		c.SliceStorIndexes = opt.SliceStorIndexes
 		c.Indices = opt.Indices
 		c.Round = opt.Round
 		c.RandThisRound = opt.RandThisRound
@@ -134,6 +135,7 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 			return code.Error(err)
 		}
 		c.SliceID = opt.SliceID
+		c.SliceStorIndex = opt.SliceStorIndex
 		c.Ranges = opt.Ranges
 		c.HashOfProof = opt.HashOfProof
 	} else {

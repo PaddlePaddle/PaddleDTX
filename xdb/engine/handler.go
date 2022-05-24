@@ -33,25 +33,25 @@ import (
 func (e *Engine) Push(opt types.PushOptions, r io.Reader) (
 	types.PushResponse, error) {
 
+	var resp types.PushResponse
 	// for content not a slice, save or update content
 	if opt.NotASlice {
-		if err := e.storage.SaveAndUpdate(opt.SliceID, r); err != nil {
-			logger.WithError(err).Errorf("push %s", opt.SliceID)
-			return types.PushResponse{}, errorx.Wrap(err, "failed to save slice")
+		if err := e.proveStorage.SaveAndUpdate(opt.SliceID, r); err != nil {
+			logger.WithError(err).Errorf("push challenge material %s", opt.SliceID)
+			return resp, errorx.Wrap(err, "failed to save slice")
 		}
+		resp.SliceStorIndex = opt.SliceID
 	} else {
-		// check existence for pushed slice
-		exist, err := e.storage.Exist(opt.SliceID)
-		if err != nil {
-			return types.PushResponse{}, errorx.Wrap(err, "failed to tell existence of slice")
-		}
-		// Do not execute write to keep idempotency
-		if exist {
-			return types.PushResponse{}, nil
-		}
-		if err := e.storage.Save(opt.SliceID, r); err != nil {
+		storIndex, err := e.sliceStorage.Save(opt.SliceID, r)
+		if err == nil {
+			resp.SliceStorIndex = storIndex
+		} else if errorx.Is(err, errorx.ErrCodeAlreadyExists) {
+			// only in the case that storage.index is same with storage.key
+			// could we receive this error code
+			resp.SliceStorIndex = opt.SliceID
+		} else {
 			logger.WithError(err).Errorf("push %s", opt.SliceID)
-			return types.PushResponse{}, errorx.Wrap(err, "failed to save slice")
+			return resp, errorx.Wrap(err, "failed to save slice")
 		}
 	}
 
@@ -59,7 +59,7 @@ func (e *Engine) Push(opt types.PushOptions, r io.Reader) (
 		"slice_id": opt.SliceID,
 		"from":     opt.SourceID,
 	}).Debug("slice received")
-	return types.PushResponse{}, nil
+	return resp, nil
 }
 
 // Pull load ciphertext slices locally and return them to the dataOwner node
@@ -80,7 +80,7 @@ func (e *Engine) Pull(opt types.PullOptions) (io.ReadCloser, error) {
 	}
 
 	// Verify Signature
-	msg := fmt.Sprintf("%s,%s,%d", opt.SliceID, opt.FileID, opt.Timestamp)
+	msg := fmt.Sprintf("%s,%s,%s,%d", opt.SliceID, opt.StorIndex, opt.FileID, opt.Timestamp)
 	msgDigest := hash.HashUsingSha256([]byte(msg))
 
 	var verifyPubkey string
@@ -97,17 +97,17 @@ func (e *Engine) Pull(opt types.PullOptions) (io.ReadCloser, error) {
 		return nil, errorx.Wrap(err, "failed to verify slice pull token")
 	}
 
-	exist, err := e.storage.Exist(opt.SliceID)
-	if err != nil {
-		return nil, errorx.Wrap(err, "failed to tell existence of slice")
-	}
-	if !exist {
-		return nil, errorx.New(errorx.ErrCodeNotFound, "slice not found")
-	}
-
-	rc, err := e.storage.Load(opt.SliceID)
-	if err != nil {
-		return nil, errorx.Wrap(err, "failed to load slice")
+	var rc io.ReadCloser
+	if opt.NotASlice {
+		rc, err = e.proveStorage.Load(opt.SliceID)
+		if err != nil {
+			return nil, errorx.Wrap(err, "failed to load slice")
+		}
+	} else {
+		rc, err = e.sliceStorage.Load(opt.SliceID, opt.StorIndex)
+		if err != nil {
+			return nil, errorx.Wrap(err, "failed to load sigma")
+		}
 	}
 
 	logger.WithFields(logrus.Fields{

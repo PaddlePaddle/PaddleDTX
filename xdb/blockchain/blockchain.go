@@ -71,6 +71,7 @@ type PublicSliceMeta struct {
 	CipherHash []byte // hash of cipher text
 	Length     uint64 // length of cipher text
 	NodeID     []byte // where slice is stored
+	StorIndex  string // storage index of slice, is used to query a slice from Storage, created by StorageNode
 	// for pairing based challenge
 	SliceIdx int // slice index stored on this node, like 1,2,3...
 }
@@ -133,14 +134,16 @@ type Challenge struct {
 
 	ChallengeAlgorithm string   // challenge algorithm
 	SliceIDs           []string // slice IDs to challenge
+	SliceStorIndexes   []string // storage index of slice, is used to query a slice from Storage
 	Indices            [][]byte // indices of slice IDs
 	Vs                 [][]byte // random params
 	Round              int64    // challenge found
 	RandThisRound      []byte   // random number for the challenge
 
-	SliceID     string
-	Ranges      []Range
-	HashOfProof []byte
+	SliceID        string
+	SliceStorIndex string // storage index of slice, is used to query a slice from Storage
+	Ranges         []Range
+	HashOfProof    []byte
 
 	Status        string // challenge status
 	ChallengeTime int64  // challenge publish time
@@ -170,12 +173,13 @@ type ListChallengeOptions struct {
 
 // ChallengeRequestOptions used for dataOwner nodes to add challenge request on chain
 type ChallengeRequestOptions struct {
-	ChallengeID   string
-	FileOwner     []byte
-	TargetNode    []byte
-	FileID        string
-	SliceIDs      []string
-	ChallengeTime int64
+	ChallengeID      string
+	FileOwner        []byte
+	TargetNode       []byte
+	FileID           string
+	SliceIDs         []string
+	SliceStorIndexes []string // storage index of slice, is used to query a slice from Storage
+	ChallengeTime    int64
 
 	ChallengeAlgorithm string
 
@@ -184,9 +188,10 @@ type ChallengeRequestOptions struct {
 	Round         int64
 	RandThisRound []byte
 
-	SliceID     string
-	Ranges      []Range
-	HashOfProof []byte
+	SliceID        string
+	SliceStorIndex string // storage index of slice, is used to query a slice from Storage
+	Ranges         []Range
+	HashOfProof    []byte
 
 	Sig []byte
 }

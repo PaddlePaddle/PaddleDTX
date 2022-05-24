@@ -159,9 +159,9 @@ func (c *ChallengingMonitor) doPairingCalculateProof(privkey ecdsa.PrivateKey, r
 
 	var content [][]byte
 	var sigmaContent [][]byte
-	for _, sliceID := range req.SliceIDs {
+	for i, sliceID := range req.SliceIDs {
 		// read slice content
-		dataReader, err := c.sliceStorage.Load(sliceID)
+		dataReader, err := c.sliceStorage.Load(sliceID, req.SliceStorIndexes[i])
 		if err != nil {
 			return randomProof{}, errorx.Wrap(err, "failed to load local slice %s", sliceID)
 		}
@@ -172,8 +172,8 @@ func (c *ChallengingMonitor) doPairingCalculateProof(privkey ecdsa.PrivateKey, r
 		content = append(content, data)
 
 		// read sigmas content
-		sigmaFile := common.GetSliceSigmasID(sliceID)
-		dataReader, err = c.sliceStorage.Load(sigmaFile)
+		sigmaFile := sliceID
+		dataReader, err = c.proveStorage.Load(sigmaFile)
 		if err != nil {
 			return randomProof{}, errorx.Wrap(err, "failed to load local slice sigmas %s", sliceID)
 		}
@@ -227,7 +227,7 @@ func (c *ChallengingMonitor) doPairingCalculateProof(privkey ecdsa.PrivateKey, r
 
 func (c *ChallengingMonitor) doMerkleCalculation(privkey ecdsa.PrivateKey, req *blockchain.Challenge) (rangeProof, error) {
 
-	dataReader, err := c.sliceStorage.Load(req.SliceID)
+	dataReader, err := c.sliceStorage.Load(req.SliceID, req.SliceStorIndex)
 	if err != nil {
 		return rangeProof{}, errorx.Wrap(err, "failed to load local slice %s", req.SliceID)
 	}

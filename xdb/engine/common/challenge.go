@@ -86,7 +86,7 @@ func AddFileNewMerkleChallenge(ctx context.Context, challenger CommonChallenger,
 			logger.WithField("node_id", string(target.NodeID)).Warn("abnormal node")
 		}
 		for exist {
-			r, err := copier.Pull(ctx, target.ID, file.ID, &node)
+			r, err := copier.Pull(ctx, target.ID, target.StorIndex, file.ID, &node)
 			if err != nil {
 				logger.WithError(err).Warn("failed to pull slice")
 				break
@@ -124,7 +124,7 @@ func AddFileNewMerkleChallenge(ctx context.Context, challenger CommonChallenger,
 			for _, n := range selectedNodes[target.ID] {
 				newNode, exist := nodesMap[n]
 				if exist {
-					r, err := copier.Pull(ctx, target.ID, file.ID, &newNode)
+					r, err := copier.Pull(ctx, target.ID, target.StorIndex, file.ID, &newNode)
 					if err != nil {
 						logger.WithField("node_id", n).WithError(err).Warn("failed to pull slice from other node")
 						continue
@@ -321,10 +321,14 @@ func AddSlicesNewPairingChallenge(ctx context.Context, pairingConf types.Pairing
 				return
 			}
 
-			if err := copier.Push(ctx, sliceSigmaID, sourceID, bytes.NewReader(sigmasBytes), &node); err != nil {
+			storIndex, err := copier.Push(ctx, sliceSigmaID, sourceID, bytes.NewReader(sigmasBytes), &node)
+			if err != nil {
 				pushErr = errorx.Wrap(err, "failed to push pairing based challenge material")
 				return
 			}
+			// there's no need to handle storage index of Sigma currently
+			// beacause Sorage Node stores it locally and storage index is same with `SliceID`
+			_ = storIndex
 
 			logger.WithFields(logrus.Fields{
 				"file_id":      file.ID,
@@ -364,7 +368,7 @@ func AddFilePairingChallenges(ctx context.Context, pairingConf types.PairingChal
 				return
 			}
 
-			r, err := copier.Pull(ctx, target.ID, file.ID, &node)
+			r, err := copier.Pull(ctx, target.ID, target.StorIndex, file.ID, &node)
 			if err != nil {
 				logger.WithField("slice_id", target.ID).WithError(err).Error("failed to pull slice")
 				addErr = errorx.NewCode(err, errorx.ErrCodeInternal, "failed to pull slice")
@@ -381,7 +385,7 @@ func AddFilePairingChallenges(ctx context.Context, pairingConf types.PairingChal
 
 			// pull sigmas
 			sliceSigma := GetSliceSigmasID(target.ID)
-			r, err = copier.Pull(ctx, sliceSigma, file.ID, &node)
+			r, err = copier.Pull(ctx, sliceSigma, target.ID, file.ID, &node)
 			if err != nil {
 				logger.WithField("slice_id", target.ID).WithError(err).Error("failed to pull slice sigmas")
 				addErr = errorx.NewCode(err, errorx.ErrCodeInternal, "failed to pull slice sigmas")
@@ -445,7 +449,7 @@ func getSlicesIdxMap(file blockchain.File) map[string][]byte {
 	return idxMap
 }
 
-// GetSliceSigmasID pack file name to store sigmas for a slice
+// GetSliceSigmasID pack file name to pull sigmas from `Storage Node`
 func GetSliceSigmasID(sliceID string) string {
 	return sliceID + ChallengeFileSuffix
 }

@@ -78,7 +78,8 @@ func newChallengingMonitor(conf *config.MonitorConf, opt *NewEngineOption) (
 		PrivateKey:   opt.LocalNode.PrivateKey,
 		Blockchain:   opt.Chain,
 		ChallengeDB:  opt.Challenger,
-		SliceStorage: opt.Storage,
+		SliceStorage: opt.SliceStor,
+		ProveStorage: opt.ProveStor,
 	}
 	challengingMonitor, err := challenging.New(conf, &cmOpt)
 	if err != nil {
@@ -100,7 +101,7 @@ func newNodeMaintainer(conf *config.MonitorConf, opt *NewEngineOption) (*nodemai
 	mmOpt := nodemaintainer.NewNodeMaintainerOptions{
 		Blockchain:   opt.Chain,
 		LocalNode:    opt.LocalNode,
-		SliceStorage: opt.Storage,
+		SliceStorage: opt.SliceStor,
 	}
 
 	nodeMaintainer, err := nodemaintainer.New(conf, &mmOpt)
