@@ -39,7 +39,7 @@ var getNodeByIDCmd = &cobra.Command{
 			return
 		}
 		rtime := time.Unix(0, n.RegTime).Format(timeTemplate)
-		fmt.Printf("NodeID: %x\nName: %s\nAddress: %s\nRegisterTime: %v\n\n", n.ID, n.Name, n.Address, rtime)
+		fmt.Printf("NodeID: %x\nName: %s\nAddress: %s\nPaddleFLRole: %d\nPaddleFLAddress:%s\nRegisterTime: %v\n\n", n.ID, n.Name, n.Address, n.PaddleFLRole, n.PaddleFLAddress, rtime)
 	},
 }
 

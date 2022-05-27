@@ -168,6 +168,7 @@ func (t *Trainer) NewLearner(req *pbCom.StartTaskRequest) error {
 	params := req.GetParams().GetTrainParams()
 	file := req.GetFile()
 	hosts := req.GetHosts()
+	paddleParams := req.GetPaddleFLParams()
 
 	// create a learner without samples if the request contains no file, and such request always comes from LiveEvaluator
 	// create a common learner with samples if the request contains file, and such request always comes from a user (or an Evaluator)
@@ -176,9 +177,9 @@ func (t *Trainer) NewLearner(req *pbCom.StartTaskRequest) error {
 	var errL error
 	if len(file) > 0 {
 		le := t.newLiveEvaluator(req)
-		learner, errL = learners.NewLearner(taskId, t.address, algo, params, file, hosts, t.rpcHandler, t, le)
+		learner, errL = learners.NewLearner(taskId, t.address, algo, params, file, hosts, paddleParams, t.rpcHandler, t, le)
 	} else {
-		learner, errL = learners.NewLearnerWithoutSamples(taskId, t.address, algo, params, hosts, t.rpcHandler, t)
+		learner, errL = learners.NewLearnerWithoutSamples(taskId, t.address, algo, params, hosts, paddleParams, t.rpcHandler, t)
 	}
 	if errL != nil {
 		return errL

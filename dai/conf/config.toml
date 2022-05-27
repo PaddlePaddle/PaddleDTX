@@ -17,6 +17,12 @@ listenAddress = ":8184"
 # If your network mode is 'host', it is the machine's ip and the port in [server].listenAddress in before section.
 publicAddress = "10.144.94.17:8184"
 
+# PaddleFLAddress is the endpoint of the container which has a runninng environment of PaddleFL.
+# Containers belong to different executors constitute a mpc network
+paddleFLAddress = "paddlefl-env1:38302"
+# PaddleFLRole is the role of the container in paddlefl mpc network.
+paddleFLRole = 0
+
 # The private key of the trusted computing server.
 # Different key express different identity.
 # Only need to choose one from 'privateKey' and 'keyPath', and if both exist, 'privateKey' takes precedence over 'keyPath'

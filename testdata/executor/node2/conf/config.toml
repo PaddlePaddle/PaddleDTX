@@ -3,6 +3,8 @@ name = "executor2"
 listenAddress = ":80"
 publicAddress = "executor2.node.com:80"
 keyPath = "./keys"
+paddleFLRole = 1
+paddleFLAddress = "paddlefl-env2:38304"
 
 [executor.mode]
     # Define the task execution type, supports 'Proxy' and 'Self', default 'Proxy.'	

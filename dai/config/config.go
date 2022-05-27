@@ -28,15 +28,17 @@ var (
 )
 
 type ExecutorConf struct {
-	Name          string
-	ListenAddress string
-	PublicAddress string
-	PrivateKey    string
-	KeyPath       string
-	Mode          *ExecutorModeConf
-	Mpc           *ExecutorMpcConf
-	Storage       *ExecutorStorageConf
-	Blockchain    *ExecutorBlockchainConf
+	Name            string
+	ListenAddress   string
+	PublicAddress   string
+	PrivateKey      string
+	PaddleFLAddress string
+	PaddleFLRole    int
+	KeyPath         string
+	Mode            *ExecutorModeConf
+	Mpc             *ExecutorMpcConf
+	Storage         *ExecutorStorageConf
+	Blockchain      *ExecutorBlockchainConf
 }
 
 type ExecutorModeConf struct {

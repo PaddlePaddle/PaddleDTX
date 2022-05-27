@@ -21,10 +21,21 @@ publicAddress = "storage1.node.com:80"
         userName = "Admin"
         orgName = "org1"
 
+[storage.prover]
+    localRoot = "/home/data/prove"
+
 [storage.mode]
-    type = "local"
+    type = "${STORAGE_MODE_TYPE}"
     [storage.mode.local]
         rootPath = "/home/data/slices"
+    [storage.mode.ipfs]
+        hosts = [
+            "ipfs_host_0:5001",
+            "ipfs_host_1:5001",
+            "ipfs_host_2:5001",
+            "ipfs_host_3:5001"
+        ]
+        timeout = 5000
 
 [storage.monitor]
     challengingSwitch = "on"

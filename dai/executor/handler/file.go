@@ -211,7 +211,7 @@ func (f *FileDownload) recoverFile(ctx context.Context, chain Blockchain, file x
 				continue
 			}
 			// pull slice
-			r, err := f.pull(ctx, target.ID, file.ID, node.Address)
+			r, err := f.pull(ctx, target.ID, target.StorIndex, file.ID, node.Address)
 			if err != nil {
 				logger.WithFields(logrus.Fields{
 					"slice_id":    target.ID,
@@ -302,18 +302,18 @@ func (f *FileDownload) recoverFile(ctx context.Context, chain Blockchain, file x
 }
 
 // pull used pull slices from storage nodes
-func (f *FileDownload) pull(ctx context.Context, id, fileId, nodeAddress string) (io.ReadCloser, error) {
+func (f *FileDownload) pull(ctx context.Context, id, storIndex, fileId, nodeAddress string) (io.ReadCloser, error) {
 	// Add signature
 	timestamp := time.Now().UnixNano()
-	msg := fmt.Sprintf("%s,%s,%d", id, fileId, timestamp)
+	msg := fmt.Sprintf("%s,%s,%s,%d", id, storIndex, fileId, timestamp)
 	sig, err := ecdsa.Sign(f.NodePrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to sign slice pull")
 	}
 
 	pubkey := ecdsa.PublicKeyFromPrivateKey(f.NodePrivateKey)
-	url := fmt.Sprintf("http://%s/v1/slice/pull?slice_id=%s&file_id=%s&timestamp=%d&pubkey=%s&signature=%s",
-		nodeAddress, id, fileId, timestamp, pubkey.String(), sig.String())
+	url := fmt.Sprintf("http://%s/v1/slice/pull?slice_id=%s&slice_stor_index=%s&file_id=%s&timestamp=%d&pubkey=%s&signature=%s",
+		nodeAddress, id, storIndex, fileId, timestamp, pubkey.String(), sig.String())
 
 	r, err := http.Get(ctx, url)
 	if err != nil {

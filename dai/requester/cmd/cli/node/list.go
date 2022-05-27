@@ -40,7 +40,7 @@ var listNodesCmd = &cobra.Command{
 
 		for _, n := range resp {
 			rtime := time.Unix(0, n.RegTime).Format(timeTemplate)
-			fmt.Printf("NodeID: %x\nName: %s\nAddress: %s\nRegisterTime: %v\n\n", n.ID, n.Name, n.Address, rtime)
+			fmt.Printf("NodeID: %x\nName: %s\nAddress: %s\nPaddleFLRole: %d\nPaddleFLAddress:%s\nRegisterTime: %v\n\n", n.ID, n.Name, n.Address, n.PaddleFLRole, n.PaddleFLAddress, rtime)
 		}
 		if len(resp) == 0 {
 			fmt.Printf("\nThere are no executor nodes in the network\n\n")

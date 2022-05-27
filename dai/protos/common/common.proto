@@ -7,6 +7,7 @@ option go_package = "github.com/PaddlePaddle/PaddleDTX/dai/protos/common";
 enum Algorithm {
     LINEAR_REGRESSION_VL = 0;      // vertical linear regression
     LOGIC_REGRESSION_VL = 1;       // vertical logistic regression
+    DNN_PADDLEFL_VL     = 2;       // vertical dnn based
 }
 
 // TaskType defines types of task
@@ -44,7 +45,7 @@ message TrainModels {
     string label = 4;
     bool isTagPart = 5;
     string idName = 6; // for vertical learning PSI
-
+    string path = 7; // Encrypted model of PaddleFL
 }
 
 // TaskParams lists all the parameters in a task
@@ -170,7 +171,14 @@ message StartTaskRequest {
     string taskID = 2;
     bytes file = 3;
     repeated string hosts = 4;
-    TaskParams params = 5; 
+    TaskParams params = 5;
+    PaddleFLParams paddleFLParams = 6;
+}
+
+// PaddleFLParams defines node's role and mpc network using paddlefl.
+message PaddleFLParams {
+    int32 role = 1;
+    repeated string nodes = 2;
 }
 
 // StopTaskRequest is message sent to a cluster member to stop a training task or predicting task.

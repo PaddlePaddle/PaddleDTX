@@ -101,10 +101,12 @@ type MpcModelHandler struct {
 
 // ParticipantParams local parameters required for task execution
 type ParticipantParams struct {
-	otherParts []string
-	fileText   []byte
-	isTagPart  bool
-	psiLabel   string
+	otherParts    []string
+	fileText      []byte
+	isTagPart     bool
+	psiLabel      string
+	PaddleFLRole  int
+	PaddleFLNodes [3]string
 }
 
 // GetMpcClusterService returns mpc cluster service
@@ -439,6 +441,10 @@ func (m *MpcModelHandler) getMpcStartTaskParam(task blockchain.FLTask) (*pbCom.S
 			EvalParams:  task.AlgoParam.EvalParams,
 			LivalParams: task.AlgoParam.LivalParams,
 		},
+		PaddleFLParams: &pbCom.PaddleFLParams{
+			Role:  int32(partParam.PaddleFLRole),
+			Nodes: partParam.PaddleFLNodes[:],
+		},
 	}
 
 	// for predict task, model is required
@@ -489,6 +495,22 @@ func (m *MpcModelHandler) getTaskParticipantParam(task blockchain.FLTask) (partP
 		}
 	}
 	partParam.otherParts = otherParts
+
+	// if task's execution use paddlefl
+	paddleFLNodes := [3]string{}
+	if task.AlgoParam.Algo == pbCom.Algorithm_DNN_PADDLEFL_VL {
+		nodes, err := m.Chain.ListExecutorNodes()
+		if err != nil {
+			return partParam, err
+		}
+		for _, v := range nodes {
+			paddleFLNodes[v.PaddleFLRole] = v.PaddleFLAddress
+			if bytes.Equal(v.ID, pubkey[:]) {
+				partParam.PaddleFLRole = v.PaddleFLRole
+			}
+		}
+	}
+	partParam.PaddleFLNodes = paddleFLNodes
 
 	return partParam, nil
 }

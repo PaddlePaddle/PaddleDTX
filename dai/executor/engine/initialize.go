@@ -114,6 +114,8 @@ func newNode(conf *config.ExecutorConf) (node handler.Node, err error) {
 			Name:       conf.Name,
 			PrivateKey: sk,
 		},
+		PaddleFLAddress: conf.PaddleFLAddress,
+		PaddleFLRole:    conf.PaddleFLRole,
 	}
 	return local, nil
 }

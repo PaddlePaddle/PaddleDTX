@@ -2,32 +2,55 @@ version: '3'
 
 services:
   executor1:
-    image: registry.baidubce.com/paddledtx/paddledtx-dai:1.1
+    image: registry.baidubce.com/paddledtx/paddledtx-dai:2.0
     container_name: executor1.node.com
     networks:
       - blockchain_xchain_network
     ports:
-      - 38106:80
+      - 38301:80
     volumes:
       - ./node1/conf:/home/conf
       - ./node1/keys:/home/keys
       - ./requester/keys:/home/reqkeys
       - ./node1/logs:/home/logs
+      - ./node1/paddlefl:/home/paddlefl
+      - /var/run/docker.sock:/var/run/docker.sock
 
   executor2:
-    image: registry.baidubce.com/paddledtx/paddledtx-dai:1.1
+    image: registry.baidubce.com/paddledtx/paddledtx-dai:2.0
     container_name: executor2.node.com
     depends_on:
       - executor1
     networks:
       - blockchain_xchain_network   
     ports:
-      - 38107:80
+      - 38303:80
     volumes:
       - ./node2/conf:/home/conf
       - ./node2/keys:/home/keys
       - ./requester/keys:/home/reqkeys
       - ./node2/logs:/home/logs
+      - ./node2/paddlefl:/home/paddlefl
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  executor3:
+    image: registry.baidubce.com/paddledtx/paddledtx-dai:2.0
+    container_name: executor3.node.com
+    depends_on:
+      - executor2
+    networks:
+      - blockchain_xchain_network   
+    ports:
+      - 38305:80
+    volumes:
+      - ./node3/conf:/home/conf
+      - ./node3/keys:/home/keys
+      - ./requester/keys:/home/reqkeys
+      - ./node3/logs:/home/logs
+      - ./node3/paddlefl:/home/paddlefl
+      - /var/run/docker.sock:/var/run/docker.sock
+
+
 networks:
   blockchain_xchain_network:
     external: true
