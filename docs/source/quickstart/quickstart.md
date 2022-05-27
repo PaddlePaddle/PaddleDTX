@@ -15,6 +15,8 @@
 $ git clone git@github.com:PaddlePaddle/PaddleDTX.git
 $ cd PaddleDTX/scripts
 $ sh network_up.sh start
+$ # 支持三方的DNN 算法，需要启动 PaddleFL 的节点，执行如下命令代替上述命令
+$ # sh network_up.sh start -p true
 ```
 
 使用脚本也可以快速销毁网络：

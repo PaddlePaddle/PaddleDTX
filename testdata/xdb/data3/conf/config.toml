@@ -1,0 +1,58 @@
+type = "dataOwner"
+
+[dataOwner]
+name = "data-node3"
+listenAddress = ":80"
+keyPath = "./keys"
+publicAddress = "dataowner3.node.com:80"
+
+[dataOwner.slicer]
+    type = "simpleSlicer"
+    [dataOwner.slicer.simpleSlicer]
+        blockSize = 4194304
+        queueSize = 4
+
+[dataOwner.encryptor]
+    type = "softEncryptor"
+    [dataOwner.encryptor.softEncryptor]
+        password = "hijklmn"
+
+[dataOwner.challenger]
+    type = "merkle"
+    [dataOwner.challenger.pairing]
+        maxIndexNum = 5
+        sk = "Fudm9gDXNlEdCkieMid1WHIHd9K/M/CctBPlF/4y+AU="
+        pk = "B60Vdoq4SVUpVRZf1FM7ImRXo/22q0ZjYMHlaB4HgUXMSsu+2iCrNkk3gROXOUDvB8zWMcBGCnBCAnb6N9WOaBPbKkYWnp/iodp0+GFWvW1DCnAYNV2+vdaFkHaezsqeDqRDsdqV2uG47PTE2xdkljSblWNgKhsHYp7LgCcbBWiMO3TcrzUdq+ETxfIu1Bi7AzSHHAj8oc7toGT0anrO9LPSDcde8rCdsptX5CLH7WvRF0AXrqhX4Mr7i+547qI3"
+        randu = "NA1xy6JCWWc8IB4x1CM4DCoxKTqEele6zqD8kCfuj5s="
+        randv = "TV0J8YFWEsybwFdwm3DJvUHXx88YXkzK97Zpvj/tyGc="
+    [dataOwner.challenger.merkle]
+        leveldbRoot = "/home/data/challenger"
+        shrinkSize = 500
+        segmentSize = 5
+
+[dataOwner.blockchain]
+    type = "xchain"
+    [dataOwner.blockchain.xchain]
+        mnemonic = "提 现 详 责 腐 贪 沉 回 涨 谓 献 即"
+        contractName = "paddlempc"
+        contractAccount = "XC1111111111111112@xuper"
+        chainAddress = "xchain1.node.com:37101"
+        chainName = "xuper"
+    [dataOwner.blockchain.fabric]
+        configFile = "./config/fabric/config.yaml"
+        channelId = "mychannel"
+        chaincode = "mycc"
+        userName = "Admin"
+        orgName = "org1"
+
+[dataOwner.copier]
+    type = "random-copier"
+
+[dataOwner.monitor]
+    challengingSwitch = "on"
+    filemaintainerSwitch = "on"
+    filemigrateInterval = 6
+
+[log]
+level = "debug"
+path = "./logs"

@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+
+  paddlefl-env1:
+    image: registry.baidubce.com/paddledtx/paddledtx-paddfl:1.1.2
+    container_name: paddlefl-env1
+    networks:
+      - blockchain_xchain_network
+    ports:
+      - 38302:38302
+    command: /bin/bash -c "while true;do echo '';sleep 2;done"
+    working_dir: /workspace
+    volumes:
+      - ./node1/paddlefl:/workspace
+
+  paddlefl-env2:
+    image: registry.baidubce.com/paddledtx/paddledtx-paddfl:1.1.2
+    container_name: paddlefl-env2
+    networks:
+      - blockchain_xchain_network   
+    ports:
+      - 38304:38304
+    command: /bin/bash -c "while true;do echo '';sleep 2;done"
+    working_dir: /workspace
+    volumes:
+      - ./node2/paddlefl:/workspace
+
+  paddlefl-env3:
+    image: registry.baidubce.com/paddledtx/paddledtx-paddfl:1.1.2
+    container_name: paddlefl-env3
+    networks:
+      - blockchain_xchain_network   
+    ports:
+      - 38306:38306
+    command: /bin/bash -c "while true;do echo '';sleep 2;done"
+    working_dir: /workspace
+    volumes:
+      - ./node3/paddlefl:/workspace
+
+
+networks:
+  blockchain_xchain_network:
+    external: true

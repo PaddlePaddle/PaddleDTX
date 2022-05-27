@@ -33,8 +33,9 @@ const (
 	TaskTypePredict = "predict" // prediction task
 
 	/* Define Algorithms stored in Contract */
-	AlgorithmVLine = "linear-vl"   // linear regression with multiple variables in vertical federated learning
-	AlgorithmVLog  = "logistic-vl" // logistic regression with multiple variables in vertical federated learning
+	AlgorithmVLine = "linear-vl"       // linear regression with multiple variables in vertical federated learning
+	AlgorithmVLog  = "logistic-vl"     // logistic regression with multiple variables in vertical federated learning
+	AlgorithmVDnn  = "dnn-paddlefl-vl" // dnn implemented using paddlefl
 
 	/* Define Regularization stored in Contract */
 	RegModeL1 = "l1" // L1-norm
@@ -48,11 +49,13 @@ const (
 var VlAlgorithmListName = map[string]pbCom.Algorithm{
 	AlgorithmVLine: pbCom.Algorithm_LINEAR_REGRESSION_VL,
 	AlgorithmVLog:  pbCom.Algorithm_LOGIC_REGRESSION_VL,
+	AlgorithmVDnn:  pbCom.Algorithm_DNN_PADDLEFL_VL,
 }
 
 var VlAlgorithmListValue = map[pbCom.Algorithm]string{
 	pbCom.Algorithm_LINEAR_REGRESSION_VL: AlgorithmVLine,
 	pbCom.Algorithm_LOGIC_REGRESSION_VL:  AlgorithmVLog,
+	pbCom.Algorithm_DNN_PADDLEFL_VL:      AlgorithmVDnn,
 }
 
 // TaskTypeListName the mapping of train task type name and value
@@ -80,16 +83,18 @@ var RegModeListValue = map[pbCom.RegMode]string{
 type FLInfo struct {
 	FileType  string // file type, only supports "csv"
 	Features  string // feature list
-	TotalRows int64 // total number of samples
+	TotalRows int64  // total number of samples
 }
 
 // ExecutorNode has access to samples with which to train models or to predict,
 //  and starts task that multi parties execute synchronically
 type ExecutorNode struct {
-	ID      []byte
-	Name    string
-	Address string // local host
-	RegTime int64  // node registering time
+	ID              []byte
+	Name            string
+	Address         string // local host
+	PaddleFLAddress string
+	PaddleFLRole    int
+	RegTime         int64 // node registering time
 }
 
 type ExecutorNodes []ExecutorNode

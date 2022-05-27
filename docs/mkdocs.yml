@@ -66,7 +66,7 @@ nav:
     - 线性回归 : 'projectcases/linear.md'
     - 逻辑回归: 'projectcases/logistic.md'
     # - 决策树: 'projectcases/decision-trees.md'
-    # - 神经网络: 'projectcases/dnn-paddlefl.md'
+    - 神经网络: 'projectcases/dnn-paddlefl.md'
   - 贡献指南: 'others/team.md'
   - 更多资料:
     - 开源版本: 'others/changelog.md'

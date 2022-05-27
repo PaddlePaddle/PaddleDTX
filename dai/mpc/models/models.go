@@ -14,6 +14,7 @@
 package models
 
 import (
+	"github.com/PaddlePaddle/PaddleDTX/dai/mpc/models/dnn_paddlefl_vl"
 	"github.com/PaddlePaddle/PaddleDTX/dai/mpc/models/linear_reg_vl"
 	"github.com/PaddlePaddle/PaddleDTX/dai/mpc/models/logic_reg_vl"
 	pbCom "github.com/PaddlePaddle/PaddleDTX/dai/protos/common"
@@ -57,11 +58,13 @@ type ResultHandler interface {
 // params are parameters for model
 func NewModel(id string, address string, algo pbCom.Algorithm,
 	params *pbCom.TrainModels, samplesFile []byte,
-	parties []string, rpc RpcHandler, rh ResultHandler) (Model, error) {
+	parties []string, paddleFLParams *pbCom.PaddleFLParams, rpc RpcHandler, rh ResultHandler) (Model, error) {
 
 	if pbCom.Algorithm_LINEAR_REGRESSION_VL == algo {
 		return linear_reg_vl.NewModel(id, address, params, samplesFile,
 			parties, rpc, rh)
+	} else if pbCom.Algorithm_DNN_PADDLEFL_VL == algo {
+		return dnn_paddlefl_vl.NewModel(id, address, params, samplesFile, parties, paddleFLParams, rpc, rh)
 	} else { // pbCom.Algorithm_LOGIC_REGRESSION_VL
 		return logic_reg_vl.NewModel(id, address, params, samplesFile,
 			parties, rpc, rh)

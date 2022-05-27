@@ -1,5 +1,5 @@
 #!/bin/sh
-VERSION=1.1
+VERSION=2.0
 mirrorAddr=registry.baidubce.com/paddledtx
 
 # build executor image

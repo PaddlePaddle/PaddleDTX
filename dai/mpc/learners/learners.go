@@ -14,6 +14,7 @@
 package learners
 
 import (
+	"github.com/PaddlePaddle/PaddleDTX/dai/mpc/learners/dnn_paddlefl_vl"
 	"github.com/PaddlePaddle/PaddleDTX/dai/mpc/learners/linear_reg_vl"
 	"github.com/PaddlePaddle/PaddleDTX/dai/mpc/learners/logic_reg_vl"
 	pbCom "github.com/PaddlePaddle/PaddleDTX/dai/protos/common"
@@ -73,10 +74,12 @@ type LiveEvaluator interface {
 // le is an LiveEvaluator, and LiveEvaluation should be performed by learner if it is assigned without nil
 func NewLearner(id string, address string, algo pbCom.Algorithm,
 	params *pbCom.TrainParams, samplesFile []byte,
-	parties []string, rpc RpcHandler, rh ResultHandler, le LiveEvaluator) (Learner, error) {
+	parties []string, paddleFLParams *pbCom.PaddleFLParams, rpc RpcHandler, rh ResultHandler, le LiveEvaluator) (Learner, error) {
 	if pbCom.Algorithm_LINEAR_REGRESSION_VL == algo {
 		return linear_reg_vl.NewLearner(id, address, params, samplesFile,
 			parties, rpc, rh, le)
+	} else if pbCom.Algorithm_DNN_PADDLEFL_VL == algo {
+		return dnn_paddlefl_vl.NewLearner(id, address, params, samplesFile, parties, paddleFLParams, rpc, rh)
 	} else { // pbCom.Algorithm_LOGIC_REGRESSION_VL
 		return logic_reg_vl.NewLearner(id, address, params, samplesFile,
 			parties, rpc, rh, le)
@@ -93,10 +96,12 @@ func NewLearner(id string, address string, algo pbCom.Algorithm,
 // params are parameters for training model
 func NewLearnerWithoutSamples(id string, address string, algo pbCom.Algorithm,
 	params *pbCom.TrainParams,
-	parties []string, rpc RpcHandler, rh ResultHandler) (Learner, error) {
+	parties []string, paddleFLParams *pbCom.PaddleFLParams, rpc RpcHandler, rh ResultHandler) (Learner, error) {
 	if pbCom.Algorithm_LINEAR_REGRESSION_VL == algo {
 		return linear_reg_vl.NewLearnerWithoutSamples(id, address, params,
 			parties, rpc, rh)
+	} else if pbCom.Algorithm_DNN_PADDLEFL_VL == algo {
+		panic("Algorithm_DNN_PADDLEFL_VL NewLearnerWithoutSamples")
 	} else { // pbCom.Algorithm_LOGIC_REGRESSION_VL
 		return logic_reg_vl.NewLearnerWithoutSamples(id, address, params,
 			parties, rpc, rh)

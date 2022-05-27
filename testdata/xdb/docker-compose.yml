@@ -2,7 +2,7 @@ version: '3'
 
 services:
   dataowner1:
-    image: registry.baidubce.com/paddledtx/xdb-dataowner:1.1
+    image: registry.baidubce.com/paddledtx/xdb-dataowner:2.0
     container_name: dataowner1.node.com
     networks:
       - blockchain_xchain_network
@@ -18,12 +18,14 @@ services:
         - ../../dai/mpc/testdata/vl:/home/mpc-data
 
   dataowner2:
-    image: registry.baidubce.com/paddledtx/xdb-dataowner:1.1
+    image: registry.baidubce.com/paddledtx/xdb-dataowner:2.0
     container_name: dataowner2.node.com
     networks:
       - blockchain_xchain_network
     ports:
       - 38102:80
+    depends_on:
+      - dataowner1
     volumes:
       - ./data2/conf:/home/conf
       - ./data2/keys:/home/keys
@@ -33,41 +35,58 @@ services:
       - ./data2/challenger:/home/data/challenger
       - ../../dai/mpc/testdata/vl:/home/mpc-data
 
+  dataowner3:
+    image: registry.baidubce.com/paddledtx/xdb-dataowner:2.0
+    container_name: dataowner3.node.com
+    networks:
+      - blockchain_xchain_network
+    depends_on:
+      - dataowner2
+    ports:
+      - 38103:80
+    volumes:
+      - ./data3/conf:/home/conf
+      - ./data3/keys:/home/keys
+      - ./data3/ukeys:/home/ukeys
+      - ./data3/authkeys:/home/authkeys
+      - ./data3/logs:/home/logs
+      - ../../dai/mpc/testdata/vl:/home/mpc-data
+
   storage1:
-    image: registry.baidubce.com/paddledtx/xdb-storage:1.1
+    image: registry.baidubce.com/paddledtx/xdb-storage:2.0
     container_name: storage1.node.com
     networks:
       - blockchain_xchain_network
     ports:
-        - 38103:80
+        - 38201:80
     volumes:
         - ./storage1/conf:/home/conf
         - ./storage1/keys:/home/keys
         - ./storage1/logs:/home/logs
 
   storage2:
-    image: registry.baidubce.com/paddledtx/xdb-storage:1.1
+    image: registry.baidubce.com/paddledtx/xdb-storage:2.0
     container_name: storage2.node.com
     depends_on:
       - storage1
     networks:
       - blockchain_xchain_network
     ports:
-        - 38104:80
+        - 38202:80
     volumes:
         - ./storage2/conf:/home/conf
         - ./storage2/keys:/home/keys
         - ./storage2/logs:/home/logs
 
   storage3:
-    image: registry.baidubce.com/paddledtx/xdb-storage:1.1
+    image: registry.baidubce.com/paddledtx/xdb-storage:2.0
     container_name: storage3.node.com
     depends_on:
       - storage2
     networks:
       - blockchain_xchain_network
     ports:
-        - 38105:80
+        - 38203:80
     volumes:
         - ./storage3/conf:/home/conf
         - ./storage3/keys:/home/keys

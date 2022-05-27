@@ -33,6 +33,8 @@ type Blockchain interface {
 	// executor operation
 	RegisterExecutorNode(opt *blockchain.AddNodeOptions) error
 	GetExecutorNodeByID(id []byte) (blockchain.ExecutorNode, error)
+	ListExecutorNodes() (blockchain.ExecutorNodes, error)
+
 	// task operation
 	ListTask(opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error)
 	PublishTask(opt *blockchain.PublishFLTaskOptions) error
@@ -55,6 +57,8 @@ type Blockchain interface {
 
 type Node struct {
 	peer.Local
+	PaddleFLAddress string
+	PaddleFLRole    int
 }
 
 // Register registers local node to blockchain
@@ -79,10 +83,12 @@ func (n *Node) autoRegister(chain Blockchain) error {
 	timestamp := time.Now().UnixNano()
 	opt := blockchain.AddNodeOptions{
 		Node: blockchain.ExecutorNode{
-			ID:      pubkey[:],
-			Name:    n.Name,
-			Address: n.Address,
-			RegTime: timestamp,
+			ID:              pubkey[:],
+			Name:            n.Name,
+			Address:         n.Address,
+			PaddleFLAddress: n.PaddleFLAddress,
+			PaddleFLRole:    n.PaddleFLRole,
+			RegTime:         timestamp,
 		},
 	}
 	// sign node info

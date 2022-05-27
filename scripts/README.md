@@ -4,9 +4,17 @@
 Usage: ./network_up.sh { start | stop | restart }
 
 ### 1.1 服务启动
+- s $storageModeType，底层存储引擎，本地存储为 local，IPFS 为 ipfs，默认 local
 ```shell
-./network_up.sh start
+./network_up.sh start -s $storageModeType
 ```
+
+-p 如果需要使用 PaddleFL 的能力, 需要启动 PaddleFL 的容器, 默认为不启动
+```shell
+./network_up.sh start -p true
+```
+
+
 
 ### 1.2 服务停止
 ```shell
@@ -14,7 +22,7 @@ Usage: ./network_up.sh { start | stop | restart }
 ```
 ### 1.3 服务重启
 ```shell
-./network_up.sh restart
+./network_up.sh restart -s $storageModeType
 ```
 
 ## 二、任务发布和执行 [./paddledtx_test.sh]

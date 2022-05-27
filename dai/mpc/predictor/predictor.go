@@ -100,7 +100,9 @@ func (p *Predictor) NewModel(req *pbCom.StartTaskRequest) error {
 	params := req.GetParams().GetModelParams()
 	file := req.GetFile()
 	hosts := req.GetHosts()
-	model, err := models.NewModel(taskId, p.address, algo, params, file, hosts, p.rpcHandler, p)
+	paddleFLParams := req.GetPaddleFLParams()
+
+	model, err := models.NewModel(taskId, p.address, algo, params, file, hosts, paddleFLParams, p.rpcHandler, p)
 	if err != nil {
 		return err
 	}
@@ -189,7 +191,7 @@ func (p *Predictor) SaveResult(result *pbCom.PredictTaskResult) {
 // or a task from Evaluator or LiveEvaluator.
 // Return true together with ValidateRequest if the prediction task is from Evaluator or LiveEvaluator, otherwise return false.
 func (p *Predictor) checkOrigin(result *pbCom.PredictTaskResult) (fromEvaluator bool, vreq *pb.ValidateRequest) {
-	// If the prediction is from Evaluator, the TaskID conforms such form like `{uuid}_{k}_predict_Eva`, 
+	// If the prediction is from Evaluator, the TaskID conforms such form like `{uuid}_{k}_predict_Eva`,
 	//  and the number of slices should be 4.
 	// And if the prediction is from LiveEvaluator, the TaskID conforms such form like `{uuid}_{k}_predict_LEv` (also couble be `{uuid}_{k}_train_Eva_0_predict_LEv`),
 	//  and the number of slices should be 4 (or 7).

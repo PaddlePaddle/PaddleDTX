@@ -24,10 +24,18 @@ TMP_CONF_PATH="testdatatmp"
 # PaddleDTX服务启动需要安装的智能合约名称
 CONTRACT_NAME=paddlempc
 CONTRACT_ACCOUNT=1111111111111112
+
 # User's blockchain account address, used invoke contract 
 # 用户安装合约所使用的区块链账户地址
 ADDRESS_PATH=../$TMP_CONF_PATH/blockchain/user
 TRANSFER_AMOUNT=110009887797
+
+#The storage mode used by the storage node, 
+#currently supports local file system (denoted with `local`) and IPFS (denoted with `ipfs`).
+# 底层存储引擎，本地存储（local）或者IPFS（ipfs）
+STORAGE_MODE_TYPE="local"
+
+PADDLEFL="none"
 
 function start() {
   # 1. Standardize Conf
@@ -51,6 +59,10 @@ function start() {
   # 5. Start PaddleDTX
   # 5. 启动多方安全计算网络
   startPaddleDTX
+
+  if [ $PADDLEFL = 'true' ]; then
+    startPaddleFL
+  fi
 }
 
 function stop() {
@@ -62,6 +74,13 @@ function stop() {
   # 停止去中心化存储网络
   print_blue "==========> Stop decentralized storage network ..."
   docker-compose -f ../$TMP_CONF_PATH/xdb/docker-compose.yml down
+  # Stop IPFS network
+  # 停止IPFS网络
+  print_blue "==========> Stop IPFS network ..."
+  docker-compose -f ../$TMP_CONF_PATH/ipfs/docker-compose.yml down
+  # 停止 PaddleFL
+  print_blue "==========> Stop executor paddlefl network ..."
+  docker-compose -f ../$TMP_CONF_PATH/executor/docker-compose-paddlefl.yml down
   # Stop xchain network
   # 停止区块链网络
   print_blue "==========> Stop xchain network ..."
@@ -107,11 +126,17 @@ function startXchain() {
 # startXdb start Decentralized storage network with docker compose
 # 通过docker-compose启动去中心化存储网络
 function startXdb() {
+  if [ $STORAGE_MODE_TYPE = "ipfs" ]; then
+    print_blue "==========> IPFS network starts ..."
+    docker-compose -f ../$TMP_CONF_PATH/ipfs/docker-compose.yml up -d
+    sleep 6
+  fi
+
   print_blue "==========> Decentralized storage network start ..."
   docker-compose -f ../$TMP_CONF_PATH/xdb/docker-compose.yml up -d
   sleep 6
 
-  xdbContainers="dataowner1.node.com dataowner2.node.com storage1.node.com storage2.node.com storage3.node.com"
+  xdbContainers="dataowner1.node.com dataowner2.node.com dataowner3.node.com storage1.node.com storage2.node.com storage3.node.com"
   checkContainerStatus "$xdbContainers" "Decentralized storage network"
   print_green "==========> Decentralized storage network starts successfully !"
 }
@@ -123,10 +148,24 @@ function startPaddleDTX() {
   docker-compose -f ../$TMP_CONF_PATH/executor/docker-compose.yml up -d
   sleep 6
 
-  executorContainers="executor1.node.com executor2.node.com"
+  executorContainers="executor1.node.com executor2.node.com executor3.node.com"
   checkContainerStatus "$executorContainers" "PaddleDTX"
   print_green "========================================================="
   print_green "          PaddleDTX starts successfully !                "
+  print_green "========================================================="
+}
+
+# startPaddleFL start PaddleFL related to PaddleDTX with docker compose
+# 通过docker-compose启动多网安全计算网络
+function startPaddleFL() {
+  print_blue "==========> PaddleFL network start ..."
+  docker-compose -f ../$TMP_CONF_PATH/executor/docker-compose-paddlefl.yml up -d
+  sleep 6
+
+  executorContainers="paddlefl-env1 paddlefl-env2 paddlefl-env3"
+  checkContainerStatus "$executorContainers" "PaddleFL"
+  print_green "========================================================="
+  print_green "          PaddleFL starts successfully !                "
   print_green "========================================================="
 }
 
@@ -148,8 +187,9 @@ function compileContract() {
       -v $(dirname ${PWD}):/workspace \
       -v ~/.ssh:/root/.ssh \
       -w /workspace \
+      -e GONOPROXY=**.baidu.com** \
       -e GONOSUMDB=* \
-      -e GOPROXY=https://goproxy.cn \
+      -e GOPROXY=https://goproxy.baidu-int.com \
       -e GO111MODULE=on \
       golang:1.13.4 sh -c "cd dai && go build -o ../$TMP_CONF_PATH/blockchain/contract/$CONTRACT_NAME ./blockchain/xchain/contract"
   
@@ -239,6 +279,23 @@ function print_red() {
 }
 
 action=$1
+shift
+while getopts "s:p:" opt; do
+  case "$opt" in
+  s) 
+    if [ $OPTARG = "ipfs" ]; then
+      STORAGE_MODE_TYPE=$OPTARG
+    fi
+    ;;
+  p)
+    if [ $OPTARG = "true" ]; then
+      PADDLEFL="true"
+    fi
+    ;;
+  esac
+done
+
+
 case $action in
 start)
   start $@
