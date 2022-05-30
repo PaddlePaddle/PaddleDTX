@@ -14,8 +14,8 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 	$ sh build_image.sh
 	```
 	产出为数据存储节点和数据持有节点两个镜像，镜像名和版本号分别为：
-	* registry.baidubce.com/paddledtx/xdb-storage:1.1
-	* registry.baidubce.com/paddledtx/xdb-dataowner:1.1
+	* registry.baidubce.com/paddledtx/xdb-storage:2.0
+	* registry.baidubce.com/paddledtx/xdb-dataowner:2.0
 
 	实际上他们是使用不同镜像名的同一个镜像，可以通过修改 *build_image.sh* 脚本来修改镜像名和版本号。
 
@@ -24,7 +24,7 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 	$ cd PaddleDTX/dai
 	$ sh build_image.sh
 	```
-	产出镜像名和版本号为 *registry.baidubce.com/paddledtx/paddledtx-dai:1.1* ，可以通过修改 *build_image.sh* 脚本来修改镜像名和版本号。
+	产出镜像名和版本号为 *registry.baidubce.com/paddledtx/paddledtx-dai:2.0* ，可以通过修改 *build_image.sh* 脚本来修改镜像名和版本号。
 
 3. 编译合约
 	``` shell
