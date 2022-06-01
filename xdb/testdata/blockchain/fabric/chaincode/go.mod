@@ -4,6 +4,6 @@ go 1.13
 
 require (
 	github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20220524015532-4fc7a22aac82
-	github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20220531032728-2da65f3661ca
+	github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20220601021329-c4d74276050
 	github.com/hyperledger/fabric v1.4.4
 )
