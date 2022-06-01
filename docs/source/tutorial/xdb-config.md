@@ -159,12 +159,26 @@ publicAddress = "10.144.94.17:8122"
         userName = "Admin"
         orgName = "org1"
 
-# The storage mode used by the storage node, currently only supports local file system.
+# Prover answers challenges from DataOwner to prove that the node is storing the slices
+[storage.prover]
+    # local storage path to keep temporary data
+    localRoot = "/root/xdb/data/prove"
+
+# The storage mode used by the storage node, currently supports local file system and IPFS.
 [storage.mode]
+    # Denotes what mode you choose, `local` or `ipfs`. 
     type = "local"
     [storage.mode.local]
         # Location of file fragments
         rootPath = "/root/xdb/data/slices"
+    [storage.mode.ipfs]
+        # Denotes peers in IPFS cluster
+        hosts = [
+            "127.0.0.1:5001",
+            "127.0.0.1:5002"
+        ]
+        # The timeout for requesting IPFS, in milliseconds
+        timeout = 5000
 
 # The monitor will query new tasks in blockchain regularly, and trigger the task handler's operations
 [storage.monitor]
@@ -190,8 +204,9 @@ path = "./logs"
 !!! note "配置说明"
 
     1. storage.blockchain 定义了节点操作区块链网络所需的配置，当前支持Xchain、Fabric网络；
-    2. storage.mode 用于指定存储节点的存储方式，当前仅支持本地文件系统方式存储，后续持续支持Ipfs、Nas等；
-    3. storage.monitor 用于存储节点开启心跳检测、配置文件清理时间间隔等；
+    2. storage.prover 用于指定挑战应答时保存临时数据的本地存储路径；
+    3. storage.mode 用于指定存储节点的存储方式，当前支持本地文件系统和ipfs方式存储；
+    4. storage.monitor 用于存储节点开启心跳检测、配置文件清理时间间隔等；
 
 
 <br>

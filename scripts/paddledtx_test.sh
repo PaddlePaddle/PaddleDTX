@@ -329,7 +329,7 @@ function uploadPaddleFLSampleFile() {
 
   files="$data1FileId,$data2FileId,$data3FileId"
 
-  printf "\033[0;32m%s\033[0m\n" "======> Vertical train sample files: $files"
+  printf "\033[0;32m%s\033[0m\n" "======> PaddleFL train sample files: $files"
   echo "PaddleFL train sample files: $files" >> $UPLOAD_FILES
 }
 
@@ -741,8 +741,8 @@ function printHelp() {
   echo "      - 'start_vl_linear_predict' - start vertical linear prediction task"
   echo "      - 'start_vl_logistic_train' - start vertical logistic training task"
   echo "      - 'start_vl_logistic_predict' - start vertical logistic prediction task"
-  echo "      - 'start_vl_dnn_train' - start vertical logistic training task"
-  echo "      - 'start_vl_dnn_predict' - start vertical logistic prediction task"
+  echo "      - 'start_vl_dnn_train' - start vertical paddlefl-dnn training task"
+  echo "      - 'start_vl_dnn_predict' - start vertical paddlefl-dnn prediction task"
   echo "      - 'tasklist' - list task in PaddleDTX"
   echo "      - 'gettaskbyid' - get task by id from PaddleDTX"
   echo "    -f <sample files> - linear or logistic sample files"

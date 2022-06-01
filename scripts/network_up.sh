@@ -80,7 +80,7 @@ function stop() {
   docker-compose -f ../$TMP_CONF_PATH/ipfs/docker-compose.yml down
   # 停止 PaddleFL
   print_blue "==========> Stop executor paddlefl network ..."
-  docker-compose -f ../$TMP_CONF_PATH/executor/docker-compose-paddlefl.yml down
+  docker-compose -p paddlefl -f ../$TMP_CONF_PATH/executor/docker-compose-paddlefl.yml down
   # Stop xchain network
   # 停止区块链网络
   print_blue "==========> Stop xchain network ..."
@@ -130,6 +130,8 @@ function startXdb() {
     print_blue "==========> IPFS network starts ..."
     docker-compose -f ../$TMP_CONF_PATH/ipfs/docker-compose.yml up -d
     sleep 6
+
+    checkContainerStatus "ipfs_host_0" "IPFS storage network"
   fi
 
   print_blue "==========> Decentralized storage network start ..."
@@ -159,7 +161,7 @@ function startPaddleDTX() {
 # 通过docker-compose启动多网安全计算网络
 function startPaddleFL() {
   print_blue "==========> PaddleFL network start ..."
-  docker-compose -f ../$TMP_CONF_PATH/executor/docker-compose-paddlefl.yml up -d
+  docker-compose -p paddlefl -f ../$TMP_CONF_PATH/executor/docker-compose-paddlefl.yml up -d
   sleep 6
 
   executorContainers="paddlefl-env1 paddlefl-env2 paddlefl-env3"

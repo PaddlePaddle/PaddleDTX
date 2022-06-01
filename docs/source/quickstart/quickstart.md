@@ -15,9 +15,13 @@
 $ git clone git@github.com:PaddlePaddle/PaddleDTX.git
 $ cd PaddleDTX/scripts
 $ sh network_up.sh start
-$ # 支持三方的DNN 算法，需要启动 PaddleFL 的节点，执行如下命令代替上述命令
-$ # sh network_up.sh start -p true
+
+# 支持启动基于ipfs存储网络的DAI，命令如下：
+$ sh network_up.sh start -s ipfs
+# 支持三方的DNN 算法，需要启动 PaddleFL 的节点，执行如下命令代替上述命令：
+$ sh network_up.sh start -p true
 ```
+
 
 使用脚本也可以快速销毁网络：
 ```
@@ -30,32 +34,38 @@ $ sh network_up.sh stop
 
     我们推荐用户采用Linux环境安装，若采用Mac启动，需修改docker运行资源限制，设置较高的Cpus（>4）、Memory（>4GB）、Swap（>4GB）。
 
-    网络启动成功后，可通过docker ps查看脚本启动的服务，共包含3个区块链节点、2个数据持有节点、3个存储节点、2个可信计算节点。
+    网络启动成功后，可通过docker ps查看脚本启动的服务，共包含3个区块链节点、3个数据持有节点、3个存储节点、3个可信计算节点，如果用户采用`sh network_up.sh start -s ipfs -p true`命令启动，则会再启动一个ipfs节点和3个paddlefl节点。
 
     如果用户无需进行模型训练，可以选择只启动去中心化存储网络（Xuperdb），参考 [XuperDB 服务启动和命令使用说明](https://github.com/PaddlePaddle/PaddleDTX/tree/master/xdb/scripts)：
     ``` shell
 
         # 启动基于Xchain的Xuperdb
         $ cd PaddleDTX/xdb/scripts
-        $ sh network_up.sh start
+        $ sh network_up.sh start -b xchain
 
         # 启动基于Fabric网络的Xuperdb
         $ cd PaddleDTX/xdb/scripts
-        $ sh network_up.sh start fabric
+        $ sh network_up.sh start -b fabric
+
+        # 启动采用ipfs存储网络的Xuperdb
+        $ cd PaddleDTX/xdb/scripts
+        $ sh network_up.sh start -b xchain -s ipfs 
     ```
 
 ### 1.3 任务发布和执行
 ./paddledtx_test.sh脚本提供了多种快捷操作，方便用户文件上传、下载、发布训练和预测任务等，快捷命令如下：
 ``` shell
-Usage: 
+Usage:
   ./paddledtx_test.sh <mode> [-f <sample files>] [-m <model task id>] [-i <task id>]
     <mode> - one of 'upload_sample_files', 'start_vl_linear_train', 'start_vl_linear_predict', 'start_vl_logistic_train'
-         'start_vl_logistic_predict', 'tasklist', 'gettaskbyid'
+         'start_vl_logistic_predict','start_vl_dnn_train', 'start_vl_dnn_predict', 'tasklist', 'gettaskbyid'
       - 'upload_sample_files' - save linear and logistic sample files into XuperDB
       - 'start_vl_linear_train' - start vertical linear training task
       - 'start_vl_linear_predict' - start vertical linear prediction task
       - 'start_vl_logistic_train' - start vertical logistic training task
       - 'start_vl_logistic_predict' - start vertical logistic prediction task
+      - 'start_vl_dnn_train' - start vertical paddlefl-dnn training task
+      - 'start_vl_dnn_predict' - start vertical paddlefl-dnn prediction task
       - 'tasklist' - list task in PaddleDTX
       - 'gettaskbyid' - get task by id from PaddleDTX
     -f <sample files> - linear or logistic sample files
@@ -71,6 +81,8 @@ Usage:
   ./paddledtx_test.sh start_vl_linear_predict -f cb40b8ad-db08-447f-a9d9-628b69d01660,2a8a45ab-3c5d-482e-b945-bc45b7e28bf9 -m 9b3ff4be-bfcd-4520-a23b-4aa6ea4d59f1
   ./paddledtx_test.sh start_vl_logistic_train -f b31f53a5-0f8b-4f57-a7ea-956f1c7f7991,f3dddade-1f52-4b9e-9253-835e9fc81901
   ./paddledtx_test.sh start_vl_logistic_predict -f 1e97d684-722f-4798-aaf0-dffe955a94ba,b51a927c-f73e-4b8f-a81c-491b9e938b4d -m d8c8865c-a837-41fd-802b-8bd754b648eb
+  ./paddledtx_test.sh start_vl_dnn_train -f 34cf2ee3-81b2-4865-907d-a9eab3c5b384,9dc7e0b7-18dd-4d5a-a3a1-6dace6d04fc8,3eaee2ea-4680-4b0b-bde3-ab4a4949159e
+  ./paddledtx_test.sh start_vl_dnn_predict -f 25ec6fd0-904e-4737-9bcc-c1cc11df1170,4442acae-90a2-4b92-b05f-cf1503c9d55e,73176b51-07f1-4f50-82c8-2d9d8908849b -m d8c8865c-a837-41fd-802b-8bd754b648eb
   ./paddledtx_test.sh gettaskbyid -i 9b3ff4be-bfcd-4520-a23b-4aa6ea4d59f1
   ./paddledtx_test.sh tasklist
 ```
@@ -78,12 +90,12 @@ Usage:
 
     用户可通过cat ./paddledtx_test.sh查看脚本默认创建的文件存储命名空间、上传文件列表等，如有额外需求，可自定义配置；
 
-    脚本执行的 start_vl_linear_train、start_vl_linear_predict、start_vl_logistic_train、start_vl_logistic_train 命令，本质为用户展示了波士顿房价预测与鸢尾花分类的项目案例，参考 [项目案例](../projectcases/linear.md)
+    脚本执行的 start_vl_linear_train、start_vl_linear_predict、start_vl_logistic_train、start_vl_logistic_train、start_vl_dnn_train、start_vl_dnn_predic 命令，本质为用户展示了多元线性回归、多元逻辑回归和神经网络算法的项目案例，参考 [项目案例](../projectcases/linear.md)
 
 1. 上传训练及预测样本文件
    ```shell
-   # upload_sample_files会为数据持有节点A/B创建数据存储的命名空间，并上传任务训练和预测所需的样本文件
-   # 该命令共上传了8个文件，包括数据持有方A/B发布纵向线性回归、纵向逻辑回归训练和预测任务所需的文件
+   # upload_sample_files会为数据持有节点A/B/C创建数据存储的命名空间，并上传任务训练和预测所需的样本文件
+   # 该命令共上传了14个文件，包括数据持有方A/B发布纵向线性回归、纵向逻辑回归训练和预测任务所需的8个样本文件，数据持有方A/B/C发布纵向深度神经网络训练和预测任务所需的6个样本文件
    ./paddledtx_test.sh upload_sample_files
 
    # 执行后，命令返回：
@@ -91,6 +103,8 @@ Usage:
    # Vertical linear prediction sample files：纵向线性预测任务所需样本ID
    # Vertical logistic train sample files：纵向逻辑回归训练任务所需样本ID
    # Vertical logistic prediction sample files：纵向逻辑回归预测任务所需样本ID
+   # PaddleFL train sample files：纵向深度神经网络训练任务所需样本ID
+   # PaddleFL prediction sample files：纵向深度神经网络预测任务所需样本ID
    ```
 
 2. 启动纵向线性回归训练任务，$vlLinTrainfiles 取值为 **步骤1** 获取到的 Vertical linear train sample files

@@ -43,6 +43,12 @@ listenAddress = ":8184"
 # If your network mode is 'host', it is the machine's ip and the port in [server].listenAddress in before section.
 publicAddress = "10.144.94.17:8184"
 
+# PaddleFLAddress is the endpoint of the container which has a runninng environment of PaddleFL.
+# Containers belong to different executors constitute a mpc network
+paddleFLAddress = "paddlefl-env1:38302"
+# PaddleFLRole is the role of the container in paddlefl mpc network.
+paddleFLRole = 0
+
 # The private key of the trusted computing server.
 # Different key express different identity.
 # Only need to choose one from 'privateKey' and 'keyPath', and if both exist, 'privateKey' takes precedence over 'keyPath'
@@ -132,7 +138,7 @@ path = "./logs"
 
 !!! note "配置说明"
 
-    1. 任务执行节点中配置了节点启动所需监听的端口、身份等信息；
+    1. 任务执行节点中配置了节点启动所需监听的端口、身份等信息，paddleFLAddress定义了运行神经网络算法所需的容器地址；
     2. executor.mode 用于指定节点的计算方式，支持代理和自主计算模式，代理模式用于数据持有节点将样本数据授权给任务执行节点进行代理计算，而自主计算模式则适用于计算节点是数据持有节点的客户端场景；
     3. executor.storage 定义了模型、评估结果、预测结果存储的路径，其中预测结果存储支持加密存储到去中心化存储网络；
     4. executor.blockchain 定义了任务执行节点操作的区块链网络配置，当前只支持Xchain网络，后续会支持Fabric；

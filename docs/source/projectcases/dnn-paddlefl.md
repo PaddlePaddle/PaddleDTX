@@ -24,17 +24,19 @@
 Usage:
   ./paddledtx_test.sh <mode> [-f <sample files>] [-m <model task id>] [-i <task id>]
     <mode> - one of 'upload_sample_files', 'start_vl_linear_train', 'start_vl_linear_predict', 'start_vl_logistic_train'
-         'start_vl_logistic_predict', 'tasklist', 'gettaskbyid'
+         'start_vl_logistic_predict','start_vl_dnn_train', 'start_vl_dnn_predict', 'tasklist', 'gettaskbyid'
       - 'upload_sample_files' - save linear and logistic sample files into XuperDB
       - 'start_vl_linear_train' - start vertical linear training task
       - 'start_vl_linear_predict' - start vertical linear prediction task
       - 'start_vl_logistic_train' - start vertical logistic training task
       - 'start_vl_logistic_predict' - start vertical logistic prediction task
-      - 'start_vl_dnn_train' - start vertical logistic training task
-      - 'start_vl_dnn_predict' - start vertical logistic prediction task
+      - 'start_vl_dnn_train' - start vertical paddlefl-dnn training task
+      - 'start_vl_dnn_predict' - start vertical paddlefl-dnn prediction task
       - 'tasklist' - list task in PaddleDTX
       - 'gettaskbyid' - get task by id from PaddleDTX
     -f <sample files> - linear or logistic sample files
+    -e <model evaluation> - whether to perform model evaluation on the training task, default false, if select true, the evaluate rule is 'Cross Validation'
+    -l <live model evaluation> - whether to perform live model evaluation, default false
     -m <model task id> - finished train task ID from which obtain the model, required for predict task
     -i <task id> - training or prediction task id
 
@@ -46,7 +48,7 @@ Usage:
   ./paddledtx_test.sh start_vl_logistic_train -f b31f53a5-0f8b-4f57-a7ea-956f1c7f7991,f3dddade-1f52-4b9e-9253-835e9fc81901
   ./paddledtx_test.sh start_vl_logistic_predict -f 1e97d684-722f-4798-aaf0-dffe955a94ba,b51a927c-f73e-4b8f-a81c-491b9e938b4d -m d8c8865c-a837-41fd-802b-8bd754b648eb
   ./paddledtx_test.sh start_vl_dnn_train -f 34cf2ee3-81b2-4865-907d-a9eab3c5b384,9dc7e0b7-18dd-4d5a-a3a1-6dace6d04fc8,3eaee2ea-4680-4b0b-bde3-ab4a4949159e
-  ./paddledtx_test.sh start_vl_dnn_predict -f c21b367f-2cb8-4859-87d8-18c52d397b13,043b9f55-68f6-4587-be8b-2340ea4432c2,b36442b6-ea3d-4530-910a-ec44291cd66c -m 91d9c0b7-996b-4954-86e8-95048e91a3b8
+  ./paddledtx_test.sh start_vl_dnn_predict -f 25ec6fd0-904e-4737-9bcc-c1cc11df1170,4442acae-90a2-4b92-b05f-cf1503c9d55e,73176b51-07f1-4f50-82c8-2d9d8908849b -m d8c8865c-a837-41fd-802b-8bd754b648eb
   ./paddledtx_test.sh gettaskbyid -i 9b3ff4be-bfcd-4520-a23b-4aa6ea4d59f1
   ./paddledtx_test.sh tasklist
 ```

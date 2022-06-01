@@ -131,10 +131,19 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		        userName = "Admin"
 		        orgName = "org1"
 
+		[storage.prover]
+			localRoot = "/root/xdb/data/prove"
+
 		[storage.mode]
-		    type = "local"
-		    [storage.mode.local]
-		        rootPath = "./slices"
+			type = "local"
+			[storage.mode.local]
+				rootPath = "/root/xdb/data/slices"
+			[storage.mode.ipfs]
+				hosts = [
+					"127.0.0.1:5001",
+					"127.0.0.1:5002"
+				]
+				timeout = 5000
 
 		[storage.monitor]
 		    challengingSwitch = "on"
@@ -145,7 +154,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		level = "debug"
 		path = "./logs"
 		```
-		其中，listenAddress和publicAddress 指定服务监听的地址及对外暴露的地址，blockchain配置中使用区块链网络部署时创建的账户助记词、合约账户及合约名，rootPath指定文件存储的本地路径。
+		其中，listenAddress和publicAddress 指定服务监听的地址及对外暴露的地址，blockchain配置中指定了使用区块链网络部署时创建的账户助记词、合约账户及合约名，storage.mode定义了存储节点采取的存储方式，支持本地文件系统和ipfs方式。
 
 		启动服务：
 		```
@@ -246,6 +255,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	请妥善保存您创建的公私钥对，在后续的配置及命令行使用时您将会频繁的用到它。
 	!!! note ""
 		注意: 任务发布后时，任务执行节点会向数据持有节点发起文件授权申请，数据持有节点可通过或拒绝样本文件授权申请。
+		当前开源的多元线性回归、多元逻辑回归算法支持两个任务执行节点，神经网络算法需要三个任务执行节点，如果需要使用神经网络，请部署3个任务执行节点。
 
 	1. 准备两个任务执行节点的配置
 		```
@@ -261,6 +271,10 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 			# executor1
 			listenAddress = ":8184"
 			publicAddress = "127.0.0.1:8184"
+			#定义PaddleFL运行所需的容器地址
+			paddleFLAddress = "paddlefl-env1:38302"
+			paddleFLRole = 0
+
 			# genkey创建的私钥
 			keyPath = "./keys"
 			
@@ -293,6 +307,9 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 			# executor2
 			listenAddress = ":8185"
 			publicAddress = "127.0.0.1:8185"
+			#定义PaddleFL运行所需的容器地址
+			paddleFLAddress = "paddlefl-env1:38303"
+			paddleFLRole = 2
 			# genkey创建的私钥
 			keyPath = "./keys"
 
