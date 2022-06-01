@@ -22,7 +22,7 @@ XuperDB 具备高安全、高可用、可审计的特点：
 ## 3. 架构设计
 XuperDB 系统架构如下图所示：
 
-<img src='../../_static/xdb.png' width = "100%" height = "100%" align="middle"/>
+<img src='../../_static/xdb.png' width = "80%" height = "80%" align="middle"/>
 
 XuperDB 网络由三类节点构成：
 

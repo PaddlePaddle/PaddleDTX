@@ -10,8 +10,8 @@
 2. 服务启动：
     ```
     cd docs
-    mkdoc server
+    mkdocs serve
     ```
 
-3. View the site on [`localhost:8000`](https://localhost:8000).
+3. View the site on [`localhost:8000`](http://localhost:8000).
 

@@ -90,7 +90,7 @@ Usage:
 
     用户可通过cat ./paddledtx_test.sh查看脚本默认创建的文件存储命名空间、上传文件列表等，如有额外需求，可自定义配置；
 
-    脚本执行的 start_vl_linear_train、start_vl_linear_predict、start_vl_logistic_train、start_vl_logistic_train、start_vl_dnn_train、start_vl_dnn_predic 命令，本质为用户展示了多元线性回归、多元逻辑回归和神经网络算法的项目案例，参考 [项目案例](../projectcases/linear.md)
+    脚本执行的 start_vl_linear_train、start_vl_linear_predict、start_vl_logistic_train、start_vl_logistic_predict、start_vl_dnn_train、start_vl_dnn_predic 命令，本质为用户展示了多元线性回归、多元逻辑回归和神经网络算法的项目案例，参考 [项目案例](../projectcases/linear.md)
 
 1. 上传训练及预测样本文件
    ```shell
