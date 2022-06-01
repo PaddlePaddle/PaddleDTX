@@ -31,7 +31,7 @@
     <div class="card-holder container">
         <div class="card rocket container">
             <p class="introtitle">应用案例</p>
-            <p class="introcontent">通过测试案例可以评估模型训练、预测的效果，PaddleDTX提供了基于波士顿房价预测的线性回归算法和基于鸢尾花的逻辑回归算法。</p>
+            <p class="introcontent">通过测试案例可以评估模型训练、预测的效果，PaddleDTX提供了基于波士顿房价预测的线性回归、神经网络算法和基于鸢尾花的逻辑回归算法。</p>
             <p class="introdetails"><b><a href="./projectcases/linear">查看详情</a></b></p>
         </div>
     </div>

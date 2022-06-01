@@ -27,12 +27,12 @@ The model is based on multivariate linear regression model. It is continuously d
 The closer to 1, the greater the possibility it is the specified value. The training process is to look for optimal coefficients &theta; by iteration to ensure errors on training samples is as small as possible. 
 
 ## Vertical Federated Learning Algorithms
-The project currently supported two-party vertical federated learning protocol. 
+The project currently implemented two-party vertical federated learning protocol. 
 In training process, each party calculates partial gradient and cost using own samples. Intermediate parameters are exchanged and integrated to obtain each party's model without leaking any data confidentiality.
 In prediction process, each party calculate local result using own model and deduce final result by the sum of all partial results.
 
 Two parties' sample numbers in training or prediction process may be different.
-Samples need to be aligned by ID list of each party. Please referr to [psi](./core/machine_learning/linear_regression/gradient_descent/mpc_vertical/psi.go) for more details about sample alignment.  
+Samples need to be aligned by ID list of each party. Please refer to [psi](./core/machine_learning/linear_regression/gradient_descent/mpc_vertical/psi.go) for more details about sample alignment.  
 
 The vertical federated learning steps of linear and logistic regression are shown as follows, suppose sample alignment has already been finished:
 

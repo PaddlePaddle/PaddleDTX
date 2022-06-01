@@ -24,9 +24,11 @@ SMPC是一个支持多个学习过程并行运行的框架，会陆续集成更�
 ![Image text](./images/architecture.png)
 
 ## 二、纵向联邦学习
-PaddleDTX 开源部分目前支持两方的纵向联邦学习算法，包括多元线性回归和多元逻辑回归。算法具体原理和实现参见 [crypto/ml](./crypto/core/machine_learning)，未来将支持更丰富的两方纵向联邦学习算法、多方的纵向联邦学习和横向联邦学习算法。
+PaddleDTX 开源部分目前支持纵向联邦学习算法，包括两方的多元线性回归和多元逻辑回归、三方的神经网络。两方纵向联邦学习算法具体原理和实现参见 [crypto/ml](./crypto/core/machine_learning)。
+神经网络算法实现依赖了 [PaddleFL 框架](https://github.com/PaddlePaddle/PaddleFL) ，可以使用 PaddleFL 提供的所有神经网络算法模型。
+PaddleDTX 未来将支持更丰富的纵向联邦学习和横向联邦学习算法。
 
-纵向联邦训练和预测步骤如下：
+以两方为例，纵向联邦训练和预测步骤如下：
 
 ![Image text](./images/vertical_learning.png)
 

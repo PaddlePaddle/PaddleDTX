@@ -24,9 +24,12 @@ Currently, XuperChain is the only blockchain framework that PaddleDTX supported.
 ![Image text](./images/architecture.png)
 
 ## Vertical Federated Learning
-The open source version of PaddleDTX supports two-party vertical federated learning(VFL) algorithms, including Linear Regression and Logistic Regression, more algorithms such as two-party Neural Network will be open sourced soon, along with multi-party VFL and multi-party HFL(horizontal federated learning) algorithms. Please refer to [crypto/ml](./crypto/core/machine_learning) for more about background and implementation of these two algorithms. 
+The open source version of PaddleDTX supports vertical federated learning(VFL) algorithms, including two-party Linear Regression, two-party Logistic Regression and three-party DNN(Deep Neural Networks). 
+Please refer to [crypto/ml](./crypto/core/machine_learning) for more about background and implementation of two-party VFL algorithms. 
+The DNN implementation relies on the [PaddleFL](https://github.com/PaddlePaddle/PaddleFL) framework and all neural network models provided by PaddleFL can be used in PaddleDTX.
+More algorithms will be open sourced soon, including multi-party VFL and multi-party HFL(horizontal federated learning) algorithms. 
 
-Training and predicting steps of VFL are shown as follows:
+Take two-party VFL algorithms as an example, training and prediction steps are shown as follows:
 
 ![Image text](./images/vertical_learning.png)
 

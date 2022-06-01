@@ -2,7 +2,7 @@
 
 PaddleDTX 主要由计算需求方、任务执行节点、数据持有节点、存储节点和区块链节点组成，部署架构如下图所示：
 
-<img src='../../_static/deployment.png' width = "100%" height = "100%" align="middle"/>
+<img src='../../_static/deployment.png' width = "60%" height = "60%" align="middle"/>
 
 !!! note "说明"
 
