@@ -189,9 +189,8 @@ function compileContract() {
       -v $(dirname ${PWD}):/workspace \
       -v ~/.ssh:/root/.ssh \
       -w /workspace \
-      -e GONOPROXY=**.baidu.com** \
       -e GONOSUMDB=* \
-      -e GOPROXY=https://goproxy.baidu-int.com \
+      -e GOPROXY=https://goproxy.cn \
       -e GO111MODULE=on \
       golang:1.13.4 sh -c "cd dai && go build -o ../$TMP_CONF_PATH/blockchain/contract/$CONTRACT_NAME ./blockchain/xchain/contract"
   
