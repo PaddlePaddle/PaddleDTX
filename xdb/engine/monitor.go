@@ -102,6 +102,7 @@ func newNodeMaintainer(conf *config.MonitorConf, opt *NewEngineOption) (*nodemai
 		Blockchain:   opt.Chain,
 		LocalNode:    opt.LocalNode,
 		SliceStorage: opt.SliceStor,
+		ProveStorage: opt.ProveStor,
 	}
 
 	nodeMaintainer, err := nodemaintainer.New(conf, &mmOpt)
