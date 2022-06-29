@@ -92,3 +92,31 @@ func ImportFeaturesForLogReg(fileRows [][]string, label, labelName string) ([]*D
 
 	return features, nil
 }
+
+// ImportFeaturesForDT import decision tree features from file
+// - fileRows file rows, first row is feature list
+func ImportFeaturesForDT(fileRows [][]string) ([]*DTDataFeature, error) {
+	if fileRows == nil {
+		return nil, fmt.Errorf("empty file content")
+	}
+
+	// read the first row to get all features
+	featureNum := len(fileRows[0])
+	features := make([]*DTDataFeature, featureNum)
+	for i := 0; i < featureNum; i++ {
+		features[i] = new(DTDataFeature)
+		features[i].Sets = make(map[int]string)
+		features[i].FeatureName = fileRows[0][i]
+	}
+
+	// read from all rows to get feature values
+	sample := 0
+	for row := 1; row < len(fileRows); row++ {
+		for i := 0; i < featureNum; i++ {
+			features[i].Sets[sample] = fileRows[row][i]
+		}
+		sample++
+	}
+
+	return features, nil
+}
