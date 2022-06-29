@@ -103,3 +103,14 @@ type EncLocalCost struct {
 	EncCost     map[int]*big.Int
 	RandomNoise *big.Int
 }
+
+// DTDataSet 用于决策树训练的样本数据集
+type DTDataSet struct {
+	Features []*DTDataFeature
+}
+
+// DTDataFeature 决策树样本的多元特征维度
+type DTDataFeature struct {
+	FeatureName string         `json:"feature_name"` // 特征的名称
+	Sets        map[int]string `json:"sets"`         // 特征集合,key是样本编号，value是特征的值。key从0开始自增
+}
