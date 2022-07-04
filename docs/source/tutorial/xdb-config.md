@@ -17,6 +17,8 @@ name = "node1"
 
 # The Address this server will listen on
 listenAddress = ":8121"
+# Whether to allow cross-domain requests, the default is false, use with caution in the production environment.
+allowCros = false
 
 # The private key of the node.
 # Different key express different identity.
@@ -105,10 +107,11 @@ path = "./logs"
 ```
 !!! note "配置说明"
 
-    1. dataOwner.slicer 定义切片大小、文件切分时并行队列数；
-    2. dataOwner.encryptor 配置文件及切片加密的初始密钥，系统采取一次一密方式，后续密钥均基于该密钥衍生；
-    3. dataOwner.challenger 定义了副本保持证明的算法，支持 'pairing' or 'merkle'；
-    4. dataOwner.blockchain 定义了节点操作区块链网络所需的配置，当前支持Xchain、Fabric网络；
+    1. allowCros配置定义了是否允许xdb请求跨域，默认为false，生产环境慎用。
+    2. dataOwner.slicer 定义切片大小、文件切分时并行队列数；
+    3. dataOwner.encryptor 配置文件及切片加密的初始密钥，系统采取一次一密方式，后续密钥均基于该密钥衍生；
+    4. dataOwner.challenger 定义了副本保持证明的算法，支持 'pairing' or 'merkle'；
+    5. dataOwner.blockchain 定义了节点操作区块链网络所需的配置，当前支持Xchain、Fabric网络；
 
 ## 数据存储节点
 conf/config-storage.toml 文件配置说明如下：

@@ -5,6 +5,7 @@ name = "data-node1"
 listenAddress = ":80"
 keyPath = "./keys"
 publicAddress = "dataowner1.node.com:80"
+allowCros = true
 
 [dataOwner.slicer]
     type = "simpleSlicer"

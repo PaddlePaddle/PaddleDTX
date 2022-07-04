@@ -14,7 +14,6 @@
 package engine
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
@@ -24,6 +23,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // ListNodes lists storage nodes from blockchain
@@ -48,51 +48,48 @@ func (e *Engine) GetNode(id []byte) (blockchain.Node, error) {
 }
 
 // NodeOffline set storage node status to offline
-func (e *Engine) NodeOffline(opt types.NodeOfflineOptions) error {
-	if err := e.verifyUserIDIsLocalNodeID(opt.NodeID); err != nil {
-		return err
-	}
-	sig, err := ecdsa.DecodeSignatureFromString(opt.Token)
-	if err != nil {
-		return errorx.Wrap(err, "failed to decode signature")
-	}
-
-	nodeOpts := &blockchain.NodeOperateOptions{
-		NodeID: []byte(opt.NodeID),
-		Nonce:  opt.Nonce,
-		Sig:    sig[:],
-	}
-	if err := e.chain.NodeOffline(nodeOpts); err != nil {
-		if errorx.Is(err, errorx.ErrCodeNotFound) {
-			return errorx.New(errorx.ErrCodeNotFound, "node not found")
-		}
-		return errorx.Wrap(err, "failed to read blockchain")
-	}
-	return nil
+func (e *Engine) NodeOffline(opt types.NodeOperateOptions) error {
+	return e.storageNodeOperate(opt, false)
 }
 
 // NodeOnline set storage node status to online
-func (e *Engine) NodeOnline(opt types.NodeOnlineOptions) error {
+func (e *Engine) NodeOnline(opt types.NodeOperateOptions) error {
+	return e.storageNodeOperate(opt, true)
+}
+
+func (e *Engine) storageNodeOperate(opt types.NodeOperateOptions, isOnline bool) error {
 	if err := e.verifyUserIDIsLocalNodeID(opt.NodeID); err != nil {
 		return err
 	}
-
-	m := fmt.Sprintf("%s,%d", opt.NodeID, opt.Nonce)
-	h := hash.HashUsingSha256([]byte(m))
-	if err := verifyUserToken(opt.NodeID, opt.Token, h); err != nil {
+	// verify signature
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
+	if err := verifyUserToken(opt.NodeID, opt.Token, hash.HashUsingSha256([]byte(msg))); err != nil {
 		return err
 	}
-	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, h)
-	if err != nil {
-		return errorx.Wrap(err, "failed to sign node")
-	}
-
+	// invoke contract
 	nodeOpts := &blockchain.NodeOperateOptions{
-		NodeID: []byte(opt.NodeID),
-		Nonce:  opt.Nonce,
-		Sig:    sig[:],
+		NodeID:    []byte(opt.NodeID),
+		Nonce:     opt.Nonce,
 	}
-	if err := e.chain.NodeOnline(nodeOpts); err != nil {
+	msg, err = util.GetSigMessage(nodeOpts)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
+	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.HashUsingSha256([]byte(msg)))
+	if err != nil {
+		return errorx.Wrap(err, "failed to sign")
+	}
+	nodeOpts.Signature = sig[:]
+
+	if isOnline {
+		err = e.chain.NodeOnline(nodeOpts)
+	} else {
+		err = e.chain.NodeOffline(nodeOpts)
+	}
+	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return errorx.New(errorx.ErrCodeNotFound, "node not found")
 		}

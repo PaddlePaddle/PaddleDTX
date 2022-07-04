@@ -79,7 +79,7 @@ var listTasksCmd = &cobra.Command{
 		for _, task := range tasks {
 			ptime := time.Unix(0, task.PublishTime).Format(timeTemplate)
 			fmt.Printf("TaskID: %s\nTaskType: %s\nTaskName: %s\nDescription: %s\nTaskStatus: %s\nPublishTime: %s\n\n",
-				task.ID, task.AlgoParam.TaskType, task.Name, task.Description, task.Status, ptime)
+				task.TaskID, task.AlgoParam.TaskType, task.Name, task.Description, task.Status, ptime)
 		}
 
 		fmt.Printf("taskNum : %d\n\n", len(tasks))

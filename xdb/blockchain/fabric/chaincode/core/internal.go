@@ -27,10 +27,11 @@ const (
 	minUnicodeRuneValue   = 0
 
 	// Define the contract prefix key of file and file namespace operations
-	prefixFilenameIndex     = "index_fn"
-	prefixFilenameListIndex = "index_fn_list"
-	prefixFileNsIndex       = "index_fns"
-	prefixFileNsListIndex   = "index_fns_list"
+	prefixFilenameIndex        = "index_fn"
+	prefixFileListByOwnerIndex = "index_fo_list"
+	prefixFileListByNsIndex    = "index_fs_list"
+	prefixFileNsIndex          = "index_fns"
+	prefixFileNsListIndex      = "index_fns_list"
 	// Define the contract prefix key of file authorization application operations
 	prefixFileAuthIndex           = "index_fileauth"
 	prefixFileAuthApplierIndex    = "index_fa_applier"
@@ -117,10 +118,15 @@ func packFileNameIndex(owner []byte, ns, name string) string {
 	return createCompositeKey(prefixFilenameIndex, attributes)
 }
 
-func packFileNameListIndex(owner []byte, ns, name string, pubTime int64) string {
-	//return fmt.Sprintf("%s/%x/%s/%d/%s", prefixFilenameListIndex, owner, ns, subByInt64Max(pubTime), name)
+func packFileListByOwnerIndex(owner []byte, ns, name string, pubTime int64) string {
 	attributes := []string{fmt.Sprintf("%x", owner), ns, fmt.Sprintf("%d", subByInt64Max(pubTime)), name}
-	return createCompositeKey(prefixFilenameListIndex, attributes)
+	return createCompositeKey(prefixFileListByOwnerIndex, attributes)
+}
+
+// packFileListByNsIndex used to list files by ns, ns+owner+pubTime+name is combined into a contract unique key
+func packFileListByNsIndex(owner []byte, ns, name string, pubTime int64) string {
+	attributes := []string{ns, fmt.Sprintf("%x", owner), fmt.Sprintf("%d", subByInt64Max(pubTime)), name}
+	return createCompositeKey(prefixFileListByNsIndex, attributes)
 }
 
 func packFileNsIndex(owner []byte, ns string) string {
@@ -138,18 +144,26 @@ func packFileNsListIndex(owner []byte, ns string, createTime int64) string {
 // prefixFileNsListIndex + "/" + fmt.Sprintf("%x/", owner)
 func packFileNsListFilter(owner []byte) (prefix string, attr []string) {
 	//return prefixFileNsListIndex + "/" + fmt.Sprintf("%x/", owner)
-	return prefixFileNsListIndex, []string{fmt.Sprintf("%x", owner)}
+	prefix = prefixFileNsListIndex
+	if len(owner) > 0 {
+		attr = []string{fmt.Sprintf("%x", owner)}
+	}
+	return prefix, attr
 }
 
 func packFileNameFilter(owner []byte, ns string) (prefix string, attr []string) {
-	prefix = prefixFilenameListIndex
+	filter := prefixFileListByOwnerIndex // default
+	if len(owner) == 0 && len(ns) > 0 {
+		filter = prefixFileListByNsIndex
+	}
+
 	if len(owner) > 0 {
 		attr = []string{fmt.Sprintf("%x", owner)}
 	}
 	if len(ns) > 0 {
 		attr = append(attr, ns)
 	}
-	return prefix, attr
+	return filter, attr
 }
 
 // packFileAuthIndex Define the contract key for file authorization application

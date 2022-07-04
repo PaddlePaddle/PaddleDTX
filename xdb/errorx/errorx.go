@@ -77,7 +77,7 @@ func Parse(err error) (code, message string) {
 	}
 
 	var e Error
-	if nerr := json.Unmarshal([]byte(err.Error()), &e); nerr == nil && len(e.Code) > 0 {
+	if nerr := json.Unmarshal([]byte(err.Error()), &e); nerr == nil && e.Code != SuccessCode {
 		return e.Code, e.Message
 	}
 
@@ -86,11 +86,11 @@ func Parse(err error) (code, message string) {
 
 func TryParseFromString(s string) (code, message string, success bool) {
 	var e Error
-	if nerr := json.Unmarshal([]byte(s), &e); nerr == nil && len(e.Code) > 0 {
+	if nerr := json.Unmarshal([]byte(s), &e); nerr == nil && e.Code != SuccessCode {
 		return e.Code, e.Message, true
 	}
 
-	return "", "", false
+	return SuccessCode, "", false
 }
 
 func Internal(err error, format string, args ...interface{}) error {

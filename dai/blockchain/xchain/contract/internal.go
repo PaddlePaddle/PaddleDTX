@@ -40,12 +40,12 @@ func packFlTaskIndex(taskID string) string {
 
 // packFlTaskListIndex pack index for saving tasks for requester, in time descending order
 func packFlTaskListIndex(task blockchain.FLTask) string {
-	return fmt.Sprintf("%s/%x/%d/%s", prefixFlTaskListIndex, task.Requester, subByInt64Max(task.PublishTime), task.ID)
+	return fmt.Sprintf("%s/%x/%d/%s", prefixFlTaskListIndex, task.Requester, subByInt64Max(task.PublishTime), task.TaskID)
 }
 
 // packExecutorTaskListIndex pack index for saving tasks that an executor involves, in time descending order
 func packExecutorTaskListIndex(executor []byte, task blockchain.FLTask) string {
-	return fmt.Sprintf("%s/%x/%d/%s", prefixFlTaskListIndex, executor, subByInt64Max(task.PublishTime), task.ID)
+	return fmt.Sprintf("%s/%x/%d/%s", prefixFlTaskListIndex, executor, subByInt64Max(task.PublishTime), task.TaskID)
 }
 
 // packFlTaskFilter pack filter index with public key for searching tasks for requester or executor
@@ -57,6 +57,11 @@ func packFlTaskFilter(pubkey []byte) string {
 // packNodeIndex pack index-id contract key for saving executor node
 func packNodeIndex(nodeID []byte) string {
 	return fmt.Sprintf("%s/%x", prefixNodeIndex, nodeID)
+}
+
+// packNodeStringIndex pack index-id contract key for saving executor node
+func packNodeStringIndex(nodeID string) string {
+	return fmt.Sprintf("%s/%s", prefixNodeIndex, nodeID)
 }
 
 // packNodeNameIndex pack index-name contract key for saving executor node

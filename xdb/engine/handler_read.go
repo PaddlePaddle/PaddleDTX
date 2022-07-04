@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"time"
@@ -32,6 +31,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 var defaultConcurrency uint64 = 10
@@ -44,11 +44,9 @@ func verifyReadToken(opt types.ReadOptions) error {
 	}
 
 	// verify token
-	var msg string
-	if len(opt.FileID) > 0 {
-		msg = fmt.Sprintf("%s,%d", opt.FileID, opt.Timestamp)
-	} else {
-		msg = fmt.Sprintf("%s,%s,%s,%d", opt.User, opt.Namespace, opt.FileName, opt.Timestamp)
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
 	}
 	msgDigest := hash.HashUsingSha256([]byte(msg))
 	if err := verifyUserToken(opt.User, opt.Token, msgDigest); err != nil {

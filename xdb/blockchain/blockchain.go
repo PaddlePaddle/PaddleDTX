@@ -67,19 +67,20 @@ const (
 
 // PublicSliceMeta public, description of a slice stored on a specific node
 type PublicSliceMeta struct {
-	ID         string // slice ID
-	CipherHash []byte // hash of cipher text
-	Length     uint64 // length of cipher text
-	NodeID     []byte // where slice is stored
-	StorIndex  string // storage index of slice, is used to query a slice from Storage, created by StorageNode
+	ID         string `json:"id"`         // slice ID
+	CipherHash []byte `json:"cipherHash"` // hash of cipher text
+	Length     uint64 `json:"length"`     // length of cipher text
+	NodeID     []byte `json:"nodeID"`     // where slice is stored
+	StorIndex  string `json:"storIndex"`  // storage index of slice, is used to query a slice from Storage, created by StorageNode
+
 	// for pairing based challenge
-	SliceIdx int // slice index stored on this node, like 1,2,3...
+	SliceIdx int `json:"sliceIdx"` // slice index stored on this node, like 1,2,3...
 }
 
 // PrivateSliceMeta private, description of the order of original slices
 type PrivateSliceMeta struct {
-	SliceID   string // slice ID
-	PlainHash []byte // hash of plain text
+	SliceID   string `json:"sliceID"`   // slice ID
+	PlainHash []byte `json:"plainHash"` // hash of plain text
 }
 
 type FileStructure []PrivateSliceMeta
@@ -94,287 +95,309 @@ func (f *FileStructure) Parse(bs []byte) error {
 
 // File public information stored on chain
 type File struct {
-	ID          string            // file ID, generate by engine
-	Name        string            // file name, user input
-	Description string            // file description, user input (optional)
-	Namespace   string            // file namespace, user input
-	Owner       []byte            // owner, user input
-	Length      uint64            // plain text length
-	MerkleRoot  []byte            // merkle root of slices (plain text)
-	Slices      []PublicSliceMeta // unordered slices
-	Structure   []byte            // encrypted FileStructure
-	PublishTime int64             // publish time on blockchain
-	ExpireTime  int64             // file expire time
+	ID          string            `json:"id"`          // file ID, generate by engine
+	Name        string            `json:"name"`        // file name, user input
+	Description string            `json:"description"` // file description, user input (optional)
+	Namespace   string            `json:"namespace"`   // file namespace, user input
+	Owner       []byte            `json:"owner"`       // owner, user input
+	Length      uint64            `json:"length"`      // plain text length
+	MerkleRoot  []byte            `json:"merkleRoot"`  // merkle root of slices (plain text)
+	Slices      []PublicSliceMeta `json:"slices"`      // unordered slices
+	Structure   []byte            `json:"structure"`   // encrypted FileStructure
+	PublishTime int64             `json:"publishTime"` // publish time on blockchain
+	ExpireTime  int64             `json:"expireTime"`  // file expire time
 
 	// for pairing based challenge
-	PdpPubkey []byte
-	RandU     []byte
-	RandV     []byte
+	PdpPubkey []byte `json:"pdpPubkey"`
+	RandU     []byte `json:"randU"`
+	RandV     []byte `json:"randV"`
 
 	// extension
-	Ext []byte
+	Ext []byte `json:"ext"`
 }
 
 type FileH struct {
-	File   File
-	Health string
+	File   File   `json:"file"`
+	Health string `json:"health"`
 }
 
 type PublishFileOptions struct {
-	File      File
-	Signature []byte
+	File      File   `json:"file"`
+	Signature []byte `json:"signature"`
 }
 
 // Challenge public information stored on chain
 type Challenge struct {
-	ID         string // challenge ID
-	FileOwner  []byte // file owner
-	TargetNode []byte // storage node
-	FileID     string // file ID
+	ID         string `json:"id"`         // challenge ID
+	FileOwner  []byte `json:"fileOwner"`  // file owner
+	TargetNode []byte `json:"targetNode"` // storage node
+	FileID     string `json:"fileID"`     // file ID
 
-	ChallengeAlgorithm string   // challenge algorithm
-	SliceIDs           []string // slice IDs to challenge
-	SliceStorIndexes   []string // storage index of slice, is used to query a slice from Storage
-	Indices            [][]byte // indices of slice IDs
-	Vs                 [][]byte // random params
-	Round              int64    // challenge found
-	RandThisRound      []byte   // random number for the challenge
+	ChallengeAlgorithm string   `json:"challengeAlgorithm"` // challenge algorithm
+	SliceIDs           []string `json:"sliceIDs"`           // slice IDs to challenge
+	SliceStorIndexes   []string `json:"sliceStorIndexes"`   // storage index of slice, is used to query a slice from Storage
+	Indices            [][]byte `json:"indices"`            // indices of slice IDs
+	Vs                 [][]byte `json:"vs"`                 // random params
+	Round              int64    `json:"round"`              // challenge found
+	RandThisRound      []byte   `json:"randThisRound"`      // random number for the challenge
 
-	SliceID        string
-	SliceStorIndex string // storage index of slice, is used to query a slice from Storage
-	Ranges         []Range
-	HashOfProof    []byte
+	SliceID        string  `json:"sliceID"`
+	SliceStorIndex string  `json:"sliceStorIndex"` // storage index of slice, is used to query a slice from Storage
+	Ranges         []Range `json:"ranges"`
+	HashOfProof    []byte  `json:"hashOfProof"`
 
-	Status        string // challenge status
-	ChallengeTime int64  // challenge publish time
-	AnswerTime    int64  // challenge answer time
+	Status        string `json:"status"`        // challenge status
+	ChallengeTime int64  `json:"challengeTime"` // challenge publish time
+	AnswerTime    int64  `json:"answerTime"`    // challenge answer time
 }
 
 type ListFileOptions struct {
-	Owner     []byte // file owner
-	Namespace string // file namespace
+	Owner     []byte `json:"owner"`     // file owner
+	Namespace string `json:"namespace"` // file namespace
 
-	TimeStart   int64
-	TimeEnd     int64
-	CurrentTime int64
-	Limit       int64 // file number limit
+	TimeStart   int64 `json:"timeStart"`
+	TimeEnd     int64 `json:"timeEnd"`
+	CurrentTime int64 `json:"currentTime"`
+	Limit       int64 `json:"limit"` // file number limit
 }
 
 type ListChallengeOptions struct {
-	FileOwner  []byte // file owner
-	TargetNode []byte // storage node
-	FileID     string // file ID
-	Status     string // challenge status
+	FileOwner  []byte `json:"fileOwner"`  // file owner
+	TargetNode []byte `json:"targetNode"` // storage node
+	FileID     string `json:"fileID"`     // file ID
+	Status     string `json:"status"`     // challenge status
 
-	TimeStart int64 // challenge time period
-	TimeEnd   int64
-	Limit     int64 // challenge limit
+	TimeStart int64 `json:"timeStart"` // challenge time period
+	TimeEnd   int64 `json:"timeEnd"`
+	Limit     int64 `json:"limit"` // challenge limit
 }
 
 // ChallengeRequestOptions used for dataOwner nodes to add challenge request on chain
 type ChallengeRequestOptions struct {
-	ChallengeID      string
-	FileOwner        []byte
-	TargetNode       []byte
-	FileID           string
-	SliceIDs         []string
-	SliceStorIndexes []string // storage index of slice, is used to query a slice from Storage
-	ChallengeTime    int64
+	ChallengeID      string   `json:"challengeID"`
+	FileOwner        []byte   `json:"fileOwner"`
+	TargetNode       []byte   `json:"targetNode"`
+	FileID           string   `json:"fileID"`
+	SliceIDs         []string `json:"sliceIDs"`
+	SliceStorIndexes []string `json:"sliceStorIndexes"` // storage index of slice, is used to query a slice from Storage
+	ChallengeTime    int64    `json:"challengeTime"`
 
-	ChallengeAlgorithm string
+	ChallengeAlgorithm string `json:"challengeAlgorithm"`
 
-	Indices       [][]byte
-	Vs            [][]byte
-	Round         int64
-	RandThisRound []byte
+	Indices       [][]byte `json:"indices"`
+	Vs            [][]byte `json:"vs"`
+	Round         int64    `json:"round"`
+	RandThisRound []byte   `json:"randThisRound"`
 
-	SliceID        string
-	SliceStorIndex string // storage index of slice, is used to query a slice from Storage
-	Ranges         []Range
-	HashOfProof    []byte
+	SliceID        string  `json:"sliceID"`
+	SliceStorIndex string  `json:"sliceStorIndex"` // storage index of slice, is used to query a slice from Storage
+	Ranges         []Range `json:"ranges"`
+	HashOfProof    []byte  `json:"hashOfProof"`
 
-	Sig []byte
+	Signature []byte `json:"signature"`
 }
 
 type Range struct {
-	Start uint64
-	End   uint64
+	Start uint64 `json:"start"`
+	End   uint64 `json:"end"`
 }
 
 // ChallengeAnswerOptions used for storage nodes to answer challenge request on chain
 type ChallengeAnswerOptions struct {
-	ChallengeID string
-	Sigma       []byte
-	Mu          []byte
-	Sig         []byte
-	AnswerTime  int64
+	ChallengeID string `json:"challengeID"`
+	Sigma       []byte `json:"sigma"`
+	Mu          []byte `json:"mu"`
+	AnswerTime  int64  `json:"answerTime"`
 
-	Proof []byte
+	Proof     []byte `json:"proof"`
+	Signature []byte `json:"signature"`
 }
 
 type Nodes []Node
 
 // Node define storage node info stored on chain
 type Node struct {
-	ID       []byte
-	Name     string
-	Address  string
-	Online   bool  // whether node is online or offline
-	RegTime  int64 // node register time
-	UpdateAt int64 // node recent update time
+	ID       []byte `json:"id"`
+	Name     string `json:"name"`
+	Address  string `json:"address"`
+	Online   bool   `json:"online"`   // whether node is online or offline
+	RegTime  int64  `json:"regTime"`  // node register time
+	UpdateAt int64  `json:"updateAt"` // node recent update time
 }
 
 type NodeH struct {
-	Node   Node
-	Health string
+	Node   Node   `json:"node"`
+	Health string `json:"health"`
 }
 
 type NodeHs []NodeH
 
+// AddNodeOptions used to add storgae node into blockchain
 type AddNodeOptions struct {
-	Node      Node
-	Signature []byte
+	Node      Node   `json:"node"`
+	Signature []byte `json:"signature"`
 }
 
+// NodeOperateOptions used to online or offline storage node
 type NodeOperateOptions struct {
-	NodeID []byte
-	Sig    []byte
-	Nonce  int64
+	NodeID    []byte `json:"nodeID"`
+	Nonce     int64  `json:"nonce"`
+	Signature []byte `json:"signature"`
 }
 
+// NodeHeartBeatOptions define parameters for heartbeat detection of storage nodes
+type NodeHeartBeatOptions struct {
+	NodeID        []byte `json:"nodeID"`
+	CurrentTime   int64  `json:"currentTime"`
+	BeginningTime int64  `json:"beginningTime"`
+	Signature     []byte `json:"signature"`
+}
+
+// UpdateExptimeOptions used to update file's expireTime
 type UpdateExptimeOptions struct {
-	FileID        string
-	NewExpireTime int64
-	CurrentTime   int64
-	Signature     []byte
+	FileID        string `json:"fileID"`
+	NewExpireTime int64  `json:"newExpireTime"`
+	CurrentTime   int64  `json:"currentTime"`
+	Signature     []byte `json:"signature"`
 }
 
 // UpdateFilePSMOptions used to update the slice public info on chain
 // when the dataOwner migrates slice from bad storage node to good storage node
 type UpdateFilePSMOptions struct {
-	FileID    string
-	Owner     []byte
-	Slices    []PublicSliceMeta
-	Signature []byte
+	FileID    string            `json:"fileID"`
+	Owner     []byte            `json:"owner"`
+	Slices    []PublicSliceMeta `json:"slices"`
+	Signature []byte            `json:"signature"`
 }
 
+// UpdateNsReplicaOptions used to update the replica on the blockchain
 type UpdateNsReplicaOptions struct {
-	Owner       []byte
-	Name        string
-	Replica     int
-	CurrentTime int64
-	Signature   []byte
+	Owner       []byte `json:"owner"`
+	Name        string `json:"name"`
+	Replica     int    `json:"replica"`
+	CurrentTime int64  `json:"currentTime"`
+	Signature   []byte `json:"signature"`
+}
+
+// SliceMigrateOptions used to record migrate info for storage node
+type SliceMigrateOptions struct {
+	NodeID      []byte `json:"nodeID"`
+	FileID      string `json:"fileID"`
+	SliceID     string `json:"sliceID"`
+	CurrentTime int64  `json:"currentTime"`
+	Signature   []byte `json:"signature"`
 }
 
 type ListNodeSliceOptions struct {
-	Target []byte
+	Target []byte `json:"target"`
 
-	StartTime int64
-	EndTime   int64
-	Limit     int64
+	StartTime int64 `json:"startTime"`
+	EndTime   int64 `json:"endTime"`
+	Limit     int64 `json:"limit"`
 }
 
 type NodeSliceMigrateOptions ListNodeSliceOptions
 
 type AddNsOptions struct {
-	Namespace Namespace
-	Signature []byte
+	Namespace Namespace `json:"namespace"`
+	Signature []byte    `json:"signature"`
 }
 
 // Namespace define file namespace stored on chain
 // Used by dataOwner to store files, like a folder
 type Namespace struct {
-	Name         string
-	Description  string
-	Owner        []byte // file namespace owner
-	Replica      int    // The replicas of files under the namespace
-	FileTotalNum int64
-	CreateTime   int64
-	UpdateTime   int64
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Owner        []byte `json:"owner"`   // file namespace owner
+	Replica      int    `json:"replica"` // The replicas of files under the namespace
+	FileTotalNum int64  `json:"fileTotalNum"`
+	CreateTime   int64  `json:"createTime"`
+	UpdateTime   int64  `json:"updateTime"`
 }
 
+// NamespaceH used to list file's information under namespace
 type NamespaceH struct {
-	Namespace      Namespace
-	FileNormalNum  int
-	FileExpiredNum int
-	GreenFileNum   int
-	YellowFileNum  int
-	RedFileNum     int
+	Namespace      Namespace `json:"namespace"`
+	FileNormalNum  int       `json:"fileNormalNum"`
+	FileExpiredNum int       `json:"fileExpiredNum"`
+	GreenFileNum   int       `json:"greenFileNum"`
+	YellowFileNum  int       `json:"yellowFileNum"`
+	RedFileNum     int       `json:"redFileNum"`
 }
 
 // FileSysHealth describes system health status for a file owner
 type FileSysHealth struct {
-	FileNum         int     // total files number, includes expired files
-	FileExpiredNum  int     // expired files number
-	NsNum           int     // namespace number
-	GreenFileNum    int     // green files number
-	YellowFileNum   int     // yellow files number
-	RedFileNum      int     // red files number
-	SysHealth       string  // system health status, green/yellow/red
-	FilesHealthRate float64 // file health rate
+	FileNum         int     `json:"fileNum"`         // total files number, includes expired files
+	FileExpiredNum  int     `json:"fileExpiredNum"`  // expired files number
+	NsNum           int     `json:"nsNum"`           // namespace number
+	GreenFileNum    int     `json:"greenFileNum"`    // green files number
+	YellowFileNum   int     `json:"yellowFileNum"`   // yellow files number
+	RedFileNum      int     `json:"redFileNum"`      // red files number
+	SysHealth       string  `json:"sysHealth"`       // system health status, green/yellow/red
+	FilesHealthRate float64 `json:"filesHealthRate"` // file health rate
 
-	NodeNum        int     // total nodes number
-	GreenNodeNum   int     // green node number
-	YellowNodeNum  int     // yellow node number
-	RedNodeNum     int     // red node number
-	NodeHealthRate float64 // node health rate
+	NodeNum        int     `json:"nodeNum"`        // total nodes number
+	GreenNodeNum   int     `json:"greenNodeNum"`   // green node number
+	YellowNodeNum  int     `json:"yellowNodeNum"`  // yellow node number
+	RedNodeNum     int     `json:"redNodeNum"`     // red node number
+	NodeHealthRate float64 `json:"nodeHealthRate"` // node health rate
 }
 
 type ListNsOptions ListFileOptions
 
 type GetChallengeNumOptions struct {
-	TargetNode []byte // storage node
-	Status     string // challenge status, optional
+	TargetNode []byte `json:"targetNode"` // storage node
+	Status     string `json:"status"`     // challenge status, optional
 
-	TimeStart int64 // challenge time period
-	TimeEnd   int64
+	TimeStart int64 `json:"timeStart"` // challenge time period
+	TimeEnd   int64 `json:"timeEnd"`
 }
 
 // FileAuthApplication define the file's authorization application stored on chain
 type FileAuthApplication struct {
-	ID           string
-	FileID       string // file ID to authorize
-	Name         string
-	Description  string
-	Applier      []byte // applier's public key, who needs to use files
-	Authorizer   []byte // file's owner
-	AuthKey      []byte // authorization key, appliers used the key to decrypt the file
-	Status       string
-	RejectReason string // reason of the rejected authorization
-	CreateTime   int64
-	ApprovalTime int64 // time when authorizer confirmed or rejected the authorization
-	ExpireTime   int64 // expiration time for file use
+	ID           string `json:"id"`
+	FileID       string `json:"fileID"` // file ID to authorize
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Applier      []byte `json:"applier"`    // applier's public key, who needs to use files
+	Authorizer   []byte `json:"authorizer"` // file's owner
+	AuthKey      []byte `json:"authKey"`    // authorization key, appliers used the key to decrypt the file
+	Status       string `json:"status"`
+	RejectReason string `json:"rejectReason"` // reason of the rejected authorization
+	CreateTime   int64  `json:"createTime"`
+	ApprovalTime int64  `json:"approvalTime"` // time when authorizer confirmed or rejected the authorization
+	ExpireTime   int64  `json:"expireTime"`   // expiration time for file use
 
 	// extension
-	Ext []byte
+	Ext []byte `json:"ext"`
 }
 
 type FileAuthApplications []*FileAuthApplication
 
 // PublishFileAuthOptions parameters for appliers to publish file authorization application
 type PublishFileAuthOptions struct {
-	FileAuthApplication FileAuthApplication
-	Signature           []byte
+	FileAuthApplication FileAuthApplication `json:"fileAuthApplication"`
+	Signature           []byte              `json:"signature"`
 }
 
 // ConfirmFileAuthOptions parameters for authorizers to confirm or reject file authorization application
 type ConfirmFileAuthOptions struct {
-	ID           string
-	AuthKey      []byte // authorized file decryption key, if authorizer confirms authorization, it cannot be empty
-	RejectReason string // if authorizer rejects authorization, it cannot be empty
-	CurrentTime  int64
-	ExpireTime   int64
+	ID           string `json:"id"`
+	AuthKey      []byte `json:"authKey"`      // authorized file decryption key, if authorizer confirms authorization, it cannot be empty
+	RejectReason string `json:"rejectReason"` // if authorizer rejects authorization, it cannot be empty
+	CurrentTime  int64  `json:"currentTime"`
+	ExpireTime   int64  `json:"expireTime"`
 
-	Signature []byte // authorizer's signature
+	Signature []byte `json:"signature"` // authorizer's signature
 }
 
 // ListFileAuthOptions parameters for authorizers or appliers to query the list of file authorization application
 type ListFileAuthOptions struct {
-	Applier    []byte // applier's public key
-	Authorizer []byte // authorizer's public key
-	FileID     string
-	Status     string // file authorization application status
-	TimeStart  int64
-	TimeEnd    int64
-	Limit      int64 // limit number of applications in list request
+	Applier    []byte `json:"applier"`    // applier's public key
+	Authorizer []byte `json:"authorizer"` // authorizer's public key
+	FileID     string `json:"fileID"`
+	Status     string `json:"status"` // file authorization application status
+	TimeStart  int64  `json:"timeStart"`
+	TimeEnd    int64  `json:"timeEnd"`
+	Limit      int64  `json:"limit"` // limit number of applications in list request
 }

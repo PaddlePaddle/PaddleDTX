@@ -76,12 +76,12 @@ func main() {
 		cancel()
 	} else {
 		// register executor service to gRPC server.
-		pbTask.RegisterTaskServer(srv.Server, taskEngine)
+		pbTask.RegisterTaskServer(srv.GrpcServer, taskEngine)
 
-		// register MPC service
-		taskEngine.GetMpcService().RegisterClusterServer(srv.Server)
+		// register MPC service to gRPC server.
+		taskEngine.GetMpcService().RegisterClusterServer(srv.GrpcServer)
 
-		// start server
+		// start server, include grpc and http server
 		if err := srv.Serve(ctx); err != nil && err != context.Canceled {
 			logrus.WithError(err).Error("failed to start server")
 			cancel()

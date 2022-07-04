@@ -94,10 +94,12 @@ func (f *Fabric) NodeOnline(opt *blockchain.NodeOperateOptions) error {
 }
 
 // Heartbeat updates heartbeat of node
-func (f *Fabric) Heartbeat(id, sig []byte, timestamp int64) error {
-	args := [][]byte{id, sig, []byte(strconv.FormatInt(timestamp, 10)), []byte(
-		strconv.FormatInt(common.TodayBeginning(timestamp), 10))}
-	if _, err := f.InvokeContract(args, "Heartbeat"); err != nil {
+func (f *Fabric) Heartbeat(opt *blockchain.NodeHeartBeatOptions) error {
+	s, err := json.Marshal(*opt)
+	if err != nil {
+		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal NodeOperateOptions")
+	}
+	if _, err := f.InvokeContract([][]byte{s}, "Heartbeat"); err != nil {
 		return err
 	}
 	return nil

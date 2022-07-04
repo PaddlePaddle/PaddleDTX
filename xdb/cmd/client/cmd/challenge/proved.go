@@ -63,7 +63,7 @@ var provedCmd = &cobra.Command{
 			TimeEnd:    endTime.UnixNano(),
 			Limit:      limit,
 		}
-		challenges, err := client.GetProvedChallenges(context.Background(), opt)
+		challenges, err := client.GetChallenges(context.Background(), opt, blockchain.ChallengeProved)
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
 			return

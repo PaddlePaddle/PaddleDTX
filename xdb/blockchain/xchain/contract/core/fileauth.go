@@ -15,12 +15,12 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/xuperchain/xuperchain/core/contractsdk/go/code"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // PublishFileAuthApplication add applier's file authorization application into chain
@@ -38,14 +38,13 @@ func (x *Xdata) PublishFileAuthApplication(ctx code.Context) code.Response {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"failed to unmarshal PublishFileAuthOptions"))
 	}
-
 	fa := opt.FileAuthApplication
-	s, err := json.Marshal(fa)
+	msg, err := util.GetSigMessage(opt)
 	if err != nil {
-		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal FileAuthApplication"))
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
 	}
 	// verify signature by applier's public key
-	err = x.checkSign(opt.Signature, fa.Applier, s)
+	err = x.checkSign(opt.Signature, fa.Applier, []byte(msg))
 	if err != nil {
 		return code.Error(err)
 	}
@@ -116,13 +115,11 @@ func (x *Xdata) setFileAuthConfirmStatus(ctx code.Context, isConfirm bool) code.
 		return code.Error(err)
 	}
 	// verify signature by authorizer's public key
-	m := fmt.Sprintf("%s,%d,", opt.ID, opt.CurrentTime)
-	if isConfirm {
-		m += fmt.Sprintf("%x,%d", opt.AuthKey, opt.ExpireTime)
-	} else {
-		m += opt.RejectReason
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
 	}
-	if err := x.checkSign(opt.Signature, fa.Authorizer, []byte(m)); err != nil {
+	if err := x.checkSign(opt.Signature, fa.Authorizer, []byte(msg)); err != nil {
 		return code.Error(err)
 	}
 

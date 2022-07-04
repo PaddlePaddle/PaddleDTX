@@ -30,7 +30,8 @@ build-pb: set-env
 	protoc -I protos protos/mpc/learners/logic_reg_vl/*.proto \
 		--go_out=plugins=grpc,paths=source_relative:protos
 	protoc -I protos protos/task/*.proto \
-		--go_out=plugins=grpc,paths=source_relative:protos
+		--go_out=plugins=grpc,paths=source_relative:protos \
+		-I protos/googleapis --grpc-gateway_out=logtostderr=true,paths=source_relative:protos
 #make prepare, download dependencies
 prepare: gomod
 

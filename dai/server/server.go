@@ -18,7 +18,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/config"
@@ -33,41 +33,99 @@ const (
 	GRPCTIMEOUT = 20
 )
 
-// Server defines grpc server
+var (
+	logger = logrus.WithField("module", "server")
+)
+
+// Server defines grpc server and http server
 type Server struct {
 	listenAddr string
-	Server     *grpc.Server
+	GrpcServer *grpc.Server
+
+	httpServer *HttpServer
 }
 
-// New creates a gRPC server which has no service registered and has not
+// New creates GRPC and HTTP server which has no service registered and has not
 // started to accept requests yet.
 func New(conf *config.ExecutorConf) (*Server, error) {
+	// define grpc server
 	ser := grpc.NewServer(grpc.MaxRecvMsgSize(MaxRecvMsgSize),
 		grpc.MaxConcurrentStreams(MaxConcurrentStreams), grpc.ConnectionTimeout(time.Second*time.Duration(GRPCTIMEOUT)))
 	server := &Server{
 		listenAddr: conf.ListenAddress,
-		Server:     ser,
+		GrpcServer: ser,
+	}
+	// if conf.HttpServer.Switch is "on", initialize httpserver
+	// httpserver is a gateway which forwards http requests to grpc server
+	if conf.HttpServer.Switch == "on" {
+		httpServe, err := NewHttpServer(conf)
+		if err != nil {
+			return nil, err
+		}
+		server.httpServer = httpServe
 	}
 	return server, nil
 }
 
 // Serve runs Server and blocks current routine
 func (s *Server) Serve(ctx context.Context) error {
-	// interrupt signal
-	go func() {
-		<-ctx.Done()
-		s.Server.Stop()
-	}()
+	errCh := make(chan error)
 
 	// start grpc server
-	lis, err := net.Listen("tcp", s.listenAddr)
-	if err != nil {
-		return errorx.Wrap(err, "StartServer failed")
+	go func() {
+		errCh <- s.StartGrpcServe(ctx)
+	}()
+
+	// if conf.HttpServer.Switch == "on, start http server
+	if s.httpServer != nil {
+		go func() {
+			errCh <- s.startHttpServer(ctx)
+		}()
 	}
 
-	// Server.Serve() block go-routine until get Stop signal
-	if err := s.Server.Serve(lis); err != nil {
+	// interrupt signal, gracefully shuts down the server
+	go func() {
+		<-ctx.Done()
+		s.Stop()
+	}()
+
+	// monitor the running status of the server
+	// return when get an error signal
+	err := <-errCh
+	return err
+}
+
+// startGrpcServe runs GerpcServer, block go-routine until get Stop signal
+func (s *Server) StartGrpcServe(ctx context.Context) error {
+	lis, err := net.Listen("tcp", s.listenAddr)
+	if err != nil {
+		logger.WithError(err).Errorf("listen tcp error: %v\n", err)
+		return err
+	}
+
+	if err := s.GrpcServer.Serve(lis); err != nil {
+		logger.WithError(err).Errorf("failed to start grpc serve: %v\n", err)
 		return err
 	}
 	return ctx.Err()
+}
+
+// startHttpServer runs httpServer and blocks current routine
+func (s *Server) startHttpServer(ctx context.Context) error {
+	if err := s.httpServer.Serve(); err != nil {
+		logger.WithError(err).Errorf("failed to start http serve: %v\n", err)
+		return err
+	}
+	return ctx.Err()
+}
+
+// Stop when get interrupt signal, stop grpc server and http server
+func (s *Server) Stop() {
+	if s.GrpcServer != nil {
+		s.GrpcServer.Stop()
+	}
+
+	if s.httpServer != nil {
+		s.httpServer.Stop()
+	}
 }

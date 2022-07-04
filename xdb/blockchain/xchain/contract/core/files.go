@@ -15,7 +15,6 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -25,6 +24,7 @@ import (
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // PublishFile publishes file on xchain
@@ -43,14 +43,12 @@ func (x *Xdata) PublishFile(ctx code.Context) code.Response {
 	// get file
 	f := opt.File
 
-	// marshal file
-	s, err := json.Marshal(f)
-	if err != nil {
-		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal File"))
-	}
-
 	// verify sig
-	err = x.checkSign(opt.Signature, f.Owner, s)
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
+	}
+	err = x.checkSign(opt.Signature, f.Owner, []byte(msg))
 	if err != nil {
 		return code.Error(err)
 	}
@@ -88,6 +86,12 @@ func (x *Xdata) PublishFile(ctx code.Context) code.Response {
 		}
 	}
 
+	// marshal file
+	s, err = json.Marshal(f)
+	if err != nil {
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal File"))
+	}
+
 	// if there's already a file with the same name in user's storage, overwrite it with the new one directly
 	// set id-file on chain
 	if err := ctx.PutObject([]byte(f.ID), s); err != nil {
@@ -98,9 +102,14 @@ func (x *Xdata) PublishFile(ctx code.Context) code.Response {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain, "failed to set index-id on chain"))
 	}
 	// set filenameListIndex-id on chain
-	filenameListIndex := packFileNameListIndex(f.Owner, f.Namespace, f.Name, f.PublishTime)
+	filenameListIndex := packFileListByOwnerIndex(f.Owner, f.Namespace, f.Name, f.PublishTime)
 	if err := ctx.PutObject([]byte(filenameListIndex), []byte(f.ID)); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain, "failed to set file listIndex-id on chain"))
+	}
+	// set fileListByNsIndex-id on chain
+	fileListByNsIndex := packFileListByNsIndex(f.Owner, f.Namespace, f.Name, f.PublishTime)
+	if err := ctx.PutObject([]byte(fileListByNsIndex), []byte(f.ID)); err != nil {
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain, "failed to set file fileListByNsIndex-id on chain"))
 	}
 
 	// update file num of fileNsIndex
@@ -110,9 +119,11 @@ func (x *Xdata) PublishFile(ctx code.Context) code.Response {
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal File namespace"))
 	}
+	// set fileNsIndex-nsf on chain
 	if err := ctx.PutObject([]byte(fileNsIndex), nsf); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain, "failed to update index-ns on chain"))
 	}
+	// set fileNsListIndex-nsf on chain
 	nsListIndex := packFileNsListIndex(ns.Owner, ns.Name, ns.CreateTime)
 	if err := ctx.PutObject([]byte(nsListIndex), nsf); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain, "failed to update listIndex-ns on chain"))
@@ -152,8 +163,13 @@ func (x *Xdata) AddFileNs(ctx code.Context) code.Response {
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal namespace"))
 	}
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
+	}
 	// verify sig
-	err = x.checkSign(opt.Signature, ns.Owner, s)
+	err = x.checkSign(opt.Signature, ns.Owner, []byte(msg))
 	if err != nil {
 		return code.Error(err)
 	}
@@ -191,9 +207,12 @@ func (x *Xdata) UpdateNsReplica(ctx code.Context) code.Response {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"failed to unmarshal UpdateNsReplicaOptions"))
 	}
-	// verify sig
-	m := fmt.Sprintf("%s,%d,%d", opt.Name, opt.Replica, opt.CurrentTime)
-	if err := x.checkSign(opt.Signature, opt.Owner, []byte(m)); err != nil {
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
+	}
+	if err := x.checkSign(opt.Signature, opt.Owner, []byte(msg)); err != nil {
 		return code.Error(err)
 	}
 
@@ -244,12 +263,11 @@ func (x *Xdata) UpdateFilePublicSliceMeta(ctx code.Context) code.Response {
 			"failed to unmarshal UpdateNsReplicaOptions"))
 	}
 	// verify sig
-	ns := opt.Slices
-	s, err := json.Marshal(ns)
+	msg, err := util.GetSigMessage(opt)
 	if err != nil {
-		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal slices"))
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
 	}
-	if err := x.checkSign(opt.Signature, opt.Owner, s); err != nil {
+	if err := x.checkSign(opt.Signature, opt.Owner, []byte(msg)); err != nil {
 		return code.Error(err)
 	}
 
@@ -381,8 +399,11 @@ func (x *Xdata) UpdateFileExpireTime(ctx code.Context) code.Response {
 	}
 
 	// verify sig
-	m := fmt.Sprintf("%s,%d,%d", opt.FileID, opt.NewExpireTime, opt.CurrentTime)
-	err = x.checkSign(opt.Signature, f.Owner, []byte(m))
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
+	}
+	err = x.checkSign(opt.Signature, f.Owner, []byte(msg))
 	if err != nil {
 		return code.Error(err)
 	}
@@ -402,46 +423,36 @@ func (x *Xdata) UpdateFileExpireTime(ctx code.Context) code.Response {
 
 // SliceMigrateRecord is used by node to slice migration record
 func (x *Xdata) SliceMigrateRecord(ctx code.Context) code.Response {
-	// get id
-	nodeID, ok := ctx.Args()["nodeID"]
+	// get SliceMigrateOptions
+	s, ok := ctx.Args()["opt"]
 	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:id"))
+		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:opt"))
 	}
-	// get fileID
-	fid, ok := ctx.Args()["fileID"]
-	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:id"))
-	}
-	// get sliceID
-	sid, ok := ctx.Args()["sliceID"]
-	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:id"))
-	}
-	ctime, err := x.getCtxTime(ctx, "currentTime")
-	if err != nil {
-		return code.Error(err)
+	// unmarshal opt
+	var opt blockchain.SliceMigrateOptions
+	if err := json.Unmarshal(s, &opt); err != nil {
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
+			"failed to unmarshal SliceMigrateOptions"))
 	}
 	// get file from id
-	file, err := x.getFileByID(ctx, fid)
+	file, err := x.getFileByID(ctx, []byte(opt.FileID))
 	if err != nil {
 		return code.Error(err)
 	}
-	// get signature
-	signature, ok := ctx.Args()["signature"]
-	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:signature"))
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
 	}
-	msg := fmt.Sprintf("%s%s%s%s", string(fid), string(sid), string(nodeID), fmt.Sprintf("%d", ctime))
 	// verify sig
-	err = x.checkSign(signature, file.Owner, []byte(msg))
+	err = x.checkSign(opt.Signature, file.Owner, []byte(msg))
 	if err != nil {
 		return code.Error(err)
 	}
 
-	hindex := packNodeSliceMigrateIndex(string(nodeID), ctime)
+	hindex := packNodeSliceMigrateIndex(string(opt.NodeID), opt.CurrentTime)
 	fs := map[string]interface{}{
-		"fileID":  string(fid),
-		"sliceID": string(sid),
+		"fileID":  string(opt.FileID),
+		"sliceID": string(opt.SliceID),
 	}
 	b, err := json.Marshal(fs)
 	if err != nil {
@@ -638,7 +649,7 @@ func (x *Xdata) getFileByID(ctx code.Context, fileID []byte) (f blockchain.File,
 
 func (x *Xdata) checkSign(sign, owner, mes []byte) (err error) {
 	// verify sig
-	if len(sign) != ecdsa.SignatureLength {
+	if len(owner) != ecdsa.PublicKeyLength || len(sign) != ecdsa.SignatureLength {
 		return errorx.New(errorx.ErrCodeParam, "bad param:signature")
 	}
 	var pubkey [ecdsa.PublicKeyLength]byte

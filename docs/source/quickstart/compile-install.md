@@ -173,6 +173,8 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		# 修改服务监听端口及对外服务地址
 		listenAddress = ":8121"
 		publicAddress = "127.0.0.1:8121"
+		# 是否允许跨域访问
+		allowCros = false
 
 		# genkey创建的私钥
 		keyPath = "./keys"
@@ -277,6 +279,12 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 
 			# genkey创建的私钥
 			keyPath = "./keys"
+
+			# 是否启动http server
+			[executor.httpserver]
+			switch = "on"
+			httpPort = ":8013"
+			allowCros = false
 			
 			[executor.storage]
 				# 定义模型存储的路径
@@ -312,6 +320,12 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 			paddleFLRole = 2
 			# genkey创建的私钥
 			keyPath = "./keys"
+
+			# 是否启动http server
+			[executor.httpserver]
+			switch = "on"
+			httpPort = ":8014"
+			allowCros = false
 
 			[executor.storage]
 				# 定义模型存储的路径

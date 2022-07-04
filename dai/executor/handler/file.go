@@ -19,8 +19,10 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/dai/executor/storage/xuperdb"
 	xdbchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/http"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 var defaultConcurrency uint64 = 10
@@ -305,13 +307,21 @@ func (f *FileDownload) recoverFile(ctx context.Context, chain Blockchain, file x
 func (f *FileDownload) pull(ctx context.Context, id, storIndex, fileId, nodeAddress string) (io.ReadCloser, error) {
 	// Add signature
 	timestamp := time.Now().UnixNano()
-	msg := fmt.Sprintf("%s,%s,%s,%d", id, storIndex, fileId, timestamp)
+	pubkey := ecdsa.PublicKeyFromPrivateKey(f.NodePrivateKey)
+	msg, err := util.GetSigMessage(types.PullOptions{
+		SliceID:   id,
+		FileID:    fileId,
+		StorIndex: storIndex,
+		Timestamp: timestamp,
+		Pubkey:    pubkey[:],
+	})
+	if err != nil {
+		return nil, errorx.Internal(err, "failed to get the message to sign")
+	}
 	sig, err := ecdsa.Sign(f.NodePrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to sign slice pull")
 	}
-
-	pubkey := ecdsa.PublicKeyFromPrivateKey(f.NodePrivateKey)
 	url := fmt.Sprintf("http://%s/v1/slice/pull?slice_id=%s&slice_stor_index=%s&file_id=%s&timestamp=%d&pubkey=%s&signature=%s",
 		nodeAddress, id, storIndex, fileId, timestamp, pubkey.String(), sig.String())
 

@@ -7,7 +7,7 @@ services:
     networks:
       - blockchain_xchain_network
     ports:
-        - 38101:80
+        - 8441:80
     volumes:
         - ./data1/conf:/home/conf
         - ./data1/keys:/home/keys
@@ -23,7 +23,7 @@ services:
     networks:
       - blockchain_xchain_network
     ports:
-      - 38102:80
+      - 8442:80
     depends_on:
       - dataowner1
     volumes:
@@ -43,7 +43,7 @@ services:
     depends_on:
       - dataowner2
     ports:
-      - 38103:80
+      - 8443:80
     volumes:
       - ./data3/conf:/home/conf
       - ./data3/keys:/home/keys

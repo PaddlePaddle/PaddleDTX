@@ -55,9 +55,9 @@ func (x *XChain) ListExecutorNodes() (blockchain.ExecutorNodes, error) {
 }
 
 // GetExecutorNodeByID gets Executor node by ID
-func (x *XChain) GetExecutorNodeByID(id []byte) (node blockchain.ExecutorNode, err error) {
+func (x *XChain) GetExecutorNodeByID(id string) (node blockchain.ExecutorNode, err error) {
 	args := map[string]string{
-		"id": string(id),
+		"id": id,
 	}
 	mName := "GetExecutorNodeByID"
 	s, err := x.QueryContract(args, mName)

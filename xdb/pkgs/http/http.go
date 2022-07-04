@@ -68,7 +68,7 @@ func doResponse(ctx context.Context, method string, url string, input io.Reader,
 		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to decode response")
 	}
 
-	if len(result.Code) > 0 {
+	if result.Code != errorx.SuccessCode {
 		return errorx.New(result.Code, result.Message)
 	}
 

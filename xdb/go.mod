@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Joker/hpp v1.0.0 // indirect
-	github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20220530022639-38e5760b0bd9
+	github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20220629034614-85fd963450e0
 	github.com/Shopify/sarama v1.30.0 // indirect
 	github.com/cjqpker/slidewindow v1.0.2
 	github.com/google/go-querystring v1.1.0 // indirect

@@ -13,6 +13,9 @@
 
 package errorx
 
+// define success code
+const SuccessCode = "0"
+
 // error code list
 const (
 	ErrCodeInternal = "10001" // internal error

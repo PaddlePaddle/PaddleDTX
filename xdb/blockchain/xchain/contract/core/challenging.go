@@ -21,7 +21,6 @@ import (
 	"strconv"
 
 	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
-	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/xuperchain/xuperchain/core/contractsdk/go/code"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
@@ -29,6 +28,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/monitor/challenging"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 var xchainClient = new(fl_crypto.XchainCryptoClient)
@@ -105,7 +105,16 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 	// judge if id exists
 	index := packChallengeIndex(opt.ChallengeID)
 	if _, err := ctx.GetObject([]byte(index)); err == nil {
-		return code.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated ChallengeID"))
+		return code.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated challengeID"))
+	}
+	// verify signature
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
+	}
+	err = x.checkSign(opt.Signature, opt.FileOwner, []byte(msg))
+	if err != nil {
+		return code.Error(err)
 	}
 
 	// make challenge
@@ -120,9 +129,6 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 	}
 
 	if opt.ChallengeAlgorithm == types.PairingChallengeAlgorithm {
-		if err := x.pairingOptCheck(opt); err != nil {
-			return code.Error(err)
-		}
 		c.SliceIDs = opt.SliceIDs
 		c.SliceStorIndexes = opt.SliceStorIndexes
 		c.Indices = opt.Indices
@@ -131,9 +137,6 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 		c.Vs = opt.Vs
 
 	} else if opt.ChallengeAlgorithm == types.MerkleChallengeAlgorithm {
-		if err := x.merkleOptCheck(opt); err != nil {
-			return code.Error(err)
-		}
 		c.SliceID = opt.SliceID
 		c.SliceStorIndex = opt.SliceStorIndex
 		c.Ranges = opt.Ranges
@@ -143,7 +146,7 @@ func (x *Xdata) ChallengeRequest(ctx code.Context) code.Response {
 	}
 
 	// marshal challenge
-	s, err := json.Marshal(c)
+	s, err = json.Marshal(c)
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal Challenge"))
 	}
@@ -182,6 +185,7 @@ func (x *Xdata) ChallengeAnswer(ctx code.Context) code.Response {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"failed to unmarshal ChallengeAnswerOptions"))
 	}
+
 	// judge if challenge exists
 	index := packChallengeIndex(opt.ChallengeID)
 	s, err := ctx.GetObject([]byte(index))
@@ -197,6 +201,20 @@ func (x *Xdata) ChallengeAnswer(ctx code.Context) code.Response {
 	if c.Status == blockchain.ChallengeProved || c.Status == blockchain.ChallengeFailed {
 		return code.Error(errorx.New(errorx.ErrCodeAlreadyExists,
 			"challenge already answered"))
+	}
+
+	// verify signature
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
+	}
+	targetNode, err := hex.DecodeString(string(c.TargetNode))
+	if err != nil {
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeParam, "merkle wrong target node"))
+	}
+	err = x.checkSign(opt.Signature, targetNode, []byte(msg))
+	if err != nil {
+		return code.Error(err)
 	}
 
 	// judge if file exists
@@ -216,9 +234,6 @@ func (x *Xdata) ChallengeAnswer(ctx code.Context) code.Response {
 	// sig verification
 	var verifyErr error
 	if c.ChallengeAlgorithm == types.PairingChallengeAlgorithm {
-		if err := x.pairingAnswerOptCheck(opt, c); err != nil {
-			return code.Error(err)
-		}
 		// verify pairing based challenge
 		v, err := xchainClient.VerifyPairingProof(opt.Sigma, opt.Mu, file.RandV, file.RandU, file.PdpPubkey, c.Indices, c.Vs)
 		if err != nil || !v {
@@ -228,9 +243,6 @@ func (x *Xdata) ChallengeAnswer(ctx code.Context) code.Response {
 			c.Status = blockchain.ChallengeFailed
 		}
 	} else if c.ChallengeAlgorithm == types.MerkleChallengeAlgorithm {
-		if err := x.merkleAnswerOptCheck(opt, c); err != nil {
-			return code.Error(err)
-		}
 		var aopt ctype.AnswerCalculateOptions
 		if err = json.Unmarshal(opt.Proof, &aopt); err != nil {
 			return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to unmarshal Challenge"))
@@ -332,109 +344,4 @@ func (x *Xdata) GetChallengeNum(ctx code.Context) code.Response {
 	}
 
 	return code.OK([]byte(strconv.FormatUint(total, 10)))
-}
-
-func (x *Xdata) pairingOptCheck(opt blockchain.ChallengeRequestOptions) error {
-	// sig verification
-	challengeOpt := blockchain.ChallengeRequestOptions{
-		ChallengeID:        opt.ChallengeID,
-		FileOwner:          opt.FileOwner,
-		TargetNode:         opt.TargetNode,
-		FileID:             opt.FileID,
-		SliceIDs:           opt.SliceIDs,
-		SliceStorIndexes:   opt.SliceStorIndexes,
-		ChallengeTime:      opt.ChallengeTime,
-		Indices:            opt.Indices,
-		Vs:                 opt.Vs,
-		Round:              opt.Round,
-		RandThisRound:      opt.RandThisRound,
-		ChallengeAlgorithm: opt.ChallengeAlgorithm,
-	}
-	content, err := json.Marshal(challengeOpt)
-	if err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal Challenge")
-	}
-	if len(opt.FileOwner) != ecdsa.PublicKeyLength || len(opt.Sig) != ecdsa.SignatureLength {
-		return errorx.New(errorx.ErrCodeParam, "bad challenges")
-	}
-	var pubkey [ecdsa.PublicKeyLength]byte
-	var sig [ecdsa.SignatureLength]byte
-	copy(pubkey[:], opt.FileOwner)
-	copy(sig[:], opt.Sig)
-	if err := ecdsa.Verify(pubkey, xchainClient.HashUsingSha256(content), sig); err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "failed to verify Challenge")
-	}
-	return nil
-}
-
-func (x *Xdata) merkleOptCheck(opt blockchain.ChallengeRequestOptions) error {
-	// sig verification
-	challengeOpt := blockchain.ChallengeRequestOptions{
-		ChallengeID:        opt.ChallengeID,
-		FileOwner:          opt.FileOwner,
-		TargetNode:         opt.TargetNode,
-		FileID:             opt.FileID,
-		SliceID:            opt.SliceID,
-		SliceStorIndex:     opt.SliceStorIndex,
-		Ranges:             opt.Ranges,
-		ChallengeTime:      opt.ChallengeTime,
-		HashOfProof:        opt.HashOfProof,
-		ChallengeAlgorithm: opt.ChallengeAlgorithm,
-	}
-
-	content, err := json.Marshal(challengeOpt)
-	if err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal Challenge")
-	}
-	if len(opt.FileOwner) != ecdsa.PublicKeyLength || len(opt.Sig) != ecdsa.SignatureLength {
-		return errorx.New(errorx.ErrCodeParam, "bad challenges")
-	}
-	var pubkey [ecdsa.PublicKeyLength]byte
-	var sig [ecdsa.SignatureLength]byte
-	copy(pubkey[:], opt.FileOwner)
-	copy(sig[:], opt.Sig)
-	if err := ecdsa.Verify(pubkey, xchainClient.HashUsingSha256(content), sig); err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "failed to verify Challenge")
-	}
-	return nil
-}
-
-func (x *Xdata) pairingAnswerOptCheck(opt blockchain.ChallengeAnswerOptions, c blockchain.Challenge) error {
-	digest := []byte(c.ID)
-	digest = append(digest, opt.Sigma...)
-	digest = append(digest, opt.Mu...)
-	digest = xchainClient.HashUsingSha256(digest)
-	targetNode, err := hex.DecodeString(string(c.TargetNode))
-	if err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeParam, "pairing challenge wrong target node")
-	}
-	if len(targetNode) != ecdsa.PublicKeyLength || len(opt.Sig) != ecdsa.SignatureLength {
-		return errorx.New(errorx.ErrCodeParam, "pairing challenge bad proof")
-	}
-	var pubkey [ecdsa.PublicKeyLength]byte
-	var sig [ecdsa.SignatureLength]byte
-	copy(pubkey[:], targetNode[:])
-	copy(sig[:], opt.Sig[:])
-	if err := ecdsa.Verify(pubkey, digest, sig); err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "pairing challenge signature verification failed")
-	}
-	return nil
-}
-
-func (x *Xdata) merkleAnswerOptCheck(opt blockchain.ChallengeAnswerOptions, c blockchain.Challenge) error {
-	targetNode, err := hex.DecodeString(string(c.TargetNode))
-	if err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeParam, "merkle wrong target node")
-	}
-	if len(targetNode) != ecdsa.PublicKeyLength || len(opt.Sig) != ecdsa.SignatureLength {
-		return errorx.New(errorx.ErrCodeParam, "merkle bad proof")
-	}
-	var pubkey [ecdsa.PublicKeyLength]byte
-	var sig [ecdsa.SignatureLength]byte
-	copy(pubkey[:], targetNode[:])
-	copy(sig[:], opt.Sig[:])
-	if err := ecdsa.Verify(pubkey, opt.Proof, sig); err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "merkle signature verification failed")
-	}
-	return nil
 }

@@ -30,9 +30,9 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/slicer"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
-	etype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/http"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 var (
@@ -117,7 +117,7 @@ func (m *RandomCopier) Push(ctx context.Context, id, sourceID string, r io.Reade
 	// Todo add signature when pushing slices into storage nodes
 	url := fmt.Sprintf("http://%s/v1/slice/push?slice_id=%s&source_id=%s", node.Address, id, sourceID)
 
-	var resp etype.PushResponse
+	var resp types.PushResponse
 	if err := http.PostResponse(ctx, url, r, &resp); err != nil {
 		return "", errorx.Wrap(err, "failed to do post")
 	}
@@ -134,7 +134,16 @@ func (m *RandomCopier) Push(ctx context.Context, id, sourceID string, r io.Reade
 func (m *RandomCopier) Pull(ctx context.Context, id, storIndex, fileID string, node *blockchain.Node) (io.ReadCloser, error) {
 	// Add signature when pulling slices from storage nodes
 	timestamp := time.Now().UnixNano()
-	msg := fmt.Sprintf("%s,%s,%s,%d", id, storIndex, fileID, timestamp)
+	msg, err := util.GetSigMessage(types.PullOptions{
+		SliceID:   id,
+		FileID:    fileID,
+		StorIndex: storIndex,
+		Timestamp: timestamp,
+	})
+	if err != nil {
+		return nil, errorx.Internal(err, "failed to get the message to sign for pull slices")
+	}
+
 	sig, err := ecdsa.Sign(m.privateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to sign file pull")

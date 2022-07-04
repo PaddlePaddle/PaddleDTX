@@ -39,7 +39,8 @@ var getNodeByIDCmd = &cobra.Command{
 			return
 		}
 		rtime := time.Unix(0, n.RegTime).Format(timeTemplate)
-		fmt.Printf("NodeID: %x\nName: %s\nAddress: %s\nPaddleFLRole: %d\nPaddleFLAddress:%s\nRegisterTime: %v\n\n", n.ID, n.Name, n.Address, n.PaddleFLRole, n.PaddleFLAddress, rtime)
+		fmt.Printf("NodeID: %x\nName: %s\nAddress: %s\nHttpAddress: %s\nPaddleFLRole: %d\nPaddleFLAddress:%s\nRegisterTime: %v\n\n",
+			n.ID, n.Name, n.Address, n.HttpAddress, n.PaddleFLRole, n.PaddleFLAddress, rtime)
 	},
 }
 
@@ -59,7 +60,8 @@ var getNodeByNameCmd = &cobra.Command{
 			return
 		}
 		rtime := time.Unix(0, n.RegTime).Format(timeTemplate)
-		fmt.Printf("NodeID: %x\nName: %s\nAddress: %s\nRegisterTime: %v\n\n", n.ID, n.Name, n.Address, rtime)
+		fmt.Printf("NodeID: %x\nName: %s\nAddress: %s\nHttpAddress: %s\nPaddleFLRole: %d\nPaddleFLAddress:%s\nRegisterTime: %v\n\n",
+			n.ID, n.Name, n.Address, n.HttpAddress, n.PaddleFLRole, n.PaddleFLAddress, rtime)
 	},
 }
 

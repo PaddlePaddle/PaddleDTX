@@ -16,7 +16,6 @@ package core
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
@@ -25,6 +24,7 @@ import (
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // AddNode adds a node to fabric
@@ -52,7 +52,12 @@ func (x *Xdata) AddNode(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	if err != nil {
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeParam, "failed to decode nodeID").Error())
 	}
-	if err := x.checkSign(opt.Signature, npk, s); err != nil {
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
+	}
+	if err := x.checkSign(opt.Signature, npk, []byte(msg)); err != nil {
 		return shim.Error(err.Error())
 	}
 
@@ -159,8 +164,12 @@ func (x *Xdata) setNodeOnlineStatus(stub shim.ChaincodeStubInterface, args []str
 	if err != nil {
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to decode nodeID").Error())
 	}
-	m := fmt.Sprintf("%s,%d", string(opt.NodeID), opt.Nonce)
-	if err := x.checkSign(opt.Sig, npk, []byte(m)); err != nil {
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
+	}
+	if err := x.checkSign(opt.Signature, npk, []byte(msg)); err != nil {
 		return shim.Error(err.Error())
 	}
 
@@ -203,50 +212,45 @@ func (x *Xdata) setNodeOnlineStatus(stub shim.ChaincodeStubInterface, args []str
 
 // Heartbeat updates heartbeat of node
 func (x *Xdata) Heartbeat(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) < 3 {
+	if len(args) < 1 {
 		return shim.Error("invalid arguments. expecting nodeID, signature and timestamp")
 	}
-
-	// get id
-	nodeID := []byte(args[0])
-	// get currentTime
-	ctime, err := strconv.ParseInt(args[2], 10, 64)
-	if err != nil {
-		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to parseInt currentTime").Error())
-	}
-
-	// get beginningTime
-	btime, err := strconv.ParseInt(args[3], 10, 64)
-	if err != nil {
-		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to parseInt beginningTime").Error())
+	var opt blockchain.NodeHeartBeatOptions
+	if err := json.Unmarshal([]byte(args[0]), &opt); err != nil {
+		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
+			"failed to unmarshal NodeHeartBeatOptions").Error())
 	}
 
 	// verify sig
-	nodePK, err := hex.DecodeString(string(nodeID))
+	nodePK, err := hex.DecodeString(string(opt.NodeID))
 	if err != nil {
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to decode nodeID").Error())
 	}
-	msg := fmt.Sprintf("%s,%d", string(nodeID), ctime)
-	if err := x.checkSign([]byte(args[1]), nodePK, []byte(msg)); err != nil {
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
+	}
+	if err := x.checkSign(opt.Signature, nodePK, []byte(msg)); err != nil {
 		return shim.Error(err.Error())
 	}
 
 	// update node heartbeat number
-	hindex := packHeartBeatIndex(nodeID, btime)
+	hindex := packHeartBeatIndex(opt.NodeID, opt.BeginningTime)
 	resp := x.getValue(stub, []string{hindex})
 	var hb []int64
 	if len(resp.Payload) == 0 {
-		hb = append(hb, ctime)
+		hb = append(hb, opt.CurrentTime)
 	} else {
 		if err := json.Unmarshal(resp.Payload, &hb); err != nil {
 			return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to unmarshal heartbeat").Error())
 		}
 		for _, v := range hb {
-			if v == ctime {
+			if v == opt.CurrentTime {
 				return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "heartbeat has been checked of ctime").Error())
 			}
 		}
-		hb = append(hb, ctime)
+		hb = append(hb, opt.CurrentTime)
 	}
 
 	hbc, err := json.Marshal(hb)
@@ -259,7 +263,7 @@ func (x *Xdata) Heartbeat(stub shim.ChaincodeStubInterface, args []string) pb.Re
 	}
 
 	// update node updateAt after heartbeat success
-	index := packNodeIndex(nodeID)
+	index := packNodeIndex(opt.NodeID)
 	resp = x.getValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "node not found: %s", resp.Message).Error())
@@ -270,7 +274,7 @@ func (x *Xdata) Heartbeat(stub shim.ChaincodeStubInterface, args []string) pb.Re
 			"failed to unmarshal node").Error())
 	}
 	// update node heartbeat time
-	node.UpdateAt = ctime
+	node.UpdateAt = opt.CurrentTime
 	newNode, err := json.Marshal(node)
 	if err != nil {
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal node").Error())

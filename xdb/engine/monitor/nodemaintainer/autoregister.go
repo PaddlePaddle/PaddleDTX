@@ -14,8 +14,7 @@
 package nodemaintainer
 
 import (
-	"encoding/json"
-	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
@@ -24,6 +23,7 @@ import (
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // autoRegister storage-node automatically register in blockchain
@@ -36,16 +36,24 @@ func (m *NodeMaintainer) autoRegister() error {
 		logrus.Info("node already registered on blockchain")
 		return nil
 	} else if err == nil && !node.Online {
+		// get sig message
 		nonce := time.Now().UnixNano()
-		mes := fmt.Sprintf("%s,%d", pubkey.String(), nonce)
-		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(mes)))
+		msg, err := util.GetSigMessage(map[string]string{
+			"nodeID": pubkey.String(),
+			"nonce":  strconv.FormatInt(nonce, 10),
+		})
+		if err != nil {
+			return errorx.Internal(err, "failed to get the message to sign")
+		}
+		// generate signature
+		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 		if err != nil {
 			return errorx.Wrap(err, "failed to sign File")
 		}
 		nodeOpts := &blockchain.NodeOperateOptions{
-			NodeID: []byte(pubkey.String()),
-			Nonce:  nonce,
-			Sig:    sig[:],
+			NodeID:    []byte(pubkey.String()),
+			Nonce:     nonce,
+			Signature: sig[:],
 		}
 		err = m.blockchain.NodeOnline(nodeOpts)
 		if err != nil {
@@ -65,12 +73,11 @@ func (m *NodeMaintainer) autoRegister() error {
 				UpdateAt: timestamp,
 			},
 		}
-		// sign node info
-		s, err := json.Marshal(opt.Node)
+		msg, err := util.GetSigMessage(opt)
 		if err != nil {
-			return errorx.Wrap(err, "failed to marshal node")
+			return errorx.Internal(err, "failed to get the message to sign")
 		}
-		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256(s))
+		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 		if err != nil {
 			return errorx.Wrap(err, "failed to sign node")
 		}

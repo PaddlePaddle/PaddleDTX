@@ -16,7 +16,6 @@ package engine
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
@@ -29,11 +28,22 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
-// ListFiles lists files from blockchain
-func (e *Engine) ListFiles(opt types.ListFileOptions) (
+// ListFiles lists unExpired files from blockchain
+func (e *Engine) ListUnExpiredFiles(opt types.ListFileOptions) (
 	[]blockchain.File, error) {
+	return e.listFiles(opt, false)
+}
+
+// ListExpiredFiles list expired but still valid files
+func (e *Engine) ListExpiredFiles(opt types.ListFileOptions) ([]blockchain.File, error) {
+	return e.listFiles(opt, true)
+}
+
+func (e *Engine) listFiles(opt types.ListFileOptions, isExpired bool) (
+	files []blockchain.File, err error) {
 	owner, err := e.getPubKey(opt.Owner)
 	if err != nil {
 		return nil, err
@@ -53,36 +63,11 @@ func (e *Engine) ListFiles(opt types.ListFileOptions) (
 		Limit:       opt.Limit,
 		CurrentTime: opt.CurrentTime,
 	}
-	files, err := e.chain.ListFiles(&bcopt)
-	if err != nil {
-		return nil, errorx.Wrap(err, "failed to read blockchain")
+	if isExpired {
+		files, err = e.chain.ListExpiredFiles(&bcopt)
+	} else {
+		files, err = e.chain.ListFiles(&bcopt)
 	}
-	return files, nil
-}
-
-// ListExpiredFiles list expired but still valid files
-func (e *Engine) ListExpiredFiles(opt types.ListFileOptions) (
-	[]blockchain.File, error) {
-	owner, err := e.getPubKey(opt.Owner)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := e.chain.GetNsByName(owner[:], opt.Namespace); err != nil {
-		if errorx.Is(err, errorx.ErrCodeNotFound) {
-			return nil, errorx.New(errorx.ErrCodeNotFound, "ns not found")
-		}
-		return nil, errorx.Wrap(err, "failed to get ns from blockchain")
-	}
-
-	bcopt := blockchain.ListFileOptions{
-		Owner:       owner,
-		Namespace:   opt.Namespace,
-		TimeStart:   opt.TimeStart,
-		TimeEnd:     opt.TimeEnd,
-		Limit:       opt.Limit,
-		CurrentTime: opt.CurrentTime,
-	}
-	files, err := e.chain.ListExpiredFiles(&bcopt)
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to read blockchain")
 	}
@@ -153,16 +138,15 @@ func (e *Engine) UpdateFileExpireTime(ctx context.Context, opt types.UpdateFileE
 	if err := e.verifyUserID(opt.User); err != nil {
 		return err
 	}
-	m := fmt.Sprintf("%s,%d,%d", opt.FileID, opt.ExpireTime, opt.CurrentTime)
-	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(m))); err != nil {
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
+	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(msg))); err != nil {
 		return err
 	}
 
-	localPrv := e.monitor.challengingMonitor.PrivateKey
-	sig, err := ecdsa.Sign(localPrv, hash.HashUsingSha256([]byte(m)))
-	if err != nil {
-		return errorx.Wrap(err, "failed to sign")
-	}
 	if opt.CurrentTime+5*time.Second.Nanoseconds() < time.Now().UnixNano() {
 		return errorx.New(errorx.ErrCodeExpired, "request expired")
 	}
@@ -177,15 +161,25 @@ func (e *Engine) UpdateFileExpireTime(ctx context.Context, opt types.UpdateFileE
 	}
 
 	if opt.ExpireTime <= opt.CurrentTime || opt.ExpireTime <= file.ExpireTime {
-		return errorx.New(errorx.ErrCodeParam, "invalid param expireTime")
+		return errorx.New(errorx.ErrCodeParam, "invalid param expireTime, newExpireTime is too small")
 	}
 
 	uopt := &blockchain.UpdateExptimeOptions{
 		FileID:        opt.FileID,
 		NewExpireTime: opt.ExpireTime,
 		CurrentTime:   opt.CurrentTime,
-		Signature:     sig[:],
 	}
+
+	msg, err = util.GetSigMessage(uopt)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign for update file expire time")
+	}
+	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.HashUsingSha256([]byte(msg)))
+	if err != nil {
+		return errorx.Wrap(err, "failed to sign")
+	}
+	uopt.Signature = sig[:]
+
 	newFile, err := e.chain.UpdateFileExpireTime(uopt)
 	if err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
@@ -223,38 +217,39 @@ func (e *Engine) AddFileNs(opt types.AddNsOptions) (err error) {
 	if err := e.verifyUserID(opt.User); err != nil {
 		return err
 	}
-
-	m := fmt.Sprintf("%s,%s,%d,%d", opt.Namespace, opt.Description, opt.CreateTime, opt.Replica)
-	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(m))); err != nil {
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
+	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(msg))); err != nil {
 		return err
 	}
 
 	// sign with the private key of the dataOwner node
 	pubkey := ecdsa.PublicKeyFromPrivateKey(e.monitor.challengingMonitor.PrivateKey)
-	namespace := blockchain.Namespace{
-		Name:         opt.Namespace,
-		Description:  opt.Description,
-		Owner:        pubkey[:],
-		CreateTime:   opt.CreateTime,
-		UpdateTime:   opt.CreateTime,
-		Replica:      opt.Replica,
-		FileTotalNum: 0,
+	namespace := &blockchain.AddNsOptions{
+		Namespace: blockchain.Namespace{
+			Name:         opt.Namespace,
+			Description:  opt.Description,
+			Owner:        pubkey[:],
+			CreateTime:   opt.CreateTime,
+			UpdateTime:   opt.CreateTime,
+			Replica:      opt.Replica,
+			FileTotalNum: 0,
+		},
 	}
-
-	s, err := json.Marshal(namespace)
+	msg, err = util.GetSigMessage(namespace)
 	if err != nil {
-		return errorx.Wrap(err, "failed to marshal namespace")
+		return errorx.Internal(err, "failed to get the message to sign for add file ns")
 	}
-	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.HashUsingSha256(s))
+	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign file expire time")
 	}
-	ans := &blockchain.AddNsOptions{
-		Namespace: namespace,
-		Signature: sig[:],
-	}
+	namespace.Signature = sig[:]
 
-	if err := e.chain.AddFileNs(ans); err != nil {
+	if err := e.chain.AddFileNs(namespace); err != nil {
 		if errorx.Is(err, errorx.ErrCodeNotFound) {
 			return err
 		}
@@ -268,18 +263,18 @@ func (e *Engine) UpdateNsReplica(ctx context.Context, opt types.UpdateNsOptions)
 	if err := e.verifyUserID(opt.User); err != nil {
 		return err
 	}
-	m := fmt.Sprintf("%s,%d,%d", opt.Namespace, opt.Replica, opt.CurrentTime)
-	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(m))); err != nil {
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
+	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(msg))); err != nil {
 		return err
 	}
 
 	// sign using local key
 	localPrv := e.monitor.challengingMonitor.PrivateKey
 	localPub := ecdsa.PublicKeyFromPrivateKey(localPrv)
-	sig, err := ecdsa.Sign(localPrv, hash.HashUsingSha256([]byte(m)))
-	if err != nil {
-		return errorx.Wrap(err, "failed to sign")
-	}
 
 	// get replica from chain
 	ns, err := e.chain.GetNsByName(localPub[:], opt.Namespace)
@@ -318,8 +313,16 @@ func (e *Engine) UpdateNsReplica(ctx context.Context, opt types.UpdateNsOptions)
 		Name:        opt.Namespace,
 		Replica:     opt.Replica,
 		CurrentTime: opt.CurrentTime,
-		Signature:   sig[:],
 	}
+	msg, err = util.GetSigMessage(sopt)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign for update ns replica")
+	}
+	sig, err := ecdsa.Sign(localPrv, hash.HashUsingSha256([]byte(msg)))
+	if err != nil {
+		return errorx.Wrap(err, "failed to sign")
+	}
+	sopt.Signature = sig[:]
 	err = e.chain.UpdateNsReplica(sopt)
 	if err != nil {
 		return errorx.Wrap(err, "failed to update file ns replica on blockchain")
@@ -443,8 +446,12 @@ func (e *Engine) ConfirmAuth(opt types.ConfirmAuthOptions) error {
 	if err := e.verifyUserID(opt.User); err != nil {
 		return err
 	}
-	m := fmt.Sprintf("%s,%d,%s", opt.AuthID, opt.ExpireTime, opt.RejectReason)
-	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(m))); err != nil {
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
+	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(msg))); err != nil {
 		return errorx.Wrap(err, "failed to verify user token")
 	}
 
@@ -459,7 +466,6 @@ func (e *Engine) ConfirmAuth(opt types.ConfirmAuthOptions) error {
 		CurrentTime:  time.Now().UnixNano(),
 		ExpireTime:   opt.ExpireTime,
 	}
-	sigMes := fmt.Sprintf("%s,%d,", copt.ID, copt.CurrentTime)
 	if opt.Status {
 		// Obtain an encryption key once and twice
 		authKey, err := e.getAuthKey(fileAuth.FileID, fileAuth.Applier, opt.ExpireTime)
@@ -467,12 +473,14 @@ func (e *Engine) ConfirmAuth(opt types.ConfirmAuthOptions) error {
 			return errorx.Wrap(err, "failed to get file authorization encryption key")
 		}
 		copt.AuthKey = authKey
-		sigMes += fmt.Sprintf("%x,%d", authKey, copt.ExpireTime)
-	} else {
-		sigMes += copt.RejectReason
 	}
+
 	// Sign confirm info
-	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.HashUsingSha256([]byte(sigMes)))
+	msg, err = util.GetSigMessage(copt)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign for confirm authorization")
+	}
+	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign file authorization application")
 	}
@@ -497,8 +505,8 @@ func (e *Engine) getAuthKey(fileID string, applier []byte, expireTime int64) ([]
 		return nil, errorx.Wrap(err, "failed to get file from blockchain")
 	}
 	// The authorization expiration time must be less than the file expiration time
-	if file.ExpireTime <= expireTime {
-		return nil, errorx.New(errorx.ErrCodeParam, "file expireTime less than authorization expireTime")
+	if file.ExpireTime < expireTime {
+		return nil, errorx.New(errorx.ErrCodeParam, "authorization expireTime cannot be later than file expireTime")
 	}
 	authKey := make(map[string]interface{})
 	// Get the first-level derived key

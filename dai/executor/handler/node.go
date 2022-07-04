@@ -32,7 +32,7 @@ import (
 type Blockchain interface {
 	// executor operation
 	RegisterExecutorNode(opt *blockchain.AddNodeOptions) error
-	GetExecutorNodeByID(id []byte) (blockchain.ExecutorNode, error)
+	GetExecutorNodeByID(id string) (blockchain.ExecutorNode, error)
 	ListExecutorNodes() (blockchain.ExecutorNodes, error)
 
 	// task operation
@@ -57,6 +57,7 @@ type Blockchain interface {
 
 type Node struct {
 	peer.Local
+	HttpAddress     string
 	PaddleFLAddress string
 	PaddleFLRole    int
 }
@@ -76,7 +77,7 @@ func (n *Node) autoRegister(chain Blockchain) error {
 	logrus.WithField("module", "handler.node")
 
 	pubkey := ecdsa.PublicKeyFromPrivateKey(n.PrivateKey)
-	if _, err := chain.GetExecutorNodeByID(pubkey[:]); err == nil {
+	if _, err := chain.GetExecutorNodeByID(pubkey.String()); err == nil {
 		logrus.Info("node already registered on blockchain")
 		return nil
 	}
@@ -86,6 +87,7 @@ func (n *Node) autoRegister(chain Blockchain) error {
 			ID:              pubkey[:],
 			Name:            n.Name,
 			Address:         n.Address,
+			HttpAddress:     n.HttpAddress,
 			PaddleFLAddress: n.PaddleFLAddress,
 			PaddleFLRole:    n.PaddleFLRole,
 			RegTime:         timestamp,

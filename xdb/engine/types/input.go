@@ -22,12 +22,12 @@ import (
 // WriteOptions options for writing file to system
 type WriteOptions struct {
 	User        string `json:"user"`
-	Token       string `json:"token"`
-	Namespace   string `json:"namespace"`
-	FileName    string `json:"file_name"`
-	ExpireTime  int64  `json:"expire_time"`
-	Description string `json:"description"`
-	Extra       string `json:"extra"`
+	Namespace   string `json:"ns"`
+	FileName    string `json:"name"`
+	ExpireTime  int64  `json:"expireTime"`
+	Description string `json:"desc"`
+	Extra       string `json:"ext"`
+	Token       string `json:"-"`
 }
 
 // Valid checks if WriteOptions is valid
@@ -61,10 +61,10 @@ func (o *WriteOptions) Valid() error {
 type ReadOptions struct {
 	User      string `json:"user"`
 	Timestamp int64  `json:"timestamp"`
-	Token     string `json:"token"`
-	Namespace string `json:"namespace"`
-	FileName  string `json:"file_name"`
+	Namespace string `json:"ns"`
+	FileName  string `json:"name"`
 	FileID    string `json:"file_id"`
+	Token     string `json:"-"`
 }
 
 // Valid check if ReadOptions is valid
@@ -102,27 +102,20 @@ type PushOptions struct {
 
 // PullOptions options for pulling slice from storage node
 type PullOptions struct {
-	Pubkey    []byte // file owner public key or applier's public key, applier has usage requirements for files
-	SliceID   string
-	StorIndex string
-	FileID    string
-	Timestamp int64
-	Signature string
-	NotASlice bool // denote if pushed content is not a slice, current pairing based challenge sigmas is supported
+	Pubkey    []byte `json:"pubkey"` // file owner public key or applier's public key, applier has usage requirements for files
+	SliceID   string `json:"slice_id"`
+	StorIndex string `json:"slice_stor_index"`
+	FileID    string `json:"file_id"`
+	Timestamp int64  `json:"timestamp"`
+	NotASlice bool   `json:"notASlice"` // denote if pushed content is not a slice, current pairing based challenge sigmas is supported
+	Signature string `json:"signature"`
 }
 
-// NodeOfflineOptions options for setting storage node with offline status on blockchain
-type NodeOfflineOptions struct {
-	NodeID string
-	Nonce  int64
-	Token  string
-}
-
-// NodeOnlineOptions options for setting storage node with online status on blockchain
-type NodeOnlineOptions struct {
-	NodeID string
-	Nonce  int64
-	Token  string
+// NodeOperateOptions options for setting storage node with online or offline status on blockchain
+type NodeOperateOptions struct {
+	NodeID string `json:"node"`
+	Nonce  int64  `json:"nonce"`
+	Token  string `json:"-"`
 }
 
 // ListFileOptions options for listing files from blockchain
@@ -146,11 +139,11 @@ func (o *ListFileOptions) Valid() error {
 
 // UpdateFileEtimeOptions options for updating file expire time
 type UpdateFileEtimeOptions struct {
-	FileID      string
-	ExpireTime  int64
-	CurrentTime int64
-	User        string
-	Token       string
+	FileID      string `json:"id"`
+	ExpireTime  int64  `json:"expireTime"`
+	CurrentTime int64  `json:"ctime"`
+	User        string `json:"user"`
+	Token       string `json:"-"`
 }
 
 // Valid checks if UpdateFileEtimeOptions is valid
@@ -163,22 +156,48 @@ func (o *UpdateFileEtimeOptions) Valid() error {
 
 // AddNsOptions options for adding namespace on blockchain
 type AddNsOptions struct {
-	Owner       string
-	Namespace   string
-	Description string
-	Replica     int
-	CreateTime  int64
-	User        string
-	Token       string
+	Namespace   string `json:"ns"`
+	Description string `json:"desc"`
+	Replica     int    `json:"replica"`
+	CreateTime  int64  `json:"ctime"`
+	User        string `json:"user"`
+	Token       string `json:"-"`
+}
+
+// Valid checks if AddNsOptions is valid
+func (o *AddNsOptions) Valid() error {
+	return checkOperateNsOptions(o.User, o.Namespace, o.Token, o.Replica)
 }
 
 // UpdateNsOptions options for updating namespace replica
 type UpdateNsOptions struct {
-	Namespace   string
-	Replica     int
-	CurrentTime int64
-	User        string
-	Token       string
+	Namespace   string `json:"ns"`
+	Replica     int    `json:"replica"`
+	CurrentTime int64  `json:"ctime"`
+	User        string `json:"user"`
+	Token       string `json:"-"`
+}
+
+// Valid checks if WriteOptions is valid
+func (o *UpdateNsOptions) Valid() error {
+	return checkOperateNsOptions(o.User, o.Namespace, o.Token, o.Replica)
+}
+
+// checkOperateNsOptions checks UpdateNsOptions or AddNsOptions is valid
+func checkOperateNsOptions(user, ns, token string, replica int) error {
+	if len(user) == 0 {
+		return errorx.New(errorx.ErrCodeParam, "invalid param, empty user")
+	}
+	if len(token) == 0 {
+		return errorx.New(errorx.ErrCodeParam, "invalid param, empty token")
+	}
+	if len(ns) == 0 {
+		return errorx.New(errorx.ErrCodeParam, "invalid param, empty namespace")
+	}
+	if replica <= 0 {
+		return errorx.New(errorx.ErrCodeParam, "invalid param replica")
+	}
+	return nil
 }
 
 type ListNsOptions ListFileOptions
@@ -196,12 +215,12 @@ type ListFileAuthOptions struct {
 
 // ConfirmAuthOptions parameters for authorizers confirm or reject file authorization application
 type ConfirmAuthOptions struct {
-	User         string // authorizer's public key
-	AuthID       string
-	RejectReason string
-	ExpireTime   int64
-	Status       bool // file authorization application status
-	Token        string
+	User         string `json:"user"` // authorizer's public key
+	AuthID       string `json:"authID"`
+	RejectReason string `json:"rejectReason"`
+	ExpireTime   int64  `json:"expireTime"`
+	Status       bool   `json:"status"` // file authorization application status
+	Token        string `json:"-"`
 }
 
 // Valid checks if ConfirmAuthOptions is valid

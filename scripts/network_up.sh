@@ -37,6 +37,13 @@ STORAGE_MODE_TYPE="local"
 
 PADDLEFL="none"
 
+# The IP address of the executor node registered to the blockchain network
+# 计算节点注册到区块链网络的IP地址
+EXECUTOR_HOST=""
+EXECUTOR1_HOST="executor1.node.com"
+EXECUTOR2_HOST="executor2.node.com"
+EXECUTOR3_HOST="executor3.node.com"
+
 function start() {
   # 1. Standardize Conf
   # 1. 标准化配置文件
@@ -56,13 +63,19 @@ function start() {
   startXdb
   sleep 5
 
-  # 5. Start PaddleDTX
-  # 5. 启动多方安全计算网络
-  startPaddleDTX
+  # 5. Start PaddleDTX Visualization service
+  # 5. 如果用户指定了计算节点IP，则启动可视化服务
+  if [ $EXECUTOR_HOST ]; then     
+    startVisual
+  fi
 
+  # 6. Start PaddleDTX
+  # 6. 启动多方安全计算网络, 如果使用DNN算法, 则启动PaddleFL
   if [ $PADDLEFL = 'true' ]; then
     startPaddleFL
   fi
+  startPaddleDTX
+
 }
 
 function stop() {
@@ -81,6 +94,12 @@ function stop() {
   # 停止 PaddleFL
   print_blue "==========> Stop executor paddlefl network ..."
   docker-compose -p paddlefl -f ../$TMP_CONF_PATH/executor/docker-compose-paddlefl.yml down
+  
+  # Stop visualization
+  # 停止可视化服务
+  print_blue "==========> Stop visualization ..."
+  docker-compose -f ../$TMP_CONF_PATH/visualization/docker-compose.yml down 
+
   # Stop xchain network
   # 停止区块链网络
   print_blue "==========> Stop xchain network ..."
@@ -130,7 +149,7 @@ function startXdb() {
     print_blue "==========> IPFS network starts ..."
     docker-compose -f ../$TMP_CONF_PATH/ipfs/docker-compose.yml up -d
     sleep 6
-
+    
     checkContainerStatus "ipfs_host_0" "IPFS storage network"
   fi
 
@@ -166,9 +185,19 @@ function startPaddleFL() {
 
   executorContainers="paddlefl-env1 paddlefl-env2 paddlefl-env3"
   checkContainerStatus "$executorContainers" "PaddleFL"
-  print_green "========================================================="
-  print_green "          PaddleFL starts successfully !                "
-  print_green "========================================================="
+  print_green "==========> PaddleFL starts successfully !"
+}
+
+# startVisual start PaddleDTX Visualization service with docker compose
+# 通过docker-compose启动可视化服务
+function startVisual() {
+  print_blue "==========> Visualization start ..."
+  docker-compose -f ../$TMP_CONF_PATH/visualization/docker-compose.yml up -d
+  sleep 6
+
+  xchainContainers="paddledtx-visual"
+  checkContainerStatus "$xchainContainers" "Visualization service"
+  print_green "==========> PaddleDTX Visualization starts successfully !"
 }
 
 # checkContainerStatus check container status
@@ -281,7 +310,7 @@ function print_red() {
 
 action=$1
 shift
-while getopts "s:p:" opt; do
+while getopts "s:p:h:" opt; do
   case "$opt" in
   s) 
     if [ $OPTARG = "ipfs" ]; then
@@ -291,6 +320,14 @@ while getopts "s:p:" opt; do
   p)
     if [ $OPTARG = "true" ]; then
       PADDLEFL="true"
+    fi
+    ;;
+  h)
+    if [ $OPTARG ]; then
+      EXECUTOR_HOST=$OPTARG
+	  EXECUTOR1_HOST=$EXECUTOR_HOST
+	  EXECUTOR2_HOST=$EXECUTOR_HOST
+	  EXECUTOR3_HOST=$EXECUTOR_HOST
     fi
     ;;
   esac
@@ -313,5 +350,6 @@ restart)
   exit 1
   ;;
 esac
+
 
 

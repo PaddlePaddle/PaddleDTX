@@ -63,7 +63,7 @@ var failedCmd = &cobra.Command{
 			TimeEnd:    endTime.UnixNano(),
 			Limit:      limit,
 		}
-		challenges, err := client.GetFailedChallenges(context.Background(), opt)
+		challenges, err := client.GetChallenges(context.Background(), opt, blockchain.ChallengeFailed)
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
 			return

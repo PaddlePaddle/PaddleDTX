@@ -43,7 +43,7 @@ var getByIDCmd = &cobra.Command{
 		publishTime := time.Unix(0, task.PublishTime).Format(timeTemplate)
 
 		fmt.Printf("TaskID: %s\nRequester: %x\nTaskType: %s\nTaskName: %s\nDescription: %s\nLabel: %s\nLabelName: %s\nRegMode: %v\nRegParam: %v\n",
-			task.ID, task.Requester, blockchain.TaskTypeListValue[task.AlgoParam.TaskType], task.Name, task.Description, task.AlgoParam.TrainParams.Label,
+			task.TaskID, task.Requester, blockchain.TaskTypeListValue[task.AlgoParam.TaskType], task.Name, task.Description, task.AlgoParam.TrainParams.Label,
 			task.AlgoParam.TrainParams.LabelName, blockchain.RegModeListValue[task.AlgoParam.TrainParams.RegMode], task.AlgoParam.TrainParams.RegParam)
 
 		fmt.Printf("Algorithm: %v\nAlpha: %f\nAmplitude: %f\nAccuracy: %v\nModelTaskID: %s\nStatus: %s\nPublishTime: %s\n\n",
@@ -74,7 +74,7 @@ var getByIDCmd = &cobra.Command{
 				rt = time.Unix(0, data.RejectedAt).Format(timeTemplate)
 			}
 			fmt.Printf("DataID: %s\nOwner: %x\nExecutor: %x\nAddress: %s\nPSILabel: %s\nConfirmedAt: %s\nRejectedAt: %s\n\n",
-				data.DataID, data.Owner, data.Executor, data.Address, data.PSILabel, ct, rt)
+				data.DataID, data.Owner, data.Executor, data.Address, data.PsiLabel, ct, rt)
 		}
 
 		var startTime, endTime string

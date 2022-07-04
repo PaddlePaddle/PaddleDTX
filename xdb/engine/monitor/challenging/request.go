@@ -15,7 +15,6 @@ package challenging
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"math/big"
 	"math/rand"
@@ -31,6 +30,7 @@ import (
 	ctype "github.com/PaddlePaddle/PaddleDTX/xdb/engine/challenger/merkle/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // loopRequest publishes challenge requests if local node is dataOwner-node,
@@ -180,17 +180,17 @@ func (c *ChallengingMonitor) doPairingChallengeRequest(challengeAlgorithm string
 	}
 
 	// sign request
-	content, err := json.Marshal(requestOpt)
+	msg, err := util.GetSigMessage(requestOpt)
 	if err != nil {
-		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to marshal request")
+		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to get the message to sign")
 		return err
 	}
-	sig, err := ecdsa.Sign(c.PrivateKey, hash.HashUsingSha256(content))
+	sig, err := ecdsa.Sign(c.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to sign request")
 		return err
 	}
-	requestOpt.Sig = sig[:]
+	requestOpt.Signature = sig[:]
 
 	if err := c.blockchain.ChallengeRequest(&requestOpt); err != nil {
 		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to publish challenge request")
@@ -257,17 +257,17 @@ func (c *ChallengingMonitor) doMerkleChallengeRequest(challengeAlgorithm string,
 	}
 
 	// sign request
-	content, err := json.Marshal(requestOpt)
+	msg, err := util.GetSigMessage(requestOpt)
 	if err != nil {
-		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to marshal request")
+		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to get the message to sign")
 		return err
 	}
-	sig, err := ecdsa.Sign(c.PrivateKey, hash.HashUsingSha256(content))
+	sig, err := ecdsa.Sign(c.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to sign request")
 		return err
 	}
-	requestOpt.Sig = sig[:]
+	requestOpt.Signature = sig[:]
 
 	if err := c.blockchain.ChallengeRequest(&requestOpt); err != nil {
 		l.WithField("challenge_id", requestOpt.ChallengeID).WithError(err).Warn("failed to publish challenge request")

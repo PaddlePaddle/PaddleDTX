@@ -22,14 +22,12 @@ import (
 )
 
 type randomProof struct {
-	Sigma     []byte
-	Mu        []byte
-	Signature []byte
+	Sigma []byte
+	Mu    []byte
 }
 
 type rangeProof struct {
-	Proof     []byte
-	Signature []byte
+	Proof []byte
 }
 
 func Calculate(opt *ctype.CalculateOptions) []byte {

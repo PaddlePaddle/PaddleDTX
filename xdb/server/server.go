@@ -16,6 +16,7 @@ package server
 import (
 	"context"
 	"io"
+	"strings"
 
 	"github.com/kataras/iris/v12"
 	"github.com/sirupsen/logrus"
@@ -33,7 +34,7 @@ type Handler interface {
 	Write(context.Context, etype.WriteOptions, io.Reader) (etype.WriteResponse, error)
 	Read(context.Context, etype.ReadOptions) (io.ReadCloser, error)
 
-	ListFiles(etype.ListFileOptions) ([]blockchain.File, error)
+	ListUnExpiredFiles(etype.ListFileOptions) ([]blockchain.File, error)
 	ListExpiredFiles(etype.ListFileOptions) ([]blockchain.File, error)
 	GetFileByID(ctx context.Context, id string) (blockchain.FileH, error)
 	GetFileByName(ctx context.Context, pubkey, ns, name string) (blockchain.FileH, error)
@@ -57,8 +58,8 @@ type Handler interface {
 	GetNode([]byte) (blockchain.Node, error)
 	GetHeartbeatNum([]byte, int64) (int, int, error)
 	GetNodeHealth([]byte) (string, error)
-	NodeOffline(etype.NodeOfflineOptions) error
-	NodeOnline(etype.NodeOnlineOptions) error
+	NodeOffline(etype.NodeOperateOptions) error
+	NodeOnline(etype.NodeOperateOptions) error
 	GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error)
 }
 
@@ -76,7 +77,6 @@ func New(listenAddress string, h Handler) (*Server, error) {
 	if listenAddress == "" {
 		return nil, errorx.New(errorx.ErrCodeConfig, "misssing config: listenAddress")
 	}
-
 	server := &Server{
 		app:        app,
 		listenAddr: listenAddress,
@@ -85,36 +85,56 @@ func New(listenAddress string, h Handler) (*Server, error) {
 	return server, nil
 }
 
-// setRoute define the routing of node's server
+// setCros Set the DataOwner node allows CROS requests
+func (s *Server) setCros(ictx iris.Context) {
+	// Note: AllowCros is kind of dangerous in production environment
+	// don't use this without consideration
+	if origin := ictx.GetHeader("Origin"); origin != "" {
+		ictx.Header("Access-Control-Allow-Origin", origin)
+		if ictx.Method() == "OPTIONS" && ictx.GetHeader("Access-Control-Request-Method") != "" {
+			headers := []string{"Content-Type", "Accept"}
+			ictx.Header("Access-Control-Allow-Headers", strings.Join(headers, ","))
+			methods := []string{"GET", "HEAD", "POST", "PUT", "DELETE"}
+			ictx.Header("Access-Control-Allow-Methods", strings.Join(methods, ","))
+			return
+		}
+	}
+	ictx.Next()
+}
+
+// setNodeRoute used to set dataOwner nodes or storage nodes routing
 func (s *Server) setRoute(serverType string) (err error) {
 	v1 := s.app.Party("/v1")
+	// Set routing for StorageNodes queries
 	nodeParty := v1.Party("/node")
+	nodeParty.Get("/list", s.listNodes)
+	nodeParty.Get("/get", s.getNode)
+	nodeParty.Get("/health", s.getNodeHealth)
+	nodeParty.Get("/getmrecord", s.getMRecord)
+	nodeParty.Get("/gethbnum", s.getHeartbeatNum)
+
 	switch serverType {
-	// storage node
+	// If the storage node, setting the '/v1/slice', '/v1/node/online' and '/v1/node/offline' routing
 	case config.NodeTypeStorage:
 		sliceParty := v1.Party("/slice")
 		sliceParty.Post("/push", s.push)
 		sliceParty.Get("/pull", s.pull)
 
-		nodeParty.Get("/list", s.listNodes)
-		nodeParty.Get("/get", s.getNode)
-		nodeParty.Get("/health", s.getNodeHealth)
 		nodeParty.Post("/offline", s.nodeOffline)
 		nodeParty.Post("/online", s.nodeOnline)
-		nodeParty.Get("/getmrecord", s.getMRecord)
-		nodeParty.Get("/gethbnum", s.getHeartbeatNum)
-	// dataOwner node
+	// If the dataOwner node, setting the '/v1/file' and '/v1/challenge' routing
 	case config.NodeTypeDataOwner:
 		fileParty := v1.Party("/file")
 		fileParty.Post("/write", s.write)
-		fileParty.Get("/read", s.read)
-		fileParty.Get("/list", s.listFiles)
-		fileParty.Get("/listexp", s.listExpiredFiles)
-		fileParty.Get("/getbyid", s.getFileByID)
-		fileParty.Get("/getbyname", s.getFileByName)
 		fileParty.Post("/updatexptime", s.updateFileExpireTime)
 		fileParty.Post("/addns", s.addFileNs)
 		fileParty.Post("/ureplica", s.updateNsReplica)
+
+		fileParty.Get("/read", s.read)
+		fileParty.Get("/list", s.listUnExpiredFiles)
+		fileParty.Get("/listexp", s.listExpiredFiles)
+		fileParty.Get("/getbyid", s.getFileByID)
+		fileParty.Get("/getbyname", s.getFileByName)
 		fileParty.Get("/listns", s.listFileNs)
 		fileParty.Get("/getns", s.getNsByName)
 		fileParty.Get("/getsyshealth", s.getSysHealth)
@@ -122,12 +142,7 @@ func (s *Server) setRoute(serverType string) (err error) {
 		fileParty.Post("/confirmauth", s.confirmAuth)
 		fileParty.Get("/getauthbyid", s.getAuthByID)
 
-		nodeParty.Get("/list", s.listNodes)
-		nodeParty.Get("/get", s.getNode)
-		nodeParty.Get("/health", s.getNodeHealth)
-		nodeParty.Get("/getmrecord", s.getMRecord)
-		nodeParty.Get("/gethbnum", s.getHeartbeatNum)
-
+		// Set routing for challenge queries
 		challParty := v1.Party("/challenge")
 		challParty.Get("/getbyid", s.getChallengeByID)
 		challParty.Get("/toprove", s.getToProveChallenges)
@@ -144,6 +159,12 @@ func (s *Server) setRoute(serverType string) (err error) {
 
 // Serve runs and blocks current routine
 func (s *Server) Serve(ctx context.Context) error {
+	// if the DataOwner node allows CROS requests
+	// AllowCros is recommended to be set false in the production environment
+	if config.GetServerConf() != nil && config.GetServerConf().AllowCros {
+		s.app.Use(s.setCros)
+	}
+
 	if err := s.setRoute(config.GetServerType()); err != nil {
 		return err
 	}

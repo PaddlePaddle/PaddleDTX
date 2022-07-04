@@ -175,13 +175,22 @@ func (s *Server) getNode(ictx iris.Context) {
 
 // nodeOffline set storage node status to offline
 func (s *Server) nodeOffline(ictx iris.Context) {
-	req := etype.NodeOfflineOptions{
+	s.nodeOperate(ictx, false)
+}
+
+func (s *Server) nodeOperate(ictx iris.Context, isOnline bool) {
+	req := etype.NodeOperateOptions{
 		NodeID: ictx.URLParam("node"),
 		Nonce:  ictx.URLParamInt64Default("nonce", 0),
 		Token:  ictx.URLParam("token"),
 	}
-
-	if err := s.handler.NodeOffline(req); err != nil {
+	var err error
+	if isOnline {
+		err = s.handler.NodeOnline(req)
+	} else {
+		err = s.handler.NodeOffline(req)
+	}
+	if err != nil {
 		responseError(ictx, errorx.Wrap(err, "failed to take node offline"))
 		return
 	}
@@ -190,17 +199,7 @@ func (s *Server) nodeOffline(ictx iris.Context) {
 
 // nodeOnline set storage node status to online
 func (s *Server) nodeOnline(ictx iris.Context) {
-	req := etype.NodeOnlineOptions{
-		NodeID: ictx.URLParam("node"),
-		Nonce:  ictx.URLParamInt64Default("nonce", 0),
-		Token:  ictx.URLParam("token"),
-	}
-
-	if err := s.handler.NodeOnline(req); err != nil {
-		responseError(ictx, errorx.Wrap(err, "failed to take node online"))
-		return
-	}
-	responseJSON(ictx, "success")
+	s.nodeOperate(ictx, true)
 }
 
 // getMRecord get storage node migration records
@@ -244,32 +243,18 @@ func (s *Server) getHeartbeatNum(ictx iris.Context) {
 // listFiles list files
 // The currentTime is used to determine whether the file is expired,
 // only show the list of unexpired files
-func (s *Server) listFiles(ictx iris.Context) {
-	req := etype.ListFileOptions{
-		Owner:       ictx.URLParam("owner"),
-		Namespace:   ictx.URLParam("ns"),
-		TimeStart:   ictx.URLParamInt64Default("start", 0),
-		TimeEnd:     ictx.URLParamInt64Default("end", time.Now().UnixNano()),
-		CurrentTime: ictx.URLParamInt64Default("ctime", time.Now().UnixNano()),
-		Limit:       ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
-	}
-
-	if err := req.Valid(); err != nil {
-		responseError(ictx, errorx.Wrap(err, "invalid params"))
-		return
-	}
-
-	resp, err := s.handler.ListFiles(req)
-	if err != nil {
-		responseError(ictx, errorx.Wrap(err, "failed to list files"))
-		return
-	}
-	responseJSON(ictx, resp)
+func (s *Server) listUnExpiredFiles(ictx iris.Context) {
+	s.listFiles(ictx, false)
 }
 
 // listExpiredFiles list expired but valid files
 // The currentTime is used to determine whether the file is expired
 func (s *Server) listExpiredFiles(ictx iris.Context) {
+	s.listFiles(ictx, true)
+}
+
+// listFilesByStatus used to list unexpired or expired files
+func (s *Server) listFiles(ictx iris.Context, isExpired bool) {
 	req := etype.ListFileOptions{
 		Owner:       ictx.URLParam("owner"),
 		Namespace:   ictx.URLParam("ns"),
@@ -283,10 +268,15 @@ func (s *Server) listExpiredFiles(ictx iris.Context) {
 		responseError(ictx, errorx.Wrap(err, "invalid params"))
 		return
 	}
-
-	resp, err := s.handler.ListExpiredFiles(req)
+	var resp []blockchain.File
+	var err error
+	if isExpired {
+		resp, err = s.handler.ListExpiredFiles(req)
+	} else {
+		resp, err = s.handler.ListUnExpiredFiles(req)
+	}
 	if err != nil {
-		responseError(ictx, errorx.Wrap(err, "failed to list expired files"))
+		responseError(ictx, errorx.Wrap(err, "failed to list files"))
 		return
 	}
 	responseJSON(ictx, resp)
@@ -361,13 +351,16 @@ func (s *Server) addFileNs(ictx iris.Context) {
 		return
 	}
 	req := etype.AddNsOptions{
-		Owner:       ictx.URLParam("owner"),
 		Namespace:   ictx.URLParam("ns"),
 		Description: ictx.URLParam("desc"),
 		Replica:     replica,
 		CreateTime:  ictx.URLParamInt64Default("ctime", time.Now().UnixNano()),
 		User:        ictx.URLParam("user"),
 		Token:       ictx.URLParam("token"),
+	}
+	if err := req.Valid(); err != nil {
+		responseError(ictx, errorx.Wrap(err, "invalid params"))
+		return
 	}
 	err = s.handler.AddFileNs(req)
 	if err != nil {
@@ -386,7 +379,10 @@ func (s *Server) updateNsReplica(ictx iris.Context) {
 		User:        ictx.URLParam("user"),
 		Token:       ictx.URLParam("token"),
 	}
-
+	if err := req.Valid(); err != nil {
+		responseError(ictx, errorx.Wrap(err, "invalid params"))
+		return
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ictx.OnConnectionClose(func(iris.Context) { cancel() })
@@ -526,36 +522,21 @@ func (s *Server) getChallengeByID(ictx iris.Context) {
 
 // getToProveChallenges get challenges with status "ToProve"
 func (s *Server) getToProveChallenges(ictx iris.Context) {
-	var owner []byte
-	if len(ictx.URLParam("owner")) != 0 {
-		pubkey, err := ecdsa.DecodePublicKeyFromString(ictx.URLParam("owner"))
-		if err != nil {
-			responseError(ictx, errorx.Wrap(err, "failed to decode owner public key"))
-			return
-		}
-		owner = append(owner, pubkey[:]...)
-	}
-
-	opt := blockchain.ListChallengeOptions{
-		FileOwner:  owner,
-		TargetNode: []byte(ictx.URLParam("node")),
-		FileID:     ictx.URLParam("file"),
-		Status:     blockchain.ChallengeToProve,
-		TimeStart:  ictx.URLParamInt64Default("start", 0),
-		TimeEnd:    ictx.URLParamInt64Default("end", time.Now().UnixNano()),
-		Limit:      ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
-	}
-
-	resp, err := s.handler.GetChallenges(opt)
-	if err != nil {
-		responseError(ictx, errorx.Wrap(err, "failed to get proves challenge"))
-		return
-	}
-	responseJSON(ictx, resp)
+	s.getChallengesByStatus(ictx, blockchain.ChallengeToProve)
 }
 
 // getProvedChallenges get challenges with status "Proved"
 func (s *Server) getProvedChallenges(ictx iris.Context) {
+	s.getChallengesByStatus(ictx, blockchain.ChallengeProved)
+}
+
+// getFailedChallenges get challenges with status "Failed"
+func (s *Server) getFailedChallenges(ictx iris.Context) {
+	s.getChallengesByStatus(ictx, blockchain.ChallengeFailed)
+}
+
+// getChallengesByStatus used to get challenges with status
+func (s *Server) getChallengesByStatus(ictx iris.Context, status string) {
 	var owner []byte
 	if len(ictx.URLParam("owner")) != 0 {
 		pubkey, err := ecdsa.DecodePublicKeyFromString(ictx.URLParam("owner"))
@@ -570,7 +551,7 @@ func (s *Server) getProvedChallenges(ictx iris.Context) {
 		FileOwner:  owner,
 		TargetNode: []byte(ictx.URLParam("node")),
 		FileID:     ictx.URLParam("file"),
-		Status:     blockchain.ChallengeProved,
+		Status:     status,
 		TimeStart:  ictx.URLParamInt64Default("start", 0),
 		TimeEnd:    ictx.URLParamInt64Default("end", time.Now().UnixNano()),
 		Limit:      ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
@@ -578,37 +559,7 @@ func (s *Server) getProvedChallenges(ictx iris.Context) {
 
 	resp, err := s.handler.GetChallenges(opt)
 	if err != nil {
-		responseError(ictx, errorx.Wrap(err, "failed to get proves challenge"))
-		return
-	}
-	responseJSON(ictx, resp)
-}
-
-// getFailedChallenges get challenges with status "Failed"
-func (s *Server) getFailedChallenges(ictx iris.Context) {
-	var owner []byte
-	if len(ictx.URLParam("owner")) != 0 {
-		pubkey, err := ecdsa.DecodePublicKeyFromString(ictx.URLParam("owner"))
-		if err != nil {
-			responseError(ictx, errorx.Wrap(err, "failed to decode owner public key"))
-			return
-		}
-		owner = append(owner, pubkey[:]...)
-	}
-
-	opt := blockchain.ListChallengeOptions{
-		FileOwner:  owner[:],
-		TargetNode: []byte(ictx.URLParam("node")),
-		FileID:     ictx.URLParam("file"),
-		Status:     blockchain.ChallengeFailed,
-		TimeStart:  ictx.URLParamInt64Default("start", 0),
-		TimeEnd:    ictx.URLParamInt64Default("end", time.Now().UnixNano()),
-		Limit:      ictx.URLParamInt64Default("limit", blockchain.ListMaxNumber),
-	}
-
-	resp, err := s.handler.GetChallenges(opt)
-	if err != nil {
-		responseError(ictx, errorx.Wrap(err, "failed to get failed challenge"))
+		responseError(ictx, errorx.Wrap(err, "failed to get %s challenge", status))
 		return
 	}
 	responseJSON(ictx, resp)

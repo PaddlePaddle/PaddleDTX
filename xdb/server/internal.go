@@ -39,6 +39,7 @@ type response struct {
 func responseJSON(ctx iris.Context, o interface{}) {
 	ctx.StatusCode(http.StatusOK)
 	ctx.JSON(response{
+		Code: errorx.SuccessCode,
 		Data: o,
 	})
 }

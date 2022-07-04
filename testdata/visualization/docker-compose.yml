@@ -1,0 +1,16 @@
+version: "3"
+
+services:
+  visual:
+    container_name: paddledtx-visual
+    image: registry.baidubce.com/paddledtx/paddledtx-visual:1.0
+    networks:
+      - blockchain_xchain_network
+    restart: always
+    # volumes:
+    #   - ./conf:/data/conf                
+    ports:
+      - 8233:80
+networks:
+  blockchain_xchain_network:
+    external: true

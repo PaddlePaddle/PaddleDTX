@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -37,7 +36,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/dai/p2p"
 	pbCom "github.com/PaddlePaddle/PaddleDTX/dai/protos/common"
 	pbTask "github.com/PaddlePaddle/PaddleDTX/dai/protos/task"
-	util "github.com/PaddlePaddle/PaddleDTX/dai/util/strings"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 var (
@@ -154,10 +153,10 @@ func (m *MpcModelHandler) addTaskIntoMpcHandler(task blockchain.FLTask) error {
 	}
 	m.Lock()
 	defer m.Unlock()
-	if _, ok := m.MpcTasks[task.ID]; ok {
-		return errorx.New(errcodes.ErrCodeTaskExists, "task already exists, taskId: %s", task.ID)
+	if _, ok := m.MpcTasks[task.TaskID]; ok {
+		return errorx.New(errcodes.ErrCodeTaskExists, "task already exists, taskId: %s", task.TaskID)
 	}
-	m.MpcTasks[task.ID] = &FlTask{
+	m.MpcTasks[task.TaskID] = &FlTask{
 		FLTask:      *task,
 		ExpiredTime: time.Now().UnixNano() + m.MpcTaskMaxExecTime.Nanoseconds(),
 	}
@@ -175,7 +174,7 @@ func (m *MpcModelHandler) TaskStartPrepare(task blockchain.FLTask) (*pbCom.Start
 	// 2. get task start parameters
 	startRequest, err := m.getMpcStartTaskParam(task)
 	if err != nil {
-		m.updateTaskStatusAndStopLocalMpc(task.ID, err.Error(), "")
+		m.updateTaskStatusAndStopLocalMpc(task.TaskID, err.Error(), "")
 		return nil, err
 	}
 	return startRequest, err
@@ -207,7 +206,7 @@ func (m *MpcModelHandler) CheckMpcTimeOutTasks() {
 	m.RLock()
 	for _, task := range m.MpcTasks {
 		if task.ExpiredTime <= time.Now().UnixNano() {
-			timeOutTaskList = append(timeOutTaskList, task.ID)
+			timeOutTaskList = append(timeOutTaskList, task.TaskID)
 		}
 	}
 	m.RUnlock()
@@ -260,18 +259,20 @@ func (m *MpcModelHandler) sendTaskStartRequestToOthers(otherParts []string, task
 // sendTaskStartRequest sends "start task" signal to other Executor
 func (m *MpcModelHandler) sendTaskStartRequest(executorHost, taskID string) (err error) {
 	pubkey := ecdsa.PublicKeyFromPrivateKey(m.Node.PrivateKey)
-	signMsg := fmt.Sprintf("%x,%s", pubkey[:], taskID)
+	in := &pbTask.TaskRequest{
+		PubKey: pubkey[:],
+		TaskID: taskID,
+	}
+	msg, err := util.GetSigMessage(in)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign for send task start request")
+	}
 
-	sig, err := ecdsa.Sign(m.Node.PrivateKey, hash.HashUsingSha256([]byte(signMsg)))
+	sig, err := ecdsa.Sign(m.Node.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign fl start task")
 	}
-	in := &pbTask.TaskRequest{
-		PubKey:    pubkey[:],
-		TaskID:    taskID,
-		Signature: sig[:],
-	}
-
+	in.Signature = sig[:]
 	// send message to remote Executor
 	// reuse gRpc connection
 
@@ -321,10 +322,12 @@ func (m *MpcModelHandler) UpdateTaskFinishStatus(taskId, taskErr, taskResult str
 		ErrMessage:  taskErr,
 		Result:      taskResult,
 	}
-	baseMes := fmt.Sprintf("%x,%s,%d", execTaskOptions.Executor, execTaskOptions.TaskID, execTaskOptions.CurrentTime)
-	signFinishMes := baseMes + fmt.Sprintf("%s,%x", execTaskOptions.ErrMessage, execTaskOptions.Result)
+	msg, err := util.GetSigMessage(execTaskOptions)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign for update mpc task")
+	}
 
-	sig, err := ecdsa.Sign(m.Node.PrivateKey, hash.HashUsingSha256([]byte(signFinishMes)))
+	sig, err := ecdsa.Sign(m.Node.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return err
 	}
@@ -430,7 +433,7 @@ func (m *MpcModelHandler) getMpcStartTaskParam(task blockchain.FLTask) (*pbCom.S
 	modeParam := &pbCom.TrainModels{}
 	// set task params
 	startTaskReqs := &pbCom.StartTaskRequest{
-		TaskID: task.ID,
+		TaskID: task.TaskID,
 		File:   partParam.fileText,
 		Hosts:  partParam.otherParts,
 		Params: &pbCom.TaskParams{
@@ -458,7 +461,7 @@ func (m *MpcModelHandler) getMpcStartTaskParam(task blockchain.FLTask) (*pbCom.S
 		startTaskReqs.Params.ModelParams.IdName = partParam.psiLabel
 	}
 	logger.Infof("get mpc task start param success, taskId: %s, param is: %+v, otherParts: %+v",
-		task.ID, startTaskReqs, partParam.otherParts)
+		task.TaskID, startTaskReqs, partParam.otherParts)
 
 	return startTaskReqs, nil
 }
@@ -477,7 +480,7 @@ func (m *MpcModelHandler) getTaskParticipantParam(task blockchain.FLTask) (partP
 			}
 			reader, err := m.Download.GetSampleFile(dataset.DataID, m.Chain)
 			if err != nil {
-				logger.Debugf("get sample file error, taskId: %s, err: %v", task.ID, err)
+				logger.Debugf("get sample file error, taskId: %s, err: %v", task.TaskID, err)
 				return partParam, err
 			}
 			fileText, err := m.getTextByReader(reader)
@@ -488,7 +491,7 @@ func (m *MpcModelHandler) getTaskParticipantParam(task blockchain.FLTask) (partP
 			}
 			partParam.isTagPart = isTagPart
 			partParam.fileText = fileText
-			partParam.psiLabel = dataset.PSILabel
+			partParam.psiLabel = dataset.PsiLabel
 		} else {
 			otherParts = append(otherParts, dataset.Address)
 			logger.Infof("got one other party: %s", dataset.Address)

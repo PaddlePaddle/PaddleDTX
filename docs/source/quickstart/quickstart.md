@@ -20,6 +20,8 @@ $ sh network_up.sh start
 $ sh network_up.sh start -s ipfs
 # 支持三方的DNN 算法，需要启动 PaddleFL 的节点，执行如下命令代替上述命令：
 $ sh network_up.sh start -p true
+# 支持界面可视化操作，启动paddledtx-visual时应指定可被浏览器访问的计算节点IP, 如在host为“106.13.169.234”的机器上启动PaddleDTX及其可视化服务，命令如下：
+$ ./network_up.sh start -h 106.13.169.234
 ```
 
 
@@ -32,11 +34,11 @@ $ sh network_up.sh stop
 
 !!! note "说明"
 
-    我们推荐用户采用Linux环境安装，若采用Mac启动，需修改docker运行资源限制，设置较高的Cpus（>4）、Memory（>4GB）、Swap（>4GB）。
+    1、我们推荐用户采用Linux环境安装，若采用Mac启动，需修改docker运行资源限制，设置较高的Cpus（>4）、Memory（>4GB）、Swap（>4GB）。
 
-    网络启动成功后，可通过docker ps查看脚本启动的服务，共包含3个区块链节点、3个数据持有节点、3个存储节点、3个可信计算节点，如果用户采用`sh network_up.sh start -s ipfs -p true`命令启动，则会再启动一个ipfs节点和3个paddlefl节点。
+    2、网络启动成功后，可通过docker ps查看脚本启动的服务，共包含3个区块链节点、3个数据持有节点、3个存储节点、3个可信计算节点，如果用户采用`sh network_up.sh start -s ipfs -p true -h 106.13.169.234`命令启动，则会再启动一个ipfs节点和3个paddlefl节点、1个可视化服务节点。
 
-    如果用户无需进行模型训练，可以选择只启动去中心化存储网络（Xuperdb），参考 [XuperDB 服务启动和命令使用说明](https://github.com/PaddlePaddle/PaddleDTX/tree/master/xdb/scripts)：
+    3、如果用户无需进行模型训练，可以选择只启动去中心化存储网络（Xuperdb），参考 [XuperDB 服务启动和命令使用说明](https://github.com/PaddlePaddle/PaddleDTX/tree/master/xdb/scripts)：
     ``` shell
 
         # 启动基于Xchain的Xuperdb
@@ -50,6 +52,12 @@ $ sh network_up.sh stop
         # 启动采用ipfs存储网络的Xuperdb
         $ cd PaddleDTX/xdb/scripts
         $ sh network_up.sh start -b xchain -s ipfs 
+    ```
+    4、PaddleDTX支持用户通过可视化界面发布任务、授权样本文件，针对网络管理、节点权限管理、模型评估结果等可视化操作正在开发中，后续版本会开源。用户在使用可视化操作之前，需要进行如下配置：
+    ```shell
+    # 计算需求节点账户设置：助记词默认配置为“提 现 详 责 腐 贪 沉 回 涨 谓 献 即”；
+    # 超级链节点配置：配置为浏览器可访问的“xchain1.node.com”容器节点，如“106.13.169.234:8098”，可通过'curl http://106.13.169.234:8098/v1/get_bcchains'验证；
+    # 合约名称：“paddlempc”；
     ```
 
 ### 1.3 任务发布和执行

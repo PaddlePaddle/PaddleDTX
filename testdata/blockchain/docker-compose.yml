@@ -6,6 +6,7 @@ services:
     container_name: xchain1.node.com
     ports:
         - 37201:37101
+        - 8908:8084
     volumes:
         - ./user:/home/work/xchain/user
         - ./blockchain/xchain1/conf:/home/work/xchain/conf
