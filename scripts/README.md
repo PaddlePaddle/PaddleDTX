@@ -18,6 +18,37 @@ Usage: ./network_up.sh { start | stop | restart }
 ```shell
 ./network_up.sh start -h 106.13.169.234
 ```
+paddledtx-visual启动之后，浏览器输入 http://106.13.169.234:8233/ 即可访问，使用之前需要输入区块链节点、数据持有节点相关信息，可直接导入如下配置paddledtx_setting.json：
+```
+{
+    "users": [
+        {
+            "publicKey": "e790393685a359e37a73457b3eef55c87264a61c968e5c136b70b8b5e6941f3605a67561af41633035239f6393b949584470da7a67b5b8fe284bd69cfb0d3d59",
+            "privateKey": "f0f6ad5422b37bdf18f3ef6464ce682d7412f25b5f5f5e800454f195055bffb1",
+            "mnemonic": "提 现 详 责 腐 贪 沉 回 涨 谓 献 即",
+            "address": "eFHH6ovPcG6eMszLB4DxFWeY3EBPZ9Hrb",
+            "default": true
+        }
+    ],
+    "contractName": "paddlempc",
+    "node": "106.13.169.234:8908",
+    "dataOwners": [
+        {
+            "address": "106.13.169.234:8441",
+            "default": false
+        },
+        {
+            "address": "106.13.169.234:8442",
+            "default": true
+        },
+        {
+            "address": "106.13.169.234:8443",
+            "default": false
+        }
+    ]
+}
+```
+
 
 ### 1.2 服务停止
 ```shell
