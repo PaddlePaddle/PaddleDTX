@@ -2,7 +2,7 @@ version: '3'
 
 services:
   data_owner:
-    image: registry.baidubce.com/paddledtx/xdb-dataowner:2.0
+    image: registry.baidubce.com/paddledtx/xdb-dataowner:2.1
     container_name: dataowner.node.com
     networks:
         - blockchain_network
@@ -17,7 +17,7 @@ services:
         - ./dataowner/challenger:/home/data/challenger
 
   storage1:
-    image: registry.baidubce.com/paddledtx/xdb-storage:2.0
+    image: registry.baidubce.com/paddledtx/xdb-storage:2.1
     container_name: storage1.node.com
     networks:
         - blockchain_network
@@ -29,7 +29,7 @@ services:
         - ./storage1/logs:/home/logs
 
   storage2:
-    image: registry.baidubce.com/paddledtx/xdb-storage:2.0
+    image: registry.baidubce.com/paddledtx/xdb-storage:2.1
     container_name: storage2.node.com
     networks:
         - blockchain_network
@@ -43,7 +43,7 @@ services:
         - ./storage2/logs:/home/logs
 
   storage3:
-    image: registry.baidubce.com/paddledtx/xdb-storage:2.0
+    image: registry.baidubce.com/paddledtx/xdb-storage:2.1
     container_name: storage3.node.com
     networks:
        - blockchain_network

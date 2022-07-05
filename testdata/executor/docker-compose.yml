@@ -2,7 +2,7 @@ version: '3'
 
 services:
   executor1:
-    image: registry.baidubce.com/paddledtx/paddledtx-dai:2.0
+    image: registry.baidubce.com/paddledtx/paddledtx-dai:2.1
     container_name: executor1.node.com
     networks:
       - blockchain_xchain_network
@@ -18,7 +18,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   executor2:
-    image: registry.baidubce.com/paddledtx/paddledtx-dai:2.0
+    image: registry.baidubce.com/paddledtx/paddledtx-dai:2.1
     container_name: executor2.node.com
     depends_on:
       - executor1
@@ -36,7 +36,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   executor3:
-    image: registry.baidubce.com/paddledtx/paddledtx-dai:2.0
+    image: registry.baidubce.com/paddledtx/paddledtx-dai:2.1
     container_name: executor3.node.com
     depends_on:
       - executor2
