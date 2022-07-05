@@ -22,6 +22,7 @@ $ sh network_up.sh start -s ipfs
 $ sh network_up.sh start -p true
 # 支持界面可视化操作，启动paddledtx-visual时应指定可被浏览器访问的计算节点IP, 如在host为“106.13.169.234”的机器上启动PaddleDTX及其可视化服务，命令如下：
 $ ./network_up.sh start -h 106.13.169.234
+# 可视化服务启动之后，浏览器输入 http://106.13.169.234:8233/ 即可访问，用户使用前的节点配置参考网络启动说明。
 ```
 
 
@@ -53,11 +54,39 @@ $ sh network_up.sh stop
         $ cd PaddleDTX/xdb/scripts
         $ sh network_up.sh start -b xchain -s ipfs 
     ```
-    4、PaddleDTX支持用户通过可视化界面发布任务、授权样本文件，针对网络管理、节点权限管理、模型评估结果等可视化操作正在开发中，后续版本会开源。用户在使用可视化操作之前，需要进行如下配置：
+    4、PaddleDTX支持用户通过可视化界面发布任务、授权样本文件，针对网络管理、节点权限管理、模型评估结果等可视化操作正在开发中，后续版本会开源。用户在使用可视化操作之前，需要导入如下配置paddledtx_setting.json：
     ```shell
-    # 计算需求节点账户设置：助记词默认配置为“提 现 详 责 腐 贪 沉 回 涨 谓 献 即”；
-    # 超级链节点配置：配置为浏览器可访问的“xchain1.node.com”容器节点，如“106.13.169.234:8098”，可通过'curl http://106.13.169.234:8098/v1/get_bcchains'验证；
-    # 合约名称：“paddlempc”；
+        {
+            "users": [
+                {
+                    "publicKey": "e790393685a359e37a73457b3eef55c87264a61c968e5c136b70b8b5e6941f3605a67561af41633035239f6393b949584470da7a67b5b8fe284bd69cfb0d3d59",
+                    "privateKey": "f0f6ad5422b37bdf18f3ef6464ce682d7412f25b5f5f5e800454f195055bffb1",
+                    "mnemonic": "提 现 详 责 腐 贪 沉 回 涨 谓 献 即",
+                    "address": "eFHH6ovPcG6eMszLB4DxFWeY3EBPZ9Hrb",
+                    "default": true
+                }
+            ],
+            "contractName": "paddlempc",
+            "node": "106.13.169.234:8908",
+            "dataOwners": [
+                {
+                    "address": "106.13.169.234:8441",
+                    "default": false
+                },
+                {
+                    "address": "106.13.169.234:8442",
+                    "default": true
+                },
+                {
+                    "address": "106.13.169.234:8443",
+                    "default": false
+                }
+            ]
+        }
+    # users: 计算需求节点账户设置，助记词默认配置为“提 现 详 责 腐 贪 沉 回 涨 谓 献 即”；
+    # node：超级链节点，配置为浏览器可访问的区块链节点地址，可通过'curl http://106.13.169.234:8098/v1/get_bcchains'验证；
+    # contractName：合约名称“paddlempc”；
+    # dataOwners：配置数据持有节点的地址
     ```
 
 ### 1.3 任务发布和执行
