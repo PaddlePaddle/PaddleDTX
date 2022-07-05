@@ -61,7 +61,7 @@ var listFilesCmd = &cobra.Command{
 			TimeEnd:   endTime.UnixNano(),
 			Limit:     limit,
 		}
-		resp, err := client.ListFiles(context.Background(), opt)
+		resp, err := client.ListFiles(context.Background(), opt, false)
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
 			return
@@ -117,7 +117,7 @@ var listExpFilesCmd = &cobra.Command{
 			TimeEnd:   endTime.UnixNano(),
 			Limit:     limit,
 		}
-		resp, err := client.ListExpiredFiles(context.Background(), opt)
+		resp, err := client.ListFiles(context.Background(), opt, true)
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
 			return

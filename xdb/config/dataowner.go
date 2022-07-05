@@ -19,6 +19,7 @@ type DataOwnerConf struct {
 	PrivateKey    string
 	KeyPath       string
 	PublicAddress string
+	AllowCros     bool
 
 	Slicer     *DataOwnerSlicerConf
 	Encryptor  *DataOwnerEncryptorConf

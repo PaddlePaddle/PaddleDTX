@@ -17,7 +17,6 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -35,8 +34,8 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/dai/crypto/vl/common/csv"
 	pbCom "github.com/PaddlePaddle/PaddleDTX/dai/protos/common"
 	pbTask "github.com/PaddlePaddle/PaddleDTX/dai/protos/task"
-	util "github.com/PaddlePaddle/PaddleDTX/dai/util/strings"
 	xdbchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 type Client struct {
@@ -162,7 +161,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 		dataSets = append(dataSets, &pbTask.DataForTask{
 			Owner:     file.Owner,
 			Executor:  executorNode.ID,
-			PSILabel:  psiLabels[index],
+			PsiLabel:  psiLabels[index],
 			DataID:    fileID,
 			Address:   executorNode.Address,
 			IsTagPart: isTagPart,
@@ -199,14 +198,14 @@ func (c *Client) Publish(opt PublishOptions) (taskId string, err error) {
 	if err != nil {
 		return taskId, errorx.Internal(err, "failed to get uuid")
 	}
-	task.ID = taskUuid.String()
+	task.TaskID = taskUuid.String()
 
 	// sign task info
-	s, err := json.Marshal(task)
+	m, err := util.GetSigMessage(task)
 	if err != nil {
-		return taskId, errorx.Wrap(err, "failed to marshal fl task")
+		return taskId, errorx.Internal(err, "failed to get fl task signature message")
 	}
-	sig, err := ecdsa.Sign(privkey, hash.HashUsingSha256(s))
+	sig, err := ecdsa.Sign(privkey, hash.HashUsingSha256([]byte(m)))
 	if err != nil {
 		return taskId, errorx.Wrap(err, "failed to sign fl task")
 	}
@@ -218,7 +217,7 @@ func (c *Client) Publish(opt PublishOptions) (taskId string, err error) {
 	if err := c.XchainClient.PublishTask(pubOpt); err != nil {
 		return taskId, err
 	}
-	return task.ID, nil
+	return task.TaskID, nil
 }
 
 // GetTaskById gets task by taskID
@@ -254,17 +253,21 @@ func (c *Client) ListTask(pubkeyStr, status string, start, end,
 
 // StartTask starts task by taskID
 func (c *Client) StartTask(privateKey, id string) (err error) {
-	pubkey, privkey, err := checkUserPrivateKey(privateKey)
+	_, privkey, err := checkUserPrivateKey(privateKey)
 	if err != nil {
 		return err
 	}
-
-	msg := fmt.Sprintf("%s,%x", id, pubkey[:])
+	sParams := blockchain.StartFLTaskOptions{TaskID: id}
+	msg, err := util.GetSigMessage(sParams)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign for start task")
+	}
 	sig, err := ecdsa.Sign(privkey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign fl task")
 	}
-	err = c.XchainClient.StartTask(id, sig[:])
+	sParams.Signature = sig[:]
+	err = c.XchainClient.StartTask(&sParams)
 	return err
 }
 
@@ -312,7 +315,10 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 	}
 
 	// verify signature
-	msg := fmt.Sprintf("%x,%s", in.PubKey, in.TaskID)
+	msg, err := util.GetSigMessage(in)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign for download prediction result")
+	}
 	sig, err := ecdsa.Sign(privkey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign predict task")
@@ -343,11 +349,11 @@ func (c *Client) ListExecutorNodes() (nodes blockchain.ExecutorNodes, err error)
 
 // GetExecutorNodeByID get executor node by nodeID
 func (c *Client) GetExecutorNodeByID(pubkeyStr string) (node blockchain.ExecutorNode, err error) {
-	pubkey, err := hex.DecodeString(pubkeyStr)
+	_, err = hex.DecodeString(pubkeyStr)
 	if err != nil {
 		return node, errorx.Wrap(err, "failed to decode executor public key")
 	}
-	return c.XchainClient.GetExecutorNodeByID(pubkey[:])
+	return c.XchainClient.GetExecutorNodeByID(pubkeyStr)
 }
 
 // GetExecutorNodeByName get executor node by nodeName

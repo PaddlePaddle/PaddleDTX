@@ -16,7 +16,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
@@ -25,6 +24,7 @@ import (
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
 	pbTask "github.com/PaddlePaddle/PaddleDTX/dai/protos/task"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // PublishTask publishes task
@@ -42,26 +42,25 @@ func (x *Xdata) PublishTask(ctx code.Context) code.Response {
 	}
 	// get fltask
 	t := opt.FLTask
+	// get fltask signature msg
+	msg, err := util.GetSigMessage(t)
+	if err != nil {
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to get the message to sign"))
+	}
+	if err := x.checkSign(opt.Signature, t.Requester, []byte(msg)); err != nil {
+		return code.Error(err)
+	}
+
+	t.Status = blockchain.TaskConfirming
 	// marshal fltask
 	s, err := json.Marshal(t)
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"fail to marshal FLTask"))
 	}
-	if err := x.checkSign(opt.Signature, t.Requester, s); err != nil {
-		return code.Error(err)
-	}
-
-	t.Status = blockchain.TaskConfirming
-	// marshal fltask
-	s, err = json.Marshal(t)
-	if err != nil {
-		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
-			"fail to marshal FLTask"))
-	}
 
 	// put index-fltask on xchain, judge if index exists
-	index := packFlTaskIndex(t.ID)
+	index := packFlTaskIndex(t.TaskID)
 	if _, err := ctx.GetObject([]byte(index)); err == nil {
 		return code.Error(errorx.New(errorx.ErrCodeAlreadyExists,
 			"duplicated taskID"))
@@ -73,14 +72,14 @@ func (x *Xdata) PublishTask(ctx code.Context) code.Response {
 
 	// put requester listIndex-fltask on xchain
 	index = packFlTaskListIndex(t)
-	if err := ctx.PutObject([]byte(index), []byte(t.ID)); err != nil {
+	if err := ctx.PutObject([]byte(index), []byte(t.TaskID)); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
 			"fail to put requester listIndex-fltask on xchain"))
 	}
 	// put executor listIndex-fltask on xchain
 	for _, ds := range t.DataSets {
 		index := packExecutorTaskListIndex(ds.Executor, t)
-		if err := ctx.PutObject([]byte(index), []byte(t.ID)); err != nil {
+		if err := ctx.PutObject([]byte(index), []byte(t.TaskID)); err != nil {
 			return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
 				"fail to put executor listIndex-fltask on xchain"))
 		}
@@ -178,15 +177,18 @@ func (x *Xdata) setTaskConfirmStatus(ctx code.Context, isConfirm bool) code.Resp
 		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param: executor"))
 	}
 	// verify sig
-	m := fmt.Sprintf("%x,%s,%s,%d", opt.Pubkey, opt.TaskID, opt.RejectReason, opt.CurrentTime)
-	if err := x.checkSign(opt.Signature, opt.Pubkey, []byte(m)); err != nil {
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to get the message to sign"))
+	}
+	if err := x.checkSign(opt.Signature, opt.Pubkey, []byte(msg)); err != nil {
 		return code.Error(err)
 	}
 
 	// check status
 	if t.Status != blockchain.TaskConfirming {
 		return code.Error(errorx.New(errorx.ErrCodeParam,
-			"confirm task error, taskStatus is not Confirming, taskId: %s, taskStatus: %s", t.ID, t.Status))
+			"confirm task error, taskStatus is not Confirming, taskId: %s, taskStatus: %s", t.TaskID, t.Status))
 	}
 	isAllConfirm := true
 	for index, ds := range t.DataSets {
@@ -224,7 +226,7 @@ func (x *Xdata) setTaskConfirmStatus(ctx code.Context, isConfirm bool) code.Resp
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "fail to marshal FLTask"))
 	}
 	// update index-fltask on xchain
-	index := packFlTaskIndex(t.ID)
+	index := packFlTaskIndex(t.TaskID)
 	if err := ctx.PutObject([]byte(index), s); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
 			"fail to confirm index-flTask on xchain"))
@@ -234,27 +236,31 @@ func (x *Xdata) setTaskConfirmStatus(ctx code.Context, isConfirm bool) code.Resp
 
 // StartTask is called when Requester starts task after Executors confirmed
 func (x *Xdata) StartTask(ctx code.Context) code.Response {
-	// get taskId
-	taskId, ok := ctx.Args()["taskId"]
+	var opt blockchain.StartFLTaskOptions
+	// get opt
+	p, ok := ctx.Args()["opt"]
 	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:taskId"))
+		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:opt"))
 	}
-	t, err := x.getTaskById(ctx, string(taskId))
+	if err := json.Unmarshal(p, &opt); err != nil {
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
+			"fail to unmarshal StartFLTaskOptions"))
+	}
+	t, err := x.getTaskById(ctx, opt.TaskID)
 	if err != nil {
 		return code.Error(err)
 	}
-	// get signature
-	signature, ok := ctx.Args()["signature"]
-	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:signature"))
+	// verify sig
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to get the message to sign"))
 	}
-	mes := fmt.Sprintf("%s,%x", string(taskId), t.Requester)
-	if err := x.checkSign(signature, t.Requester, []byte(mes)); err != nil {
+	if err := x.checkSign(opt.Signature, t.Requester, []byte(msg)); err != nil {
 		return code.Error(err)
 	}
 	if t.Status != blockchain.TaskReady && t.Status != blockchain.TaskFailed {
 		return code.Error(errorx.New(errorx.ErrCodeParam,
-			"start task error, task status is not Ready or Failed, taskId: %s, taskStatus: %s", t.ID, t.Status))
+			"start task error, task status is not Ready or Failed, taskId: %s, taskStatus: %s", t.TaskID, t.Status))
 	}
 	// update task status
 	t.Status = blockchain.TaskToProcess
@@ -263,7 +269,7 @@ func (x *Xdata) StartTask(ctx code.Context) code.Response {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "fail to marshal FLTask"))
 	}
 	// update index-fltask on xchain
-	index := packFlTaskIndex(t.ID)
+	index := packFlTaskIndex(t.TaskID)
 	if err := ctx.PutObject([]byte(index), s); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
 			"fail to start index-flTask on xchain"))
@@ -301,18 +307,18 @@ func (x *Xdata) setTaskExecuteStatus(ctx code.Context, isFinish bool) code.Respo
 		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param:executor"))
 	}
 	// verify sig
-	m := fmt.Sprintf("%x,%s,%d", opt.Executor, opt.TaskID, opt.CurrentTime)
-	if isFinish {
-		m += fmt.Sprintf("%s,%x", opt.ErrMessage, opt.Result)
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to get the message to sign"))
 	}
-	if err := x.checkSign(opt.Signature, opt.Executor, []byte(m)); err != nil {
+	if err := x.checkSign(opt.Signature, opt.Executor, []byte(msg)); err != nil {
 		return code.Error(err)
 	}
 
 	if isFinish {
 		if t.Status != blockchain.TaskProcessing {
 			return code.Error(errorx.New(errorx.ErrCodeParam,
-				"finish task error, task status is not Processing, taskId: %s, taskStatus: %s", t.ID, t.Status))
+				"finish task error, task status is not Processing, taskId: %s, taskStatus: %s", t.TaskID, t.Status))
 		}
 
 		t.Status = blockchain.TaskFinished
@@ -326,7 +332,7 @@ func (x *Xdata) setTaskExecuteStatus(ctx code.Context, isFinish bool) code.Respo
 	} else {
 		if t.Status != blockchain.TaskToProcess {
 			return code.Error(errorx.New(errorx.ErrCodeParam,
-				"execute task error, task status is not ToProcess, taskId: %s, taskStatus: %s", t.ID, t.Status))
+				"execute task error, task status is not ToProcess, taskId: %s, taskStatus: %s", t.TaskID, t.Status))
 		}
 		t.Status = blockchain.TaskProcessing
 		t.StartTime = opt.CurrentTime
@@ -338,7 +344,7 @@ func (x *Xdata) setTaskExecuteStatus(ctx code.Context, isFinish bool) code.Respo
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "fail to marshal FLTask"))
 	}
 	// update index-fltask on xchain
-	index := packFlTaskIndex(t.ID)
+	index := packFlTaskIndex(t.TaskID)
 	if err := ctx.PutObject([]byte(index), s); err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
 			"fail to set task execute status on xchain"))

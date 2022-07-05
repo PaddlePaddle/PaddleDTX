@@ -25,6 +25,7 @@ import (
 )
 
 var userPubkey string
+var authKeyOutput string
 
 // addUKeyCmd adds the user's public key into the whitelist
 var addUKeyCmd = &cobra.Command{
@@ -33,11 +34,11 @@ var addUKeyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		pubkey, err := ecdsa.DecodePublicKeyFromString(userPubkey)
 		if err != nil {
-			fmt.Printf("failed to save private.key, err: %v\n", err)
+			fmt.Printf("failed to decode the public.key, err: %v\n", err)
 			return
 		}
 		userKeyFileName := hash.HashUsingSha256([]byte(pubkey.String()))
-		err = file.WriteFile(output, hex.EncodeToString(userKeyFileName), []byte(pubkey.String()))
+		err = file.WriteFile(authKeyOutput, hex.EncodeToString(userKeyFileName), []byte(pubkey.String()))
 		if err != nil {
 			fmt.Printf("failed to grant authorization of the ukeys, err: %v\n", err)
 			return
@@ -50,7 +51,7 @@ func init() {
 	rootCmd.AddCommand(addUKeyCmd)
 
 	addUKeyCmd.Flags().StringVarP(&userPubkey, "user", "u", "", "user public key")
-	addUKeyCmd.Flags().StringVarP(&output, "output", "o", file.AuthKeyFilePath, "output")
+	addUKeyCmd.Flags().StringVarP(&authKeyOutput, "output", "o", file.AuthKeyFilePath, "output")
 
 	addUKeyCmd.MarkFlagRequired("user")
 }

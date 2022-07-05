@@ -15,13 +15,13 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // PublishFileAuthApplication add applier's file authorization application into chain
@@ -41,19 +41,23 @@ func (x *Xdata) PublishFileAuthApplication(stub shim.ChaincodeStubInterface, arg
 	}
 
 	fa := opt.FileAuthApplication
-	s, err := json.Marshal(fa)
+	msg, err := util.GetSigMessage(opt)
 	if err != nil {
-		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal FileAuthApplication").Error())
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
 	}
 	// verify signature by applier's public key
-	err = x.checkSign(opt.Signature, fa.Applier, s)
+	err = x.checkSign(opt.Signature, fa.Applier, []byte(msg))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	err = x.checkSign(opt.Signature, fa.Applier, []byte(msg))
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
 	fa.Status = blockchain.FileAuthUnapproved
 	// marshal fileAuthApplication
-	s, err = json.Marshal(fa)
+	s, err := json.Marshal(fa)
 	if err != nil {
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"fail to marshal fileAuthApplication").Error())
@@ -124,13 +128,11 @@ func (x *Xdata) setFileAuthConfirmStatus(stub shim.ChaincodeStubInterface, args 
 		return shim.Error(err.Error())
 	}
 	// verify signature by authorizer's public key
-	m := fmt.Sprintf("%s,%d,", opt.ID, opt.CurrentTime)
-	if isConfirm {
-		m += fmt.Sprintf("%x,%d", opt.AuthKey, opt.ExpireTime)
-	} else {
-		m += opt.RejectReason
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
 	}
-	if err := x.checkSign(opt.Signature, fa.Authorizer, []byte(m)); err != nil {
+	if err := x.checkSign(opt.Signature, fa.Authorizer, []byte(msg)); err != nil {
 		return shim.Error(err.Error())
 	}
 

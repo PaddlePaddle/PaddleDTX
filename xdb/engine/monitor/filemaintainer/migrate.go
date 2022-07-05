@@ -16,8 +16,6 @@ package filemaintainer
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
@@ -30,6 +28,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 var l = logger.WithField("runner", "file migrate loop")
@@ -413,8 +412,21 @@ func (m FileMaintainer) rearrangeSlices(oldSlices []blockchain.PublicSliceMeta, 
 
 // migrateRecordOnChain put migrate record on blockchain
 func (m FileMaintainer) migrateRecordOnChain(nodeID, fileID, sliceID string) {
-	now := time.Now().UnixNano()
-	msg := fileID + sliceID + nodeID + fmt.Sprintf("%d", now)
+	opt := &blockchain.SliceMigrateOptions{
+		NodeID:      []byte(nodeID),
+		FileID:      fileID,
+		SliceID:     sliceID,
+		CurrentTime: time.Now().UnixNano(),
+	}
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		l.WithFields(logrus.Fields{
+			"file_id":     fileID,
+			"slice_id":    sliceID,
+			"target_node": nodeID,
+		}).WithError(err).Error("failed to get the message to sign")
+		return
+	}
 	sign, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		l.WithFields(logrus.Fields{
@@ -424,7 +436,8 @@ func (m FileMaintainer) migrateRecordOnChain(nodeID, fileID, sliceID string) {
 		}).WithError(err).Error("failed to sign migrate message")
 		return
 	}
-	if err := m.blockchain.SliceMigrateRecord([]byte(nodeID), sign[:], fileID, sliceID, now); err != nil {
+	opt.Signature = sign[:]
+	if err := m.blockchain.SliceMigrateRecord(opt); err != nil {
 		l.WithFields(logrus.Fields{
 			"file_id":     fileID,
 			"slice_id":    sliceID,
@@ -435,45 +448,21 @@ func (m FileMaintainer) migrateRecordOnChain(nodeID, fileID, sliceID string) {
 
 // updateFileSlicesOnChain update file slices structure on blockchain
 func (m FileMaintainer) updateFileSlicesOnChain(fileID string, owner []byte, slices []blockchain.PublicSliceMeta) error {
-	msg, err := json.Marshal(slices)
-	if err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal slices")
+	opt := &blockchain.UpdateFilePSMOptions{
+		FileID: fileID,
+		Owner:  owner,
+		Slices: slices,
 	}
-	sign, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256(msg))
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
+	sign, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.NewCode(err, errorx.ErrCodeCrypto, "failed to sign slices")
 	}
-
-	opt := blockchain.UpdateFilePSMOptions{
-		FileID:    fileID,
-		Owner:     owner,
-		Slices:    slices,
-		Signature: sign[:],
-	}
-	return m.blockchain.UpdateFilePublicSliceMeta(&opt)
-}
-
-// orderSlicesByIdx rearrange slices with descending sliceIdx order with respect to each storage node
-func orderSlicesByIdx(slices []blockchain.PublicSliceMeta) []blockchain.PublicSliceMeta {
-	nodeSlicesMap := make(map[string][]blockchain.PublicSliceMeta)
-	for _, slice := range slices {
-		nodeSlicesMap[string(slice.NodeID)] = append(nodeSlicesMap[string(slice.NodeID)], slice)
-	}
-	var newSlices []blockchain.PublicSliceMeta
-	for _, sliceList := range nodeSlicesMap {
-		newSliceList := sortSlices(sliceList)
-		newSlices = append(newSlices, newSliceList...)
-	}
-	return newSlices
-}
-
-// sortSlices sort slices by idx in descending order
-func sortSlices(slices []blockchain.PublicSliceMeta) []blockchain.PublicSliceMeta {
-	newSlices := make([]blockchain.PublicSliceMeta, len(slices))
-	for _, slice := range slices {
-		newSlices[len(slices)-slice.SliceIdx] = slice
-	}
-	return newSlices
+	opt.Signature = sign[:]
+	return m.blockchain.UpdateFilePublicSliceMeta(opt)
 }
 
 // removeSlice remove old slice

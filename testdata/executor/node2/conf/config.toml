@@ -1,10 +1,15 @@
 [executor]
 name = "executor2"
-listenAddress = ":80"
-publicAddress = "executor2.node.com:80"
+listenAddress = ":38303"
+publicAddress = "executor2.node.com:38303"
 keyPath = "./keys"
 paddleFLRole = 1
 paddleFLAddress = "paddlefl-env2:38304"
+
+[executor.httpserver]
+switch = "on"
+httpPort = ":8512"
+allowCros = true
 
 [executor.mode]
     # Define the task execution type, supports 'Proxy' and 'Self', default 'Proxy.'	

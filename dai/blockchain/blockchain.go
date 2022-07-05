@@ -81,20 +81,21 @@ var RegModeListValue = map[pbCom.RegMode]string{
 }
 
 type FLInfo struct {
-	FileType  string // file type, only supports "csv"
-	Features  string // feature list
-	TotalRows int64  // total number of samples
+	FileType  string `json:"fileType"`  // file type, only supports "csv"
+	Features  string `json:"features"`  // feature list
+	TotalRows int64  `json:"totalRows"` // total number of samples
 }
 
 // ExecutorNode has access to samples with which to train models or to predict,
 //  and starts task that multi parties execute synchronically
 type ExecutorNode struct {
-	ID              []byte
-	Name            string
-	Address         string // local host
-	PaddleFLAddress string
-	PaddleFLRole    int
-	RegTime         int64 // node registering time
+	ID              []byte `json:"id"`
+	Name            string `json:"name"`
+	Address         string `json:"address"`     // local grpc host
+	HttpAddress     string `json:"httpAddress"` // local http host
+	PaddleFLAddress string `json:"paddleFLAddress"`
+	PaddleFLRole    int    `json:"paddleFLRole"`
+	RegTime         int64  `json:"regTime"` // node registering time
 }
 
 type ExecutorNodes []ExecutorNode
@@ -106,44 +107,50 @@ type FLTasks []*pbTask.FLTask
 
 // PublishFLTaskOptions contains parameters for publishing tasks
 type PublishFLTaskOptions struct {
-	FLTask    FLTask
-	Signature []byte
+	FLTask    FLTask `json:"fLTask"`
+	Signature []byte `json:"signature"`
+}
+
+// StartFLTaskOptions contains parameters for the requester to start tasks
+type StartFLTaskOptions struct {
+	TaskID    string `json:"taskID"`
+	Signature []byte `json:"signature"`
 }
 
 // ListFLTaskOptions contains parameters for listing tasks
 // support listing tasks a requester published or tasks an executor involved
 type ListFLTaskOptions struct {
-	PubKey    []byte // requester or executor's public key
-	Status    string // task status
-	TimeStart int64  // task publish time period, only task published after TimeStart and before TimeEnd will be listed
-	TimeEnd   int64
-	Limit     int64 // limit number of tasks in list request, default 'all'
+	PubKey    []byte `json:"pubKey"`    // requester or executor's public key
+	Status    string `json:"status"`    // task status
+	TimeStart int64  `json:"timeStart"` // task publish time period, only task published after TimeStart and before TimeEnd will be listed
+	TimeEnd   int64  `json:"timeEnd"`
+	Limit     int64  `json:"limit"` // limit number of tasks in list request, default 'all'
 }
 
 // FLTaskConfirmOptions contains parameters for confirming task
 type FLTaskConfirmOptions struct {
-	Pubkey       []byte // one of the task executor's public key
-	TaskID       string
-	RejectReason string // reason of the rejected task
-	CurrentTime  int64  // time when confirming task
+	Pubkey       []byte `json:"pubkey"` // one of the task executor's public key
+	TaskID       string `json:"taskID"`
+	RejectReason string `json:"rejectReason"` // reason of the rejected task
+	CurrentTime  int64  `json:"currentTime"`  // time when confirming task
 
-	Signature []byte // executor's signature
+	Signature []byte `json:"signature"` // executor's signature
 }
 
 // FLTaskExeStatusOptions contains parameters for updating executing task
 type FLTaskExeStatusOptions struct {
-	Executor    []byte
-	TaskID      string
-	CurrentTime int64 // task execute start time or finish time
+	Executor    []byte `json:"executor"`
+	TaskID      string `json:"taskID"`
+	CurrentTime int64  `json:"currentTime"` // task execute start time or finish time
 
-	Signature []byte
+	Signature []byte `json:"signature"`
 
-	ErrMessage string // for failed task
-	Result     string // for finished task
+	ErrMessage string `json:"errMessage"` // for failed task
+	Result     string `json:"result"`     // for finished task
 }
 
 // AddNodeOptions contains parameters for adding node of Executor
 type AddNodeOptions struct {
-	Node      ExecutorNode
-	Signature []byte
+	Node      ExecutorNode `json:"node"`
+	Signature []byte       `json:"signature"`
 }

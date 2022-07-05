@@ -129,9 +129,14 @@ func (f *Fabric) UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions)
 }
 
 // SliceMigrateRecord is used by node to slice migration record
-func (f *Fabric) SliceMigrateRecord(id, sig []byte, fid, sid string, ctime int64) error {
-	args := [][]byte{id, []byte(fid), []byte(sid), sig, []byte(strconv.FormatInt(ctime, 10))}
-	if _, err := f.InvokeContract(args, "SliceMigrateRecord"); err != nil {
+func (f *Fabric) SliceMigrateRecord(opt *blockchain.SliceMigrateOptions) error {
+	s, err := json.Marshal(*opt)
+	if err != nil {
+		return errorx.NewCode(err, errorx.ErrCodeInternal,
+			"failed to marshal SliceMigrateOptions")
+	}
+
+	if _, err := f.InvokeContract([][]byte{s}, "SliceMigrateRecord"); err != nil {
 		return err
 	}
 	return nil

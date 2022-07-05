@@ -156,13 +156,14 @@ func (x *XChain) UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions)
 }
 
 // SliceMigrateRecord is used by node to slice migration record
-func (x *XChain) SliceMigrateRecord(id, sig []byte, fid, sid string, ctime int64) error {
+func (x *XChain) SliceMigrateRecord(opt *blockchain.SliceMigrateOptions) error {
+	s, err := json.Marshal(*opt)
+	if err != nil {
+		return errorx.NewCode(err, errorx.ErrCodeInternal,
+			"failed to marshal SliceMigrateOptions")
+	}
 	args := map[string]string{
-		"nodeID":      string(id),
-		"fileID":      fid,
-		"sliceID":     sid,
-		"signature":   string(sig),
-		"currentTime": strconv.FormatInt(ctime, 10),
+		"opt": string(s),
 	}
 	mName := "SliceMigrateRecord"
 	if _, err := x.InvokeContract(args, mName); err != nil {

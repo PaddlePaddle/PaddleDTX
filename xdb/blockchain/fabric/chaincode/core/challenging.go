@@ -21,7 +21,6 @@ import (
 	"strconv"
 
 	fl_crypto "github.com/PaddlePaddle/PaddleDTX/crypto/client/service/xchain"
-	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
 
@@ -30,6 +29,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/monitor/challenging"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 var xchainClient = new(fl_crypto.XchainCryptoClient)
@@ -109,11 +109,20 @@ func (x *Xdata) ChallengeRequest(stub shim.ChaincodeStubInterface, args []string
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"failed to unmarshal ChallengeRequestOptions").Error())
 	}
-
 	// judge if id exists
 	index := packChallengeIndex(opt.ChallengeID)
 	if resp := x.getValue(stub, []string{index}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated ChallengeID").Error())
+	}
+
+	// verify signature
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
+	}
+	err = x.checkSign(opt.Signature, opt.FileOwner, []byte(msg))
+	if err != nil {
+		return shim.Error(err.Error())
 	}
 
 	// make challenge
@@ -128,9 +137,6 @@ func (x *Xdata) ChallengeRequest(stub shim.ChaincodeStubInterface, args []string
 	}
 
 	if opt.ChallengeAlgorithm == types.PairingChallengeAlgorithm {
-		if err := x.pairingOptCheck(opt); err != nil {
-			return shim.Error(err.Error())
-		}
 		c.SliceIDs = opt.SliceIDs
 		c.SliceStorIndexes = opt.SliceStorIndexes
 		c.Indices = opt.Indices
@@ -139,9 +145,6 @@ func (x *Xdata) ChallengeRequest(stub shim.ChaincodeStubInterface, args []string
 		c.Vs = opt.Vs
 
 	} else if opt.ChallengeAlgorithm == types.MerkleChallengeAlgorithm {
-		if err := x.merkleOptCheck(opt); err != nil {
-			return shim.Error(err.Error())
-		}
 		c.SliceID = opt.SliceID
 		c.SliceStorIndex = opt.SliceStorIndex
 		c.Ranges = opt.Ranges
@@ -207,6 +210,20 @@ func (x *Xdata) ChallengeAnswer(stub shim.ChaincodeStubInterface, args []string)
 			"challenge already answered").Error())
 	}
 
+	// verify signature
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
+	}
+	targetNode, err := hex.DecodeString(string(c.TargetNode))
+	if err != nil {
+		return shim.Error(errorx.NewCode(err, errorx.ErrCodeParam, "pairing challenge wrong target node").Error())
+	}
+	err = x.checkSign(opt.Signature, targetNode, []byte(msg))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
 	// judge if file exists
 	resp = x.getValue(stub, []string{c.FileID})
 	if len(resp.Payload) == 0 {
@@ -224,9 +241,6 @@ func (x *Xdata) ChallengeAnswer(stub shim.ChaincodeStubInterface, args []string)
 	// sig verification
 	var verifyErr error
 	if c.ChallengeAlgorithm == types.PairingChallengeAlgorithm {
-		if err := x.pairingAnswerOptCheck(opt, c); err != nil {
-			return shim.Error(err.Error())
-		}
 		// verify pairing based challenge
 		v, err := xchainClient.VerifyPairingProof(opt.Sigma, opt.Mu, file.RandV, file.RandU, file.PdpPubkey, c.Indices, c.Vs)
 		if err != nil || !v {
@@ -235,9 +249,6 @@ func (x *Xdata) ChallengeAnswer(stub shim.ChaincodeStubInterface, args []string)
 			c.Status = blockchain.ChallengeFailed
 		}
 	} else if c.ChallengeAlgorithm == types.MerkleChallengeAlgorithm {
-		if err := x.merkleAnswerOptCheck(opt, c); err != nil {
-			return shim.Error(err.Error())
-		}
 		var aopt ctype.AnswerCalculateOptions
 		if err := json.Unmarshal(opt.Proof, &aopt); err != nil {
 			return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to unmarshal Challenge").Error())
@@ -345,109 +356,4 @@ func (x *Xdata) GetChallengeNum(stub shim.ChaincodeStubInterface, args []string)
 	}
 
 	return shim.Success([]byte(strconv.FormatUint(total, 10)))
-}
-
-func (x *Xdata) pairingOptCheck(opt blockchain.ChallengeRequestOptions) error {
-	// sig verification
-	challengeOpt := blockchain.ChallengeRequestOptions{
-		ChallengeID:        opt.ChallengeID,
-		FileOwner:          opt.FileOwner,
-		TargetNode:         opt.TargetNode,
-		FileID:             opt.FileID,
-		SliceIDs:           opt.SliceIDs,
-		SliceStorIndexes:   opt.SliceStorIndexes,
-		ChallengeTime:      opt.ChallengeTime,
-		Indices:            opt.Indices,
-		Vs:                 opt.Vs,
-		Round:              opt.Round,
-		RandThisRound:      opt.RandThisRound,
-		ChallengeAlgorithm: opt.ChallengeAlgorithm,
-	}
-	content, err := json.Marshal(challengeOpt)
-	if err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal Challenge")
-	}
-	if len(opt.FileOwner) != ecdsa.PublicKeyLength || len(opt.Sig) != ecdsa.SignatureLength {
-		return errorx.New(errorx.ErrCodeParam, "bad challenges")
-	}
-	var pubkey [ecdsa.PublicKeyLength]byte
-	var sig [ecdsa.SignatureLength]byte
-	copy(pubkey[:], opt.FileOwner)
-	copy(sig[:], opt.Sig)
-	if err := ecdsa.Verify(pubkey, xchainClient.HashUsingSha256(content), sig); err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "failed to verify Challenge")
-	}
-	return nil
-}
-
-func (x *Xdata) merkleOptCheck(opt blockchain.ChallengeRequestOptions) error {
-	// sig verification
-	challengeOpt := blockchain.ChallengeRequestOptions{
-		ChallengeID:        opt.ChallengeID,
-		FileOwner:          opt.FileOwner,
-		TargetNode:         opt.TargetNode,
-		FileID:             opt.FileID,
-		SliceID:            opt.SliceID,
-		SliceStorIndex:     opt.SliceStorIndex,
-		Ranges:             opt.Ranges,
-		ChallengeTime:      opt.ChallengeTime,
-		HashOfProof:        opt.HashOfProof,
-		ChallengeAlgorithm: opt.ChallengeAlgorithm,
-	}
-
-	content, err := json.Marshal(challengeOpt)
-	if err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal Challenge")
-	}
-	if len(opt.FileOwner) != ecdsa.PublicKeyLength || len(opt.Sig) != ecdsa.SignatureLength {
-		return errorx.New(errorx.ErrCodeParam, "bad challenges")
-	}
-	var pubkey [ecdsa.PublicKeyLength]byte
-	var sig [ecdsa.SignatureLength]byte
-	copy(pubkey[:], opt.FileOwner)
-	copy(sig[:], opt.Sig)
-	if err := ecdsa.Verify(pubkey, xchainClient.HashUsingSha256(content), sig); err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "failed to verify Challenge")
-	}
-	return nil
-}
-
-func (x *Xdata) pairingAnswerOptCheck(opt blockchain.ChallengeAnswerOptions, c blockchain.Challenge) error {
-	digest := []byte(c.ID)
-	digest = append(digest, opt.Sigma...)
-	digest = append(digest, opt.Mu...)
-	digest = xchainClient.HashUsingSha256(digest)
-	targetNode, err := hex.DecodeString(string(c.TargetNode))
-	if err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeParam, "pairing challenge wrong target node")
-	}
-	if len(targetNode) != ecdsa.PublicKeyLength || len(opt.Sig) != ecdsa.SignatureLength {
-		return errorx.New(errorx.ErrCodeParam, "pairing challenge bad proof")
-	}
-	var pubkey [ecdsa.PublicKeyLength]byte
-	var sig [ecdsa.SignatureLength]byte
-	copy(pubkey[:], targetNode[:])
-	copy(sig[:], opt.Sig[:])
-	if err := ecdsa.Verify(pubkey, digest, sig); err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "pairing challenge signature verification failed")
-	}
-	return nil
-}
-
-func (x *Xdata) merkleAnswerOptCheck(opt blockchain.ChallengeAnswerOptions, c blockchain.Challenge) error {
-	targetNode, err := hex.DecodeString(string(c.TargetNode))
-	if err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeParam, "merkle wrong target node")
-	}
-	if len(targetNode) != ecdsa.PublicKeyLength || len(opt.Sig) != ecdsa.SignatureLength {
-		return errorx.New(errorx.ErrCodeParam, "merkle bad proof")
-	}
-	var pubkey [ecdsa.PublicKeyLength]byte
-	var sig [ecdsa.SignatureLength]byte
-	copy(pubkey[:], targetNode[:])
-	copy(sig[:], opt.Sig[:])
-	if err := ecdsa.Verify(pubkey, opt.Proof, sig); err != nil {
-		return errorx.NewCode(err, errorx.ErrCodeBadSignature, "merkle signature verification failed")
-	}
-	return nil
 }

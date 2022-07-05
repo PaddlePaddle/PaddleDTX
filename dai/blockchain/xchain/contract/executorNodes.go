@@ -120,7 +120,7 @@ func (x *Xdata) GetExecutorNodeByID(ctx code.Context) code.Response {
 	}
 
 	// get node by index
-	index := packNodeIndex(nodeID)
+	index := packNodeStringIndex(string(nodeID))
 	s, err := ctx.GetObject([]byte(index))
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeNotFound, "node not found"))

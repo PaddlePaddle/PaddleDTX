@@ -117,6 +117,10 @@ func newNode(conf *config.ExecutorConf) (node handler.Node, err error) {
 		PaddleFLAddress: conf.PaddleFLAddress,
 		PaddleFLRole:    conf.PaddleFLRole,
 	}
+	// if conf.HttpServer.Switch is "on", setting HttpAddress
+	if conf.HttpServer.Switch == "on" {
+		local.HttpAddress = strings.TrimRight(conf.PublicAddress, conf.ListenAddress) + conf.HttpServer.HttpPort
+	}
 	return local, nil
 }
 

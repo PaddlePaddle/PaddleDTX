@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 package task;
 option go_package = "github.com/PaddlePaddle/PaddleDTX/dai/protos/task";
@@ -8,11 +9,26 @@ option go_package = "github.com/PaddlePaddle/PaddleDTX/dai/protos/task";
 // Cluster defines communication communication between client and server, and communication between cluster members.
 service Task {
     // ListTask is provided by Executor server for Executor client to list tasks with filters.
-    rpc ListTask(ListTaskRequest)  returns (FLTasks);
+    rpc ListTask(ListTaskRequest)  returns (FLTasks) {
+        option (google.api.http) = {
+            post : "/v1/task/list"
+            body : "*"
+        };
+    }
     // GetTaskById is provided by Executor server for Executor client to query a task.
-    rpc GetTaskById(GetTaskRequest) returns (FLTask);
+    rpc GetTaskById(GetTaskRequest) returns (FLTask) {
+        option (google.api.http) = {
+            post : "/v1/task/getbyid"
+            body : "*"
+        };
+    }
     // GetPredictResult is provided by Executor server for Executor client to get prediction result.
-    rpc GetPredictResult(TaskRequest) returns (PredictResponse);
+    rpc GetPredictResult(TaskRequest) returns (PredictResponse) {
+        option (google.api.http) = {
+            post : "/v1/task/predictres/get"
+            body : "*"
+        };
+    }
     // StartTask is for Executors to request remote ones to start a task.
     rpc StartTask(TaskRequest) returns (TaskResponse);
 }
@@ -43,7 +59,7 @@ message DataForTask {
     bytes  owner = 1;  // samples'owner, also dataOwner who confirms executor's authorization application for the use of samples
 	bytes  executor = 2; // executor who process tasks
 	string dataID = 3; // file id of samples
-	string PSILabel = 4 ; // psi lable for vertical learning
+	string psiLabel = 4 ; // psi lable for vertical learning
 	int64  confirmedAt = 5; // task confirm time
 	int64  rejectedAt = 6; // task reject time
     string address = 7; // host of Executor 
@@ -52,7 +68,7 @@ message DataForTask {
 
 // FLTask is a message received from Executor and defines Federated Learning Task based on MPC
 message FLTask {
-    string iD = 1;
+    string taskID = 1;
     string name = 2;
     string description = 3;
 

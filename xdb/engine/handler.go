@@ -16,7 +16,6 @@ package engine
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"time"
 
@@ -26,6 +25,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // Push receive slices from dataOwner nodes
@@ -79,10 +79,6 @@ func (e *Engine) Pull(opt types.PullOptions) (io.ReadCloser, error) {
 		return nil, errorx.Wrap(err, "failed to read blockchain")
 	}
 
-	// Verify Signature
-	msg := fmt.Sprintf("%s,%s,%s,%d", opt.SliceID, opt.StorIndex, opt.FileID, opt.Timestamp)
-	msgDigest := hash.HashUsingSha256([]byte(msg))
-
 	var verifyPubkey string
 	// If opt.Pubkey is empty, use file owner's public key to verify signature
 	if len(opt.Pubkey) == 0 || bytes.Equal(opt.Pubkey, file.Owner) {
@@ -93,7 +89,12 @@ func (e *Engine) Pull(opt types.PullOptions) (io.ReadCloser, error) {
 			return nil, err
 		}
 	}
-	if err := verifyUserToken(verifyPubkey, opt.Signature, msgDigest); err != nil {
+	// Verify Signature
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return nil, errorx.Internal(err, "failed to get the message to sign for pull slices")
+	}
+	if err := verifyUserToken(verifyPubkey, opt.Signature, hash.HashUsingSha256([]byte(msg))); err != nil {
 		return nil, errorx.Wrap(err, "failed to verify slice pull token")
 	}
 

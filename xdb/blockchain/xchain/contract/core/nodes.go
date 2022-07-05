@@ -16,7 +16,6 @@ package core
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
@@ -24,6 +23,7 @@ import (
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // AddNode adds a node to xchain
@@ -44,15 +44,19 @@ func (x *Xdata) AddNode(ctx code.Context) code.Response {
 	// marshal node
 	s, err := json.Marshal(node)
 	if err != nil {
-		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
-			"failed to marshal Node"))
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal Node"))
 	}
 	// verify sig
 	npk, err := hex.DecodeString(string(node.ID))
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to decode nodeID"))
 	}
-	if err := x.checkSign(opt.Signature, npk, s); err != nil {
+	// get the message to sing
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
+	}
+	if err := x.checkSign(opt.Signature, npk, []byte(msg)); err != nil {
 		return code.Error(err)
 	}
 
@@ -148,8 +152,12 @@ func (x *Xdata) setNodeOnlineStatus(ctx code.Context, online bool) code.Response
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to decode nodeID"))
 	}
-	m := fmt.Sprintf("%s,%d", string(opt.NodeID), opt.Nonce)
-	if err := x.checkSign(opt.Sig, npk, []byte(m)); err != nil {
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
+	}
+	if err := x.checkSign(opt.Signature, npk, []byte(msg)); err != nil {
 		return code.Error(err)
 	}
 
@@ -193,63 +201,44 @@ func (x *Xdata) setNodeOnlineStatus(ctx code.Context, online bool) code.Response
 
 // Heartbeat updates heartbeat of node
 func (x *Xdata) Heartbeat(ctx code.Context) code.Response {
-	// get id
-	nodeID, ok := ctx.Args()["id"]
+	s, ok := ctx.Args()["opt"]
 	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:id"))
+		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:opt"))
 	}
-	// get currentTime
-	h, ok := ctx.Args()["currentTime"]
-	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:currentTime"))
+	var opt blockchain.NodeHeartBeatOptions
+	if err := json.Unmarshal(s, &opt); err != nil {
+		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to unmarshal NodeHeartBeatOptions"))
 	}
-	ctime, err := strconv.ParseInt(string(h), 10, 64)
-	if err != nil {
-		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to parseInt currentTime"))
-	}
-	// get beginningTime
-	bt, ok := ctx.Args()["beginningTime"]
-	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:beginningTime"))
-	}
-	btime, err := strconv.ParseInt(string(bt), 10, 64)
-	if err != nil {
-		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to parseInt beginningTime"))
-	}
-	//get signature
-	signature, ok := ctx.Args()["signature"]
-	if !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "missing param:signature"))
-	}
-	// verify sig
-	if len(signature) != ecdsa.SignatureLength {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param:signature"))
-	}
-	nodePK, err := hex.DecodeString(string(nodeID))
+	// get node public key
+	nodePK, err := hex.DecodeString(string(opt.NodeID))
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to decode nodeID"))
 	}
-	msg := fmt.Sprintf("%s,%d", string(nodeID), ctime)
-	if err := x.checkSign(signature, nodePK, []byte(msg)); err != nil {
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
+	}
+	if err := x.checkSign(opt.Signature, nodePK, []byte(msg)); err != nil {
 		return code.Error(err)
 	}
 
 	// update node heartbeat number
-	hindex := packNodeHeartBeatIndex(nodeID, btime)
+	hindex := packNodeHeartBeatIndex(opt.NodeID, opt.BeginningTime)
 	hl, err := ctx.GetObject([]byte(hindex))
 	var hb []int64
 	if err != nil {
-		hb = append(hb, ctime)
+		hb = append(hb, opt.CurrentTime)
 	} else {
 		if err := json.Unmarshal(hl, &hb); err != nil {
 			return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to unmarshal heartbeat"))
 		}
 		for _, v := range hb {
-			if v == ctime {
+			if v == opt.CurrentTime {
 				return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "heartbeat has been checked of ctime"))
 			}
 		}
-		hb = append(hb, ctime)
+		hb = append(hb, opt.CurrentTime)
 	}
 	hbc, err := json.Marshal(hb)
 	if err != nil {
@@ -260,7 +249,7 @@ func (x *Xdata) Heartbeat(ctx code.Context) code.Response {
 	}
 
 	// update node updateAt after heartbeat success
-	index := packNodeIndex(nodeID)
+	index := packNodeIndex(opt.NodeID)
 	oldn, err := ctx.GetObject([]byte(index))
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeNotFound, "node not found"))
@@ -271,7 +260,7 @@ func (x *Xdata) Heartbeat(ctx code.Context) code.Response {
 	}
 
 	// update node heartbeat time
-	node.UpdateAt = ctime
+	node.UpdateAt = opt.CurrentTime
 	newn, err := json.Marshal(node)
 	if err != nil {
 		return code.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal node"))

@@ -27,6 +27,10 @@
     - requester：计算需求方配置目录
     - docker-compose.yml: 多方安全计算网络启动所需的配置
 
+- visualization【可视化服务】
+    - docker-compose.yml: 启动可视化服务所需的配置
+
+
 ## 二、准备工作
 服务启动依赖docker-compose，请先确认本地是否安装docker-compose
 

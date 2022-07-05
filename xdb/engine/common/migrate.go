@@ -29,6 +29,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // PullAndDec pull a slice from healthy node and decrypt
@@ -169,24 +170,23 @@ func ExpandFileSlices(ctx context.Context, privkey ecdsa.PrivateKey, cp CommonCo
 		}
 	}
 
-	// sign slice info
-	s, err := json.Marshal(slices)
-	if err != nil {
-		return errorx.Wrap(err, "failed to marshal slices")
-	}
-	sig, err := ecdsa.Sign(privkey, xchainClient.HashUsingSha256(s))
-	if err != nil {
-		return errorx.Wrap(err, "failed to marshal slices")
-	}
 	// update file slices on blockchain
 	opt := blockchain.UpdateFilePSMOptions{
-		FileID:    file.ID,
-		Owner:     file.Owner,
-		Slices:    slices,
-		Signature: sig[:],
+		FileID: file.ID,
+		Owner:  file.Owner,
+		Slices: slices,
 	}
-	err = chain.UpdateFilePublicSliceMeta(&opt)
+	msg, err := util.GetSigMessage(opt)
 	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
+	sign, err := ecdsa.Sign(privkey, xchainClient.HashUsingSha256([]byte(msg)))
+	if err != nil {
+		return errorx.NewCode(err, errorx.ErrCodeCrypto, "failed to sign slices")
+	}
+	opt.Signature = sign[:]
+
+	if err := chain.UpdateFilePublicSliceMeta(&opt); err != nil {
 		l.WithFields(logrus.Fields{
 			"file_id":     file.ID,
 			"new_replica": replica,

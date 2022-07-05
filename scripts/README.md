@@ -14,7 +14,10 @@ Usage: ./network_up.sh { start | stop | restart }
 ./network_up.sh start -p true
 ```
 
-
+-h 如果需要使用PaddleDTX可视化能力，需启动可视化服务paddledtx-visual，启动时指定可被浏览器访问的计算节点IP地址，默认为不启动。在host为“106.13.169.234”的机器上启动PaddleDTX及其可视化服务，命令如下：
+```shell
+./network_up.sh start -h 106.13.169.234
+```
 
 ### 1.2 服务停止
 ```shell

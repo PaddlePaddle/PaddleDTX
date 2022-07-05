@@ -71,6 +71,7 @@ type ServerConf struct {
 	ListenAddress string
 	PrivateKey    string
 	PublicAddress string
+	AllowCros     bool
 }
 
 type Log struct {
@@ -138,7 +139,9 @@ func GetServerConf() *ServerConf {
 			Name:          dataOwnerConf.Name,
 			ListenAddress: dataOwnerConf.ListenAddress,
 			PrivateKey:    privateKey,
-			PublicAddress: dataOwnerConf.PublicAddress}
+			PublicAddress: dataOwnerConf.PublicAddress,
+			AllowCros:     dataOwnerConf.AllowCros,
+		}
 	} else if serverType == NodeTypeStorage {
 		privateKey = storageConf.PrivateKey
 		privateKeyBytes, err := file.ReadFile(storageConf.KeyPath, file.PrivateKeyFileName)
@@ -150,7 +153,8 @@ func GetServerConf() *ServerConf {
 			Name:          storageConf.Name,
 			ListenAddress: storageConf.ListenAddress,
 			PrivateKey:    privateKey,
-			PublicAddress: storageConf.PublicAddress}
+			PublicAddress: storageConf.PublicAddress,
+		}
 	} else {
 		return nil
 	}

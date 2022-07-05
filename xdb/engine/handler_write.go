@@ -16,8 +16,6 @@ package engine
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"io"
 	"sync"
 	"time"
@@ -35,6 +33,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/slicer"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 const (
@@ -76,7 +75,10 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 		return resp, err
 	}
 	// verify token
-	msg := fmt.Sprintf("%s,%s,%s", opt.User, opt.Namespace, opt.FileName)
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return resp, errorx.Internal(err, "failed to get the message to sign for upload files")
+	}
 	if err := verifyUserToken(opt.User, opt.Token, hash.HashUsingSha256([]byte(msg))); err != nil {
 		return resp, errorx.Wrap(err, "failed to verify token")
 	}
@@ -218,7 +220,6 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	if err != nil {
 		return resp, errorx.Wrap(err, "failed to pack chain file")
 	}
-
 	// generate and push pairing based challenge material for each slice and storage node
 	// slice index is required in calculation, which is obtained after packChainFile
 	if ca == types.PairingChallengeAlgorithm {
@@ -229,19 +230,19 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	}
 
 	// sign file info
-	s, err := json.Marshal(chainFile)
-	if err != nil {
-		return resp, errorx.Wrap(err, "failed to marshal File")
+	publishFileOpt := blockchain.PublishFileOptions{
+		File: chainFile,
 	}
-	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.HashUsingSha256(s))
+	// get the message to sign
+	msg, err = util.GetSigMessage(publishFileOpt)
+	if err != nil {
+		return resp, errorx.Internal(err, "failed to get the message to sign for upload files")
+	}
+	sig, err := ecdsa.Sign(e.monitor.challengingMonitor.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return resp, errorx.Wrap(err, "failed to sign File")
 	}
-	publishFileOpt := blockchain.PublishFileOptions{
-		File:      chainFile,
-		Signature: sig[:],
-	}
-
+	publishFileOpt.Signature = sig[:]
 	if err := e.chain.PublishFile(&publishFileOpt); err != nil {
 		return resp, errorx.Wrap(err, "failed to write file to blockchain")
 	}

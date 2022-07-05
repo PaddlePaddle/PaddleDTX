@@ -15,7 +15,6 @@ package http
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/url"
 	"path"
@@ -28,6 +27,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	httpkg "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/http"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 	servertypes "github.com/PaddlePaddle/PaddleDTX/xdb/server/types"
 )
 
@@ -52,14 +52,16 @@ func New(addr string) (Client, error) {
 	return c, nil
 }
 
-type WriteOptions struct {
-	PrivateKey string
-
-	Namespace   string
-	FileName    string
-	ExpireTime  int64
-	Description string
-	Extra       string
+// getRequestsUrl used to generate http api request url
+func (c *Client) getRequestsUrl(path []string, params map[string]string) url.URL {
+	url := c.baseAddr
+	joinPath(&url, path...)
+	q := url.Query()
+	for k, v := range params {
+		q.Add(k, v)
+	}
+	url.RawQuery = q.Encode()
+	return url
 }
 
 // Write upload a file
@@ -70,30 +72,27 @@ func (c *Client) Write(ctx context.Context, r io.Reader, opt WriteOptions) (
 	if err != nil {
 		return servertypes.WriteResponse{}, err
 	}
-	pubkey := ecdsa.PublicKeyFromPrivateKey(privkey)
-	owner := pubkey.String()
+	// defines parameters for uploading files
+	reqParams := map[string]string{
+		"user":       ecdsa.PublicKeyFromPrivateKey(privkey).String(),
+		"ns":         opt.Namespace,
+		"name":       opt.FileName,
+		"desc":       opt.Description,
+		"ext":        opt.Extra,
+		"expireTime": strconv.FormatInt(opt.ExpireTime, 10),
+	}
+	msg, err := util.GetSigMessage(reqParams)
+	if err != nil {
+		return servertypes.WriteResponse{}, errorx.Internal(err, "failed to get the message to sign")
+	}
 
-	msg := fmt.Sprintf("%s,%s,%s", owner, opt.Namespace, opt.FileName)
-	h := hash.HashUsingSha256([]byte(msg))
-
-	sig, err := ecdsa.Sign(privkey, h)
+	sig, err := ecdsa.Sign(privkey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return servertypes.WriteResponse{}, errorx.Wrap(err, "failed to sign")
 	}
+	reqParams["token"] = sig.String()
 
-	url := c.baseAddr
-	joinPath(&url, "file", "write")
-
-	q := url.Query()
-	q.Add("user", owner)
-	q.Add("token", sig.String())
-	q.Add("ns", opt.Namespace)
-	q.Add("name", opt.FileName)
-	q.Add("desc", opt.Description)
-	q.Add("ext", opt.Extra)
-	q.Add("expireTime", strconv.FormatInt(opt.ExpireTime, 10))
-	url.RawQuery = q.Encode()
-
+	url := c.getRequestsUrl([]string{"file", "write"}, reqParams)
 	var resp servertypes.WriteResponse
 	if err := httpkg.PostResponse(ctx, url.String(), r, &resp); err != nil {
 		return resp, err
@@ -102,50 +101,30 @@ func (c *Client) Write(ctx context.Context, r io.Reader, opt WriteOptions) (
 	return resp, nil
 }
 
-// ReadOptions use FileID or Namespace+FileName
-type ReadOptions struct {
-	PrivateKey string
-
-	Namespace string
-	FileName  string
-
-	FileID string
-}
-
 // Read download a file
 func (c *Client) Read(ctx context.Context, opt ReadOptions) (io.ReadCloser, error) {
 	privkey, err := ecdsa.DecodePrivateKeyFromString(opt.PrivateKey)
 	if err != nil {
 		return nil, err
 	}
-	tm := strconv.FormatInt(time.Now().UnixNano(), 10)
-	pubkey := ecdsa.PublicKeyFromPrivateKey(privkey)
-
-	var msg string
-	if len(opt.FileID) > 0 {
-		msg = fmt.Sprintf("%s,%s", opt.FileID, tm)
-	} else {
-		msg = fmt.Sprintf("%s,%s,%s,%s", pubkey.String(), opt.Namespace, opt.FileName, tm)
+	reqParams := map[string]string{
+		"user":      ecdsa.PublicKeyFromPrivateKey(privkey).String(),
+		"ns":        opt.Namespace,
+		"name":      opt.FileName,
+		"file_id":   opt.FileID,
+		"timestamp": strconv.FormatInt(time.Now().UnixNano(), 10),
 	}
-	h := hash.HashUsingSha256([]byte(msg))
-
-	sig, err := ecdsa.Sign(privkey, h)
+	msg, err := util.GetSigMessage(reqParams)
+	if err != nil {
+		return nil, errorx.Internal(err, "failed to get the message to sign")
+	}
+	sig, err := ecdsa.Sign(privkey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to sign")
 	}
+	reqParams["token"] = sig.String()
 
-	url := c.baseAddr
-	joinPath(&url, "file", "read")
-
-	q := url.Query()
-	q.Add("user", pubkey.String())
-	q.Add("token", sig.String())
-	q.Add("ns", opt.Namespace)
-	q.Add("name", opt.FileName)
-	q.Add("file_id", opt.FileID)
-	q.Add("timestamp", tm)
-	url.RawQuery = q.Encode()
-
+	url := c.getRequestsUrl([]string{"file", "read"}, reqParams)
 	reader, err := httpkg.Get(ctx, url.String())
 	if err != nil {
 		return nil, err
@@ -156,9 +135,8 @@ func (c *Client) Read(ctx context.Context, opt ReadOptions) (io.ReadCloser, erro
 
 // ListNodes list all storage nodes in system
 func (c *Client) ListNodes(ctx context.Context) (blockchain.Nodes, error) {
-	url := c.baseAddr
-	joinPath(&url, "node", "list")
 	var nodes blockchain.Nodes
+	url := c.getRequestsUrl([]string{"node", "list"}, nil)
 	if err := httpkg.GetResponse(ctx, url.String(), &nodes); err != nil {
 		return nil, err
 	}
@@ -167,12 +145,8 @@ func (c *Client) ListNodes(ctx context.Context) (blockchain.Nodes, error) {
 
 // GetNode get storage node by node id
 func (c *Client) GetNode(ctx context.Context, id string) (blockchain.Node, error) {
-	url := c.baseAddr
-	joinPath(&url, "node", "get")
-	q := url.Query()
-	q.Add("id", id)
-	url.RawQuery = q.Encode()
 	var node blockchain.Node
+	url := c.getRequestsUrl([]string{"node", "get"}, map[string]string{"id": id})
 	if err := httpkg.GetResponse(ctx, url.String(), &node); err != nil {
 		return node, err
 	}
@@ -181,13 +155,11 @@ func (c *Client) GetNode(ctx context.Context, id string) (blockchain.Node, error
 
 // GetNodeHeartbeat get storage node heart beat number
 func (c *Client) GetNodeHeartbeat(ctx context.Context, id string, ctime int64) (map[string]int, error) {
-	url := c.baseAddr
-	joinPath(&url, "node", "gethbnum")
-	q := url.Query()
-	q.Add("id", id)
-	q.Add("ctime", strconv.FormatInt(ctime, 10))
-	url.RawQuery = q.Encode()
 	var res map[string]int
+	url := c.getRequestsUrl([]string{"node", "gethbnum"}, map[string]string{
+		"id":    id,
+		"ctime": strconv.FormatInt(ctime, 10),
+	})
 	if err := httpkg.GetResponse(ctx, url.String(), &res); err != nil {
 		return nil, err
 	}
@@ -196,15 +168,14 @@ func (c *Client) GetNodeHeartbeat(ctx context.Context, id string, ctime int64) (
 
 // GetMigrateRecords get storage node migrate records
 func (c *Client) GetMigrateRecords(ctx context.Context, id string, start, end int64, limit int64) ([]map[string]interface{}, error) {
-	url := c.baseAddr
-	joinPath(&url, "node", "getmrecord")
-	q := url.Query()
-	q.Add("id", id)
-	q.Add("start", strconv.FormatInt(start, 10))
-	q.Add("end", strconv.FormatInt(end, 10))
-	q.Add("limit", strconv.FormatInt(limit, 10))
-	url.RawQuery = q.Encode()
+	reqParams := map[string]string{
+		"id":    id,
+		"start": strconv.FormatInt(start, 10),
+		"end":   strconv.FormatInt(end, 10),
+		"limit": strconv.FormatInt(limit, 10),
+	}
 	var ms []map[string]interface{}
+	url := c.getRequestsUrl([]string{"node", "getmrecord"}, reqParams)
 	if err := httpkg.GetResponse(ctx, url.String(), &ms); err != nil {
 		return nil, err
 	}
@@ -213,12 +184,8 @@ func (c *Client) GetMigrateRecords(ctx context.Context, id string, start, end in
 
 // GetNodeHealth get storage node health status by node id
 func (c *Client) GetNodeHealth(ctx context.Context, id string) (string, error) {
-	url := c.baseAddr
-	joinPath(&url, "node", "health")
-	q := url.Query()
-	q.Add("id", id)
-	url.RawQuery = q.Encode()
 	var status string
+	url := c.getRequestsUrl([]string{"node", "health"}, map[string]string{"id": id})
 	if err := httpkg.GetResponse(ctx, url.String(), &status); err != nil {
 		return "", err
 	}
@@ -231,27 +198,27 @@ func (c *Client) setNodeOnlineStatus(ctx context.Context, privateKey string, onl
 	if err != nil {
 		return err
 	}
-	pubkey := ecdsa.PublicKeyFromPrivateKey(private)
-	nodeID := pubkey.String()
+	reqParams := map[string]string{
+		"node":  ecdsa.PublicKeyFromPrivateKey(private).String(),
+		"nonce": strconv.FormatInt(time.Now().UnixNano(), 10),
+	}
+	msg, err := util.GetSigMessage(reqParams)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
 
-	nonce := time.Now().UnixNano()
-	m := fmt.Sprintf("%s,%d", nodeID, nonce)
-	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(m)))
+	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign")
 	}
+	reqParams["token"] = sig.String()
 
-	url := c.baseAddr
+	var url url.URL
 	if online {
-		joinPath(&url, "node", "online")
+		url = c.getRequestsUrl([]string{"node", "online"}, reqParams)
 	} else {
-		joinPath(&url, "node", "offline")
+		url = c.getRequestsUrl([]string{"node", "offline"}, reqParams)
 	}
-	q := url.Query()
-	q.Add("node", nodeID)
-	q.Add("nonce", strconv.FormatInt(nonce, 10))
-	q.Add("token", sig.String())
-	url.RawQuery = q.Encode()
 	if _, err := httpkg.Post(ctx, url.String(), nil); err != nil {
 		return err
 	}
@@ -268,72 +235,21 @@ func (c *Client) NodeOnline(ctx context.Context, privkey string) error {
 	return c.setNodeOnlineStatus(ctx, privkey, true)
 }
 
-type ListFileOptions struct {
-	Owner     string
-	Namespace string
-
-	TimeStart int64
-	TimeEnd   int64
-	Limit     int64
-}
-
-type ListNsOptions struct {
-	Owner string
-
-	TimeStart int64
-	TimeEnd   int64
-	Limit     int64
-}
-
-// ListFileAuthOptions define parameters for authorizers or appliers to query the list of file authorization application
-type ListFileAuthOptions struct {
-	Owner     string
-	Applier   string
-	FileID    string
-	Status    string
-	TimeStart int64
-	TimeEnd   int64
-	Limit     int64
-}
-
-// ConfirmAuthOptions define parameters for authorizers to confirm the file authorization application
-type ConfirmAuthOptions struct {
-	PrivateKey   string
-	AuthID       string
-	ExpireTime   int64
-	RejectReason string
-	Status       bool
-}
-
 // ListFiles list unexpired files
-func (c *Client) ListFiles(ctx context.Context, opt ListFileOptions) ([]blockchain.File, error) {
-	url := c.baseAddr
-	joinPath(&url, "file", "list")
-	q := url.Query()
-	q.Add("owner", opt.Owner)
-	q.Add("ns", opt.Namespace)
-	q.Add("start", strconv.FormatInt(opt.TimeStart, 10))
-	q.Add("end", strconv.FormatInt(opt.TimeEnd, 10))
-	q.Add("limit", strconv.FormatInt(opt.Limit, 10))
-	url.RawQuery = q.Encode()
-	var files []blockchain.File
-	if err := httpkg.GetResponse(ctx, url.String(), &files); err != nil {
-		return nil, err
+func (c *Client) ListFiles(ctx context.Context, opt ListFileOptions, isExpired bool) ([]blockchain.File, error) {
+	reqParams := map[string]string{
+		"owner": opt.Owner,
+		"ns":    opt.Namespace,
+		"start": strconv.FormatInt(opt.TimeStart, 10),
+		"end":   strconv.FormatInt(opt.TimeEnd, 10),
+		"limit": strconv.FormatInt(opt.Limit, 10),
 	}
-	return files, nil
-}
-
-// ListExpiredFiles list expired but valid files
-func (c *Client) ListExpiredFiles(ctx context.Context, opt ListFileOptions) ([]blockchain.File, error) {
-	url := c.baseAddr
-	joinPath(&url, "file", "listexp")
-	q := url.Query()
-	q.Add("owner", opt.Owner)
-	q.Add("ns", opt.Namespace)
-	q.Add("start", strconv.FormatInt(opt.TimeStart, 10))
-	q.Add("end", strconv.FormatInt(opt.TimeEnd, 10))
-	q.Add("limit", strconv.FormatInt(opt.Limit, 10))
-	url.RawQuery = q.Encode()
+	var url url.URL
+	if isExpired {
+		url = c.getRequestsUrl([]string{"file", "listexp"}, reqParams)
+	} else {
+		url = c.getRequestsUrl([]string{"file", "list"}, reqParams)
+	}
 	var files []blockchain.File
 	if err := httpkg.GetResponse(ctx, url.String(), &files); err != nil {
 		return nil, err
@@ -343,12 +259,8 @@ func (c *Client) ListExpiredFiles(ctx context.Context, opt ListFileOptions) ([]b
 
 // GetFileByID get file info by file id
 func (c *Client) GetFileByID(ctx context.Context, id string) (blockchain.FileH, error) {
-	url := c.baseAddr
-	joinPath(&url, "file", "getbyid")
-	q := url.Query()
-	q.Add("id", id)
-	url.RawQuery = q.Encode()
 	var hfile blockchain.FileH
+	url := c.getRequestsUrl([]string{"file", "getbyid"}, map[string]string{"id": id})
 	if err := httpkg.GetResponse(ctx, url.String(), &hfile); err != nil {
 		return hfile, err
 	}
@@ -357,14 +269,8 @@ func (c *Client) GetFileByID(ctx context.Context, id string) (blockchain.FileH, 
 
 // GetFileByName get file info by file name, owner and namespace
 func (c *Client) GetFileByName(ctx context.Context, owner, ns, name string) (blockchain.FileH, error) {
-	url := c.baseAddr
-	joinPath(&url, "file", "getbyname")
-	q := url.Query()
-	q.Add("owner", owner)
-	q.Add("ns", ns)
-	q.Add("name", name)
-	url.RawQuery = q.Encode()
 	var hfile blockchain.FileH
+	url := c.getRequestsUrl([]string{"file", "getbyname"}, map[string]string{"owner": owner, "ns": ns, "name": name})
 	if err := httpkg.GetResponse(ctx, url.String(), &hfile); err != nil {
 		return hfile, err
 	}
@@ -377,24 +283,24 @@ func (c *Client) UpdateExpTimeByID(ctx context.Context, id, privateKey string, e
 	if err != nil {
 		return err
 	}
-	pubkey := ecdsa.PublicKeyFromPrivateKey(private)
+	reqParams := map[string]string{
+		"id":         id,
+		"user":       ecdsa.PublicKeyFromPrivateKey(private).String(),
+		"ctime":      strconv.FormatInt(time.Now().UnixNano(), 10),
+		"expireTime": strconv.FormatInt(expireTime, 10),
+	}
+	msg, err := util.GetSigMessage(reqParams)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
 
-	currentTime := time.Now().UnixNano()
-	m := fmt.Sprintf("%s,%d,%d", id, expireTime, currentTime)
-	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(m)))
+	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign file expire time")
 	}
+	reqParams["token"] = sig.String()
 
-	url := c.baseAddr
-	joinPath(&url, "file", "updatexptime")
-	q := url.Query()
-	q.Add("id", id)
-	q.Add("expireTime", strconv.FormatInt(expireTime, 10))
-	q.Add("ctime", strconv.FormatInt(currentTime, 10))
-	q.Add("user", pubkey.String())
-	q.Add("token", sig.String())
-	url.RawQuery = q.Encode()
+	url := c.getRequestsUrl([]string{"file", "updatexptime"}, reqParams)
 	if _, err := httpkg.Post(ctx, url.String(), nil); err != nil {
 		return err
 	}
@@ -407,26 +313,26 @@ func (c *Client) AddFileNs(ctx context.Context, owner, priKey, ns, des string, r
 	if err != nil {
 		return err
 	}
-	pubkey := ecdsa.PublicKeyFromPrivateKey(private)
 
-	ctime := time.Now().UnixNano()
-	m := fmt.Sprintf("%s,%s,%d,%d", ns, des, ctime, replica)
-
+	reqParams := map[string]string{
+		"ns":      ns,
+		"user":    ecdsa.PublicKeyFromPrivateKey(private).String(),
+		"replica": strconv.Itoa(replica),
+		"ctime":   strconv.FormatInt(time.Now().UnixNano(), 10),
+		"desc":    des,
+	}
+	msg, err := util.GetSigMessage(reqParams)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
 	// sign ns info
-	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(m)))
+	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign file namespace")
 	}
-	url := c.baseAddr
-	joinPath(&url, "file", "addns")
-	q := url.Query()
-	q.Add("ns", ns)
-	q.Add("replica", strconv.Itoa(replica))
-	q.Add("user", pubkey.String())
-	q.Add("token", sig.String())
-	q.Add("ctime", strconv.FormatInt(ctime, 10))
-	q.Add("desc", des)
-	url.RawQuery = q.Encode()
+	reqParams["token"] = sig.String()
+
+	url := c.getRequestsUrl([]string{"file", "addns"}, reqParams)
 	if _, err := httpkg.Post(ctx, url.String(), nil); err != nil {
 		return err
 	}
@@ -439,24 +345,24 @@ func (c *Client) UpdateFileNsReplica(ctx context.Context, priKey, ns string, rep
 	if err != nil {
 		return err
 	}
-	pubkey := ecdsa.PublicKeyFromPrivateKey(private)
-
-	currentTime := time.Now().UnixNano()
-	m := fmt.Sprintf("%s,%d,%d", ns, replica, currentTime)
-	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(m)))
+	reqParams := map[string]string{
+		"ns":      ns,
+		"user":    ecdsa.PublicKeyFromPrivateKey(private).String(),
+		"replica": strconv.Itoa(replica),
+		"ctime":   strconv.FormatInt(time.Now().UnixNano(), 10),
+	}
+	msg, err := util.GetSigMessage(reqParams)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
+	// sign the message
+	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign update ns replica param")
 	}
+	reqParams["token"] = sig.String()
 
-	url := c.baseAddr
-	joinPath(&url, "file", "ureplica")
-	q := url.Query()
-	q.Add("ns", ns)
-	q.Add("replica", strconv.Itoa(replica))
-	q.Add("ctime", strconv.FormatInt(currentTime, 10))
-	q.Add("user", pubkey.String())
-	q.Add("token", sig.String())
-	url.RawQuery = q.Encode()
+	url := c.getRequestsUrl([]string{"file", "ureplica"}, reqParams)
 	if _, err := httpkg.Post(ctx, url.String(), nil); err != nil {
 		return err
 	}
@@ -465,15 +371,15 @@ func (c *Client) UpdateFileNsReplica(ctx context.Context, priKey, ns string, rep
 
 // ListFileNs list file namespaces
 func (c *Client) ListFileNs(ctx context.Context, opt ListNsOptions) ([]blockchain.Namespace, error) {
-	url := c.baseAddr
-	joinPath(&url, "file", "listns")
-	q := url.Query()
-	q.Add("owner", opt.Owner)
-	q.Add("start", strconv.FormatInt(opt.TimeStart, 10))
-	q.Add("end", strconv.FormatInt(opt.TimeEnd, 10))
-	q.Add("limit", strconv.FormatInt(opt.Limit, 10))
-	url.RawQuery = q.Encode()
+	reqParams := map[string]string{
+		"owner": opt.Owner,
+		"start": strconv.FormatInt(opt.TimeStart, 10),
+		"end":   strconv.FormatInt(opt.TimeEnd, 10),
+		"limit": strconv.FormatInt(opt.Limit, 10),
+	}
+
 	var nss []blockchain.Namespace
+	url := c.getRequestsUrl([]string{"file", "listns"}, reqParams)
 	if err := httpkg.GetResponse(ctx, url.String(), &nss); err != nil {
 		return nil, err
 	}
@@ -482,13 +388,8 @@ func (c *Client) ListFileNs(ctx context.Context, opt ListNsOptions) ([]blockchai
 
 // GetNsByName get namespace by name and owner
 func (c *Client) GetNsByName(ctx context.Context, owner, ns string) (blockchain.NamespaceH, error) {
-	url := c.baseAddr
-	joinPath(&url, "file", "getns")
-	q := url.Query()
-	q.Add("owner", owner)
-	q.Add("name", ns)
-	url.RawQuery = q.Encode()
 	var nsh blockchain.NamespaceH
+	url := c.getRequestsUrl([]string{"file", "getns"}, map[string]string{"owner": owner, "name": ns})
 	if err := httpkg.GetResponse(ctx, url.String(), &nsh); err != nil {
 		return nsh, err
 	}
@@ -497,12 +398,8 @@ func (c *Client) GetNsByName(ctx context.Context, owner, ns string) (blockchain.
 
 // GetFileSysHealth get system health status of an owner
 func (c *Client) GetFileSysHealth(ctx context.Context, owner string) (blockchain.FileSysHealth, error) {
-	url := c.baseAddr
-	joinPath(&url, "file", "getsyshealth")
-	q := url.Query()
-	q.Add("owner", owner)
-	url.RawQuery = q.Encode()
 	var fh blockchain.FileSysHealth
+	url := c.getRequestsUrl([]string{"file", "getsyshealth"}, map[string]string{"owner": owner})
 	if err := httpkg.GetResponse(ctx, url.String(), &fh); err != nil {
 		return fh, err
 	}
@@ -511,12 +408,8 @@ func (c *Client) GetFileSysHealth(ctx context.Context, owner string) (blockchain
 
 // GetAuth get file authorization application detail by authID
 func (c *Client) GetAuth(ctx context.Context, authID string) (blockchain.FileAuthApplication, error) {
-	url := c.baseAddr
-	joinPath(&url, "file", "getauthbyid")
-	q := url.Query()
-	q.Add("authID", authID)
-	url.RawQuery = q.Encode()
 	var fa blockchain.FileAuthApplication
+	url := c.getRequestsUrl([]string{"file", "getauthbyid"}, map[string]string{"authID": authID})
 	if err := httpkg.GetResponse(ctx, url.String(), &fa); err != nil {
 		return fa, err
 	}
@@ -529,24 +422,24 @@ func (c *Client) ConfirmOrRejectAuth(ctx context.Context, opt ConfirmAuthOptions
 	if err != nil {
 		return err
 	}
-	pubkey := ecdsa.PublicKeyFromPrivateKey(private)
-	m := fmt.Sprintf("%s,%d,%s", opt.AuthID, opt.ExpireTime, opt.RejectReason)
-	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(m)))
+	reqParams := map[string]string{
+		"authID":       opt.AuthID,
+		"user":         ecdsa.PublicKeyFromPrivateKey(private).String(),
+		"status":       strconv.FormatBool(opt.Status),
+		"expireTime":   strconv.FormatInt(opt.ExpireTime, 10),
+		"rejectReason": opt.RejectReason,
+	}
+	msg, err := util.GetSigMessage(reqParams)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign")
+	}
+	sig, err := ecdsa.Sign(private, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign confirm file authorization application")
 	}
+	reqParams["token"] = sig.String()
 
-	url := c.baseAddr
-	joinPath(&url, "file", "confirmauth")
-	q := url.Query()
-	q.Add("authID", opt.AuthID)
-	q.Add("status", strconv.FormatBool(opt.Status))
-	q.Add("user", pubkey.String())
-	q.Add("expireTime", strconv.FormatInt(opt.ExpireTime, 10))
-	q.Add("rejectReason", opt.RejectReason)
-	q.Add("token", sig.String())
-
-	url.RawQuery = q.Encode()
+	url := c.getRequestsUrl([]string{"file", "confirmauth"}, reqParams)
 	if _, err := httpkg.Post(ctx, url.String(), nil); err != nil {
 		return err
 	}
@@ -555,18 +448,18 @@ func (c *Client) ConfirmOrRejectAuth(ctx context.Context, opt ConfirmAuthOptions
 
 // ListFileAuths get the list of file authorization applications
 func (c *Client) ListFileAuths(ctx context.Context, opt ListFileAuthOptions) (blockchain.FileAuthApplications, error) {
-	url := c.baseAddr
-	joinPath(&url, "file", "listauth")
-	q := url.Query()
-	q.Add("applierPubkey", opt.Applier)
-	q.Add("authorizerPubkey", opt.Owner)
-	q.Add("fileID", opt.FileID)
-	q.Add("status", opt.Status)
-	q.Add("start", strconv.FormatInt(opt.TimeStart, 10))
-	q.Add("end", strconv.FormatInt(opt.TimeEnd, 10))
-	q.Add("limit", strconv.FormatInt(opt.Limit, 10))
-	url.RawQuery = q.Encode()
+	reqParams := map[string]string{
+		"applierPubkey":    opt.Applier,
+		"authorizerPubkey": opt.Owner,
+		"fileID":           opt.FileID,
+		"status":           opt.Status,
+		"start":            strconv.FormatInt(opt.TimeStart, 10),
+		"end":              strconv.FormatInt(opt.TimeEnd, 10),
+		"limit":            strconv.FormatInt(opt.Limit, 10),
+	}
+
 	var fileAuths blockchain.FileAuthApplications
+	url := c.getRequestsUrl([]string{"file", "listauth"}, reqParams)
 	if err := httpkg.GetResponse(ctx, url.String(), &fileAuths); err != nil {
 		return nil, err
 	}
@@ -575,78 +468,34 @@ func (c *Client) ListFileAuths(ctx context.Context, opt ListFileAuthOptions) (bl
 
 // GetChallengeByID get challenge info by challenge id
 func (c *Client) GetChallengeByID(ctx context.Context, id string) (blockchain.Challenge, error) {
-	url := c.baseAddr
-	joinPath(&url, "challenge", "getbyid")
-	q := url.Query()
-	q.Add("id", id)
-	url.RawQuery = q.Encode()
 	var challenge blockchain.Challenge
+	url := c.getRequestsUrl([]string{"challenge", "getbyid"}, map[string]string{"id": id})
 	if err := httpkg.GetResponse(ctx, url.String(), &challenge); err != nil {
 		return challenge, err
 	}
 	return challenge, nil
 }
 
-type GetChallengesOptions struct {
-	Owner      string
-	TargetNode string
-	FileID     string // optional, filter
-
-	TimeStart int64
-	TimeEnd   int64
-	Limit     int64
-}
-
-// GetToProveChallenges get challenges with status "ToProve"
-func (c *Client) GetToProveChallenges(ctx context.Context, opt GetChallengesOptions) ([]blockchain.Challenge, error) {
-	url := c.baseAddr
-	joinPath(&url, "challenge", "toprove")
-	q := url.Query()
-	q.Add("owner", opt.Owner)
-	q.Add("node", opt.TargetNode)
-	q.Add("file", opt.FileID)
-	q.Add("start", strconv.FormatInt(opt.TimeStart, 10))
-	q.Add("end", strconv.FormatInt(opt.TimeEnd, 10))
-	q.Add("limit", strconv.FormatInt(int64(opt.Limit), 10))
-	url.RawQuery = q.Encode()
-	var challenges []blockchain.Challenge
-	if err := httpkg.GetResponse(ctx, url.String(), &challenges); err != nil {
-		return challenges, err
+// GetChallenges get challenges with status "ToProve" or "Proved" or "Failed"
+func (c *Client) GetChallenges(ctx context.Context, opt GetChallengesOptions, status string) ([]blockchain.Challenge, error) {
+	reqParams := map[string]string{
+		"owner": opt.Owner,
+		"node":  opt.TargetNode,
+		"file":  opt.FileID,
+		"start": strconv.FormatInt(opt.TimeStart, 10),
+		"end":   strconv.FormatInt(opt.TimeEnd, 10),
+		"limit": strconv.FormatInt(int64(opt.Limit), 10),
 	}
-	return challenges, nil
-}
-
-// GetProvedChallenges get challenges with status "Proved"
-func (c *Client) GetProvedChallenges(ctx context.Context, opt GetChallengesOptions) ([]blockchain.Challenge, error) {
-	url := c.baseAddr
-	joinPath(&url, "challenge", "proved")
-	q := url.Query()
-	q.Add("owner", opt.Owner)
-	q.Add("node", opt.TargetNode)
-	q.Add("file", opt.FileID)
-	q.Add("start", strconv.FormatInt(opt.TimeStart, 10))
-	q.Add("end", strconv.FormatInt(opt.TimeEnd, 10))
-	q.Add("limit", strconv.FormatInt(int64(opt.Limit), 10))
-	url.RawQuery = q.Encode()
-	var challenges []blockchain.Challenge
-	if err := httpkg.GetResponse(ctx, url.String(), &challenges); err != nil {
-		return challenges, err
+	var url url.URL
+	switch status {
+	case blockchain.ChallengeToProve:
+		url = c.getRequestsUrl([]string{"challenge", "toprove"}, reqParams)
+	case blockchain.ChallengeProved:
+		url = c.getRequestsUrl([]string{"challenge", "proved"}, reqParams)
+	case blockchain.ChallengeFailed:
+		url = c.getRequestsUrl([]string{"challenge", "failed"}, reqParams)
 	}
-	return challenges, nil
-}
 
-// GetFailedChallenges get challenges with status "Failed"
-func (c *Client) GetFailedChallenges(ctx context.Context, opt GetChallengesOptions) ([]blockchain.Challenge, error) {
-	url := c.baseAddr
-	joinPath(&url, "challenge", "failed")
-	q := url.Query()
-	q.Add("owner", opt.Owner)
-	q.Add("node", opt.TargetNode)
-	q.Add("file", opt.FileID)
-	q.Add("start", strconv.FormatInt(opt.TimeStart, 10))
-	q.Add("end", strconv.FormatInt(opt.TimeEnd, 10))
-	q.Add("limit", strconv.FormatInt(int64(opt.Limit), 10))
-	url.RawQuery = q.Encode()
 	var challenges []blockchain.Challenge
 	if err := httpkg.GetResponse(ctx, url.String(), &challenges); err != nil {
 		return challenges, err

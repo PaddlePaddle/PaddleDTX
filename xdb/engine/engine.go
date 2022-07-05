@@ -93,7 +93,7 @@ type Blockchain interface {
 	GetNode(id []byte) (blockchain.Node, error)
 	NodeOffline(opt *blockchain.NodeOperateOptions) error
 	NodeOnline(opt *blockchain.NodeOperateOptions) error
-	Heartbeat(id, sig []byte, timestamp int64) error
+	Heartbeat(opt *blockchain.NodeHeartBeatOptions) error
 	GetHeartbeatNum(id []byte, timestamp int64) (int, error)
 	GetNodeHealth(id []byte) (string, error)
 	ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([][2]string, error)
@@ -107,7 +107,7 @@ type Blockchain interface {
 	AddFileNs(opt *blockchain.AddNsOptions) error
 	UpdateNsReplica(opt *blockchain.UpdateNsReplicaOptions) error
 	UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions) error
-	SliceMigrateRecord(id, sig []byte, fid, sid string, ctime int64) error
+	SliceMigrateRecord(opt *blockchain.SliceMigrateOptions) error
 	GetNsByName(owner []byte, name string) (blockchain.Namespace, error)
 	ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
 	ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error)

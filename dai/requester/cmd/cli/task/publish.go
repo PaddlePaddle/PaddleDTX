@@ -195,7 +195,7 @@ func init() {
 	// optional params
 	publishCmd.Flags().StringVarP(&label, "label", "l", "", "target feature for training task")
 	publishCmd.Flags().StringVar(&labelName, "labelName", "", "target variable required in logistic-vl training")
-	publishCmd.Flags().StringVarP(&psiLabel, "PSILabel", "p", "", "ID feature name list with ',' as delimiter, like 'id,id', required in vertical task")
+	publishCmd.Flags().StringVarP(&psiLabel, "psiLabel", "p", "", "ID feature name list with ',' as delimiter, like 'id,id', required in vertical task")
 	publishCmd.Flags().StringVarP(&taskId, "taskId", "i", "", "finished train task ID from which obtain the model, required for predict task")
 	publishCmd.Flags().StringVar(&regMode, "regMode", "", "regularization mode required in train task, no regularization if not set, options are l1(L1-norm) and l2(L2-norm)")
 	publishCmd.Flags().Float64Var(&regParam, "regParam", 0.1, "regularization parameter required in train task if set regMode")

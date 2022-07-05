@@ -34,7 +34,7 @@ message TrainParams {
     int64 accuracy = 7;
     bool isTagPart = 8;
     string idName = 9;            // for vertical learning PSI
-    int64 BatchSize = 10;         // for train loop
+    int64 batchSize = 10;         // for train loop
 }
 
 // TrainModels is final result of distributed training

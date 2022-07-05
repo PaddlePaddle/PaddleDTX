@@ -35,10 +35,18 @@ type ExecutorConf struct {
 	PaddleFLAddress string
 	PaddleFLRole    int
 	KeyPath         string
+	HttpServer      *HttpServerConf
 	Mode            *ExecutorModeConf
 	Mpc             *ExecutorMpcConf
 	Storage         *ExecutorStorageConf
 	Blockchain      *ExecutorBlockchainConf
+}
+
+// HttpServerConf defines the configuration required to start the executor node's httpserver
+type HttpServerConf struct {
+	Switch    string
+	HttpPort  string
+	AllowCros bool
 }
 
 type ExecutorModeConf struct {

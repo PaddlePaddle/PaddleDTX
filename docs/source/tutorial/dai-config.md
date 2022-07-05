@@ -55,6 +55,14 @@ paddleFLRole = 0
 # privateKey = "858843291fe4ed4bd2afc1120efd7315f3cae2d3f79e582f7df843ac6eb0543b"
 keyPath = "./keys"
 
+[executor.httpserver]
+# Whether to start the httpserver of the executor node, default "on"
+switch = "on"
+# The port of this httpserver will listen on
+httpPort = ":8013"
+# Whether to allow cross-domain requests, the default is false, use with caution in the production environment.
+allowCros = false
+
 # The mode defines how executor nodes download the sample file during the task execution.
 # The sample file download type also represents the task execution type, such as proxy-execution or self-execution.
 [executor.mode]
@@ -139,8 +147,9 @@ path = "./logs"
 !!! note "配置说明"
 
     1. 任务执行节点中配置了节点启动所需监听的端口、身份等信息，paddleFLAddress定义了运行神经网络算法所需的容器地址；
-    2. executor.mode 用于指定节点的计算方式，支持代理和自主计算模式，代理模式用于数据持有节点将样本数据授权给任务执行节点进行代理计算，而自主计算模式则适用于计算节点是数据持有节点的客户端场景；
-    3. executor.storage 定义了模型、评估结果、预测结果存储的路径，其中预测结果存储支持加密存储到去中心化存储网络；
-    4. executor.blockchain 定义了任务执行节点操作的区块链网络配置，当前只支持Xchain网络，后续会支持Fabric；
+    2. executor.httpserver 定义了启动http server所需的配置，用户可以按需选择是否启动http服务，allowCros用于指定是否允许跨域请求，默认为false，正式业务环境慎用allowCros；
+    3. executor.mode 用于指定节点的计算方式，支持代理和自主计算模式，代理模式用于数据持有节点将样本数据授权给任务执行节点进行代理计算，而自主计算模式则适用于计算节点是数据持有节点的客户端场景；
+    4. executor.storage 定义了模型、评估结果、预测结果存储的路径，其中预测结果存储支持加密存储到去中心化存储网络；
+    5. executor.blockchain 定义了任务执行节点操作的区块链网络配置，当前只支持Xchain网络，后续会支持Fabric；
 
 <br>

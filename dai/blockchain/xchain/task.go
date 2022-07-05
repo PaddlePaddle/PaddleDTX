@@ -111,10 +111,14 @@ func (x *XChain) setTaskConfirmStatus(opt *blockchain.FLTaskConfirmOptions, isCo
 }
 
 // StartTask is called when Requester starts task after all Executors confirmed
-func (x *XChain) StartTask(id string, sig []byte) error {
+func (x *XChain) StartTask(opt *blockchain.StartFLTaskOptions) error {
+	opts, err := json.Marshal(*opt)
+	if err != nil {
+		return errorx.NewCode(err, errorx.ErrCodeInternal,
+			"fail to marshal StartFLTaskOptions")
+	}
 	args := map[string]string{
-		"taskId":    id,
-		"signature": string(sig),
+		"opt": string(opts),
 	}
 	mName := "StartTask"
 	if _, err := x.InvokeContract(args, mName); err != nil {

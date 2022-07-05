@@ -14,7 +14,7 @@ PaddleDTX的四类节点（数据持有节点、存储节点、任务执行节�
 |   /v1/file/getbyid |      GET    |   id（file id）  | get file by id |
 |   /v1/file/getbyname |      GET    |   owner、ns、name  | get file by file name and namespace |
 |   /v1/file/updatexptime |      POST    |   UpdateFileEtimeOptions：id、expireTime、ctime、user、token  | update file's expired time |
-|   /v1/file/addns |      POST    |   AddNsOptions：replica、owner、ns、desc、ctime、user、token  | add file namespace |
+|   /v1/file/addns |      POST    |   AddNsOptions：replica、ns、desc、ctime、user、token  | add file namespace |
 |   /v1/file/ureplica |      POST    |   UpdateNsOptions：ns、replica、ctime、user、token  | update file namespace's replica |
 |   /v1/file/listns   |      GET     |   ListNsOptions：owner、start、end、limit  | list namespaces by owner |
 |   /v1/file/getns    |      GET     |   name、 owner（dataOwner nodes's public key） | get namespace by name |
@@ -57,8 +57,8 @@ PaddleDTX的四类节点（数据持有节点、存储节点、任务执行节�
 |   /v1/node/list     |      GET   |     | list storage nodes |
 |   /v1/node/get      |      GET    |   id（storage nodes's public key）  | get storage node's detail |
 |   /v1/node/health   |      GET    |   id（storage nodes's public key）  | get storage node's health |
-|   /v1/node/offline  |      POST   |   NodeOfflineOptions：node、nonce、token  | node online |
-|   /v1/node/online   |      POST   |   NodeOnlineOptions：node、nonce、token   | node offline |
+|   /v1/node/offline  |      POST   |   NodeOperateOptions：node、nonce、token  | node online |
+|   /v1/node/online   |      POST   |   NodeOperateOptions：node、nonce、token   | node offline |
 |   /v1/node/getmrecord     |      GET    |   NodeSliceMigrateOptions：id、start、end、limit  | get storage node migration records  |
 |   /v1/node/gethbnum      |      GET    |   id、ctime  | get storage node heartbeat number |
 

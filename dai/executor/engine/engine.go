@@ -17,12 +17,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 	"github.com/sirupsen/logrus"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
@@ -123,8 +123,11 @@ func (e *Engine) GetPredictResult(ctx context.Context, in *pbTask.TaskRequest) (
 		return &pbTask.PredictResponse{}, errorx.New(errorx.ErrCodeParam, "public key is invalid")
 	}
 	// check signature
-	m := fmt.Sprintf("%x,%s", in.PubKey, in.TaskID)
-	if err := e.checkSign(in.Signature, in.PubKey, []byte(m)); err != nil {
+	msg, err := util.GetSigMessage(in)
+	if err != nil {
+		return &pbTask.PredictResponse{}, errorx.Internal(err, "failed to get the message to sign")
+	}
+	if err := e.checkSign(in.Signature, in.PubKey, []byte(msg)); err != nil {
 		return &pbTask.PredictResponse{}, errorx.Wrap(err, "get predict result failed")
 	}
 
@@ -155,7 +158,7 @@ func (e *Engine) GetPredictResult(ctx context.Context, in *pbTask.TaskRequest) (
 	}
 
 	return &pbTask.PredictResponse{
-		TaskID:  task.ID,
+		TaskID:  task.TaskID,
 		Payload: payload,
 	}, nil
 }
@@ -174,8 +177,11 @@ func (e *Engine) StartTask(ctx context.Context, in *pbTask.TaskRequest) (*pbTask
 	}
 
 	// check sign
-	m := fmt.Sprintf("%x,%s", in.PubKey, in.TaskID)
-	if err := e.checkSign(in.Signature, in.PubKey, []byte(m)); err != nil {
+	msg, err := util.GetSigMessage(in)
+	if err != nil {
+		return &pbTask.TaskResponse{}, errorx.Internal(err, "failed to get the message to sign for start mpc task")
+	}
+	if err := e.checkSign(in.Signature, in.PubKey, []byte(msg)); err != nil {
 		return &pbTask.TaskResponse{}, errorx.Wrap(err, "start task failed, signature error")
 	}
 	// make sure the request must come from executor who confirmed the task
@@ -206,7 +212,7 @@ func (e *Engine) StartTask(ctx context.Context, in *pbTask.TaskRequest) (*pbTask
 	// start local mpc
 	go func() {
 		if err := e.mpcHandler.StartLocalMpcTask(startRequest, false); err != nil {
-			logger.WithError(err).Errorf("failed to start local mpc , taskId: %s", task.ID)
+			logger.WithError(err).Errorf("failed to start local mpc , taskId: %s", task.TaskID)
 		}
 	}()
 

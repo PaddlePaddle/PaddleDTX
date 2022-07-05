@@ -21,6 +21,9 @@ keyPath = "./keys"
 
 publicAddress = "10.144.94.17:8121"
 
+# Whether to allow cross-domain requests, the default is false, use with caution in the production environment.
+allowCros = false
+
 [dataOwner.slicer]
     type = "simpleSlicer"
     [dataOwner.slicer.simpleSlicer]

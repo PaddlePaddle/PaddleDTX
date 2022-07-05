@@ -16,8 +16,8 @@ package challenging
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"strconv"
 	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
@@ -29,6 +29,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/types"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // loopAnswer listens challenge requests and answer them in order to prove it's storing related files
@@ -38,16 +39,24 @@ func (c *ChallengingMonitor) loopAnswer(ctx context.Context) {
 	l := logger.WithField("runner", "answer loop")
 	defer func() {
 		nonce := time.Now().UnixNano()
-		m := fmt.Sprintf("%s,%d", pubkey.String(), nonce)
-		sig, err := ecdsa.Sign(c.PrivateKey, hash.HashUsingSha256([]byte(m)))
+		msg, err := util.GetSigMessage(map[string]string{
+			"nodeID": pubkey.String(),
+			"nonce":  strconv.FormatInt(nonce, 10),
+		})
+		if err != nil {
+			l.WithError(err).Error("failed to get the message to sign")
+			return
+		}
+		sig, err := ecdsa.Sign(c.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 		if err != nil {
 			l.WithError(err).Error("failed to sign node")
 			return
 		}
+
 		nodeOpts := &blockchain.NodeOperateOptions{
-			NodeID: []byte(pubkey.String()),
-			Nonce:  nonce,
-			Sig:    sig[:],
+			NodeID:    []byte(pubkey.String()),
+			Nonce:     nonce,
+			Signature: sig[:],
 		}
 		if err := c.blockchain.NodeOffline(nodeOpts); err != nil {
 			l.WithError(err).Error("failed to offline the node")
@@ -99,7 +108,7 @@ func (c *ChallengingMonitor) doPairingChallengeAnswer(r blockchain.Challenge, l 
 	// answer for each request
 	// calculate proof
 	l.WithField("challenge_id", r.ID).Infof("indices: %v, slices: %v", r.Indices, r.SliceIDs)
-	proof, err := c.doPairingCalculateProof(c.PrivateKey, &r)
+	proof, err := c.doPairingCalculateProof(&r)
 	if err != nil {
 		l.WithError(err).Warnf("failed to calculate pairing proof for round: %d", r.Round)
 		return err
@@ -110,9 +119,21 @@ func (c *ChallengingMonitor) doPairingChallengeAnswer(r blockchain.Challenge, l 
 		ChallengeID: r.ID,
 		Sigma:       proof.Sigma,
 		Mu:          proof.Mu,
-		Sig:         proof.Signature,
 		AnswerTime:  time.Now().UnixNano(),
 	}
+	// get the message to sign
+	msg, err := util.GetSigMessage(answerOpt)
+	if err != nil {
+		l.WithField("request_id", r.ID).WithError(err).Warn("failed to get the message to sign")
+		return err
+	}
+	sig, err := ecdsa.Sign(c.PrivateKey, hash.HashUsingSha256([]byte(msg)))
+	if err != nil {
+		l.WithField("request_id", r.ID).WithError(err).Warn("failed to sign")
+		return err
+	}
+	answerOpt.Signature = sig[:]
+
 	resp, err := c.blockchain.ChallengeAnswer(&answerOpt)
 	if err != nil {
 		l.WithError(err).Warn("failed to publish answer")
@@ -138,9 +159,20 @@ func (c *ChallengingMonitor) doMerkleChallengeAnswer(r blockchain.Challenge, l *
 	answerOpt := blockchain.ChallengeAnswerOptions{
 		ChallengeID: r.ID,
 		Proof:       proof.Proof,
-		Sig:         proof.Signature,
 		AnswerTime:  time.Now().UnixNano(),
 	}
+	msg, err := util.GetSigMessage(answerOpt)
+	if err != nil {
+		l.WithField("request_id", r.ID).WithError(err).Warn("failed to get the message to sign")
+		return err
+	}
+	sig, err := ecdsa.Sign(c.PrivateKey, hash.HashUsingSha256([]byte(msg)))
+	if err != nil {
+		l.WithField("request_id", r.ID).WithError(err).Warn("failed to sign")
+		return err
+	}
+	answerOpt.Signature = sig[:]
+
 	resp, err := c.blockchain.ChallengeAnswer(&answerOpt)
 	if err != nil {
 		l.WithError(err).Warn("failed to publish answer")
@@ -155,7 +187,7 @@ func (c *ChallengingMonitor) doMerkleChallengeAnswer(r blockchain.Challenge, l *
 }
 
 // doPairingCalculateProof calculate proof using stored files and random challenge
-func (c *ChallengingMonitor) doPairingCalculateProof(privkey ecdsa.PrivateKey, req *blockchain.Challenge) (randomProof, error) {
+func (c *ChallengingMonitor) doPairingCalculateProof(req *blockchain.Challenge) (randomProof, error) {
 
 	var content [][]byte
 	var sigmaContent [][]byte
@@ -206,27 +238,16 @@ func (c *ChallengingMonitor) doPairingCalculateProof(privkey ecdsa.PrivateKey, r
 	if err != nil {
 		return randomProof{}, errorx.NewCode(err, errorx.ErrCodeInternal, "AnswerChallenge failed")
 	}
-
-	// sign proof
-	signMsg := []byte(req.ID)
-	signMsg = append(signMsg, sigma...)
-	signMsg = append(signMsg, mu...)
-	signMsg = hash.HashUsingSha256(signMsg)
-	sig, err := ecdsa.Sign(privkey, signMsg)
-	if err != nil {
-		return randomProof{}, errorx.NewCode(err, errorx.ErrCodeCrypto, "failed to sign")
-	}
 	rp := randomProof{
-		Sigma:     sigma,
-		Mu:        mu,
-		Signature: sig[:],
+		Sigma: sigma,
+		Mu:    mu,
 	}
 
 	return rp, nil
 }
 
+// doMerkleCalculation used to calculate the slice hash to answer challenge request
 func (c *ChallengingMonitor) doMerkleCalculation(privkey ecdsa.PrivateKey, req *blockchain.Challenge) (rangeProof, error) {
-
 	dataReader, err := c.sliceStorage.Load(req.SliceID, req.SliceStorIndex)
 	if err != nil {
 		return rangeProof{}, errorx.Wrap(err, "failed to load local slice %s", req.SliceID)
@@ -262,13 +283,8 @@ func (c *ChallengingMonitor) doMerkleCalculation(privkey ecdsa.PrivateKey, req *
 		return rangeProof{}, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal merkle answer options")
 	}
 
-	sig, err := ecdsa.Sign(privkey, proof)
-	if err != nil {
-		return rangeProof{}, errorx.NewCode(err, errorx.ErrCodeCrypto, "failed to sign")
-	}
 	rp := rangeProof{
-		Proof:     proof,
-		Signature: sig[:],
+		Proof: proof,
 	}
 
 	return rp, nil

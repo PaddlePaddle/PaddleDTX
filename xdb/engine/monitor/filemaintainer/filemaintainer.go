@@ -57,7 +57,7 @@ type Blockchain interface {
 	GetFileByID(id string) (blockchain.File, error)
 	ListFileNs(opt *blockchain.ListNsOptions) ([]blockchain.Namespace, error)
 	UpdateFilePublicSliceMeta(opt *blockchain.UpdateFilePSMOptions) error
-	SliceMigrateRecord(nodeID, sig []byte, fileID, sliceID string, ctime int64) error
+	SliceMigrateRecord(opt *blockchain.SliceMigrateOptions) error
 
 	ListNodes() (blockchain.Nodes, error)
 	GetNode(id []byte) (blockchain.Node, error)

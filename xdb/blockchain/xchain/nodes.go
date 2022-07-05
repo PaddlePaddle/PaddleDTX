@@ -106,12 +106,13 @@ func (x *XChain) NodeOnline(opt *blockchain.NodeOperateOptions) error {
 }
 
 // Heartbeat updates heartbeat of node
-func (x *XChain) Heartbeat(id, sig []byte, timestamp int64) error {
+func (x *XChain) Heartbeat(opt *blockchain.NodeHeartBeatOptions) error {
+	s, err := json.Marshal(*opt)
+	if err != nil {
+		return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal NodeHeartBeatOptions")
+	}
 	args := map[string]string{
-		"id":            string(id),
-		"signature":     string(sig),
-		"currentTime":   strconv.FormatInt(timestamp, 10),
-		"beginningTime": strconv.FormatInt(common.TodayBeginning(timestamp), 10),
+		"opt": string(s),
 	}
 	mName := "Heartbeat"
 	if _, err := x.InvokeContract(args, mName); err != nil {

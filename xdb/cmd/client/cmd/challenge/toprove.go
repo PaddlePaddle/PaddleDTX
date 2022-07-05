@@ -63,7 +63,7 @@ var toProveCmd = &cobra.Command{
 			TimeEnd:    endTime.UnixNano(),
 			Limit:      limit,
 		}
-		challenges, err := client.GetToProveChallenges(context.Background(), opt)
+		challenges, err := client.GetChallenges(context.Background(), opt, blockchain.ChallengeToProve)
 		if err != nil {
 			fmt.Printf("err：%v\n", err)
 			return

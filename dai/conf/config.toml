@@ -29,6 +29,14 @@ paddleFLRole = 0
 # privateKey = "858843291fe4ed4bd2afc1120efd7315f3cae2d3f79e582f7df843ac6eb0543b"
 keyPath = "./keys"
 
+[executor.httpserver]
+# Whether to start the httpserver of the executor node, default "on"
+switch = "on"
+# The port of this httpserver will listen on
+httpPort = ":8013"
+# Whether to allow cross-domain requests, the default is false, use with caution in the production environment.
+allowCros = false
+
 # The mode defines how executor nodes download the sample file during the task execution.
 # The sample file download type also represents the task execution type, such as proxy-execution or self-execution.
 [executor.mode]

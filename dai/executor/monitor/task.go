@@ -16,7 +16,6 @@ package monitor
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -24,6 +23,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	xdbchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 
@@ -96,7 +96,7 @@ func (t *TaskMonitor) getUnconfirmedTaskAndConfirm() error {
 	for _, task := range taskList {
 		for _, ds := range task.DataSets {
 			if bytes.Equal(ds.Executor, t.PublicKey[:]) {
-				if err := t.confirmTaskByExecutionType(task.ID, ds); err != nil {
+				if err := t.confirmTaskByExecutionType(task.TaskID, ds); err != nil {
 					return err
 				}
 			}
@@ -169,9 +169,12 @@ func (t *TaskMonitor) confirmTaskOnChain(taskID, rejectReason string, isConfirm 
 		CurrentTime:  currentTime,
 		RejectReason: rejectReason,
 	}
-	m := fmt.Sprintf("%x,%s,%s,%d", t.PublicKey[:], taskID, rejectReason, currentTime)
-
-	sig, err := ecdsa.Sign(t.PrivateKey, hash.HashUsingSha256([]byte(m)))
+	// get the message to sign for confirm task
+	msg, err := util.GetSigMessage(confirmOptions)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign for confirm task")
+	}
+	sig, err := ecdsa.Sign(t.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign confirm fl task")
 	}
@@ -220,11 +223,11 @@ func (t *TaskMonitor) publishFileAuthApplication(fileID, taskID string, fileOwne
 		},
 	}
 	// sign file authorization application
-	s, err := json.Marshal(opt.FileAuthApplication)
+	msg, err := util.GetSigMessage(opt)
 	if err != nil {
-		return errorx.Wrap(err, "failed to marshal file authorization application")
+		return errorx.Internal(err, "failed to get the message to sign for publish fileAuthApplication")
 	}
-	sig, err := ecdsa.Sign(t.PrivateKey, hash.HashUsingSha256(s))
+	sig, err := ecdsa.Sign(t.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		return errorx.Wrap(err, "failed to sign file authorization application")
 	}
@@ -269,19 +272,19 @@ func (t *TaskMonitor) getToProcessTaskAndStart() error {
 		}
 
 		// 3. update task status
-		if err := t.updateTaskExecStatus(task.ID); err != nil {
+		if err := t.updateTaskExecStatus(task.TaskID); err != nil {
 			continue
 		}
 		// 4. prepare resources before starting local MPC task
 		startRequest, err := t.MpcHandler.TaskStartPrepare(task)
 		if err != nil {
-			logger.WithError(err).Errorf("error occurred when task start prepare, and taskId: %s", task.ID)
+			logger.WithError(err).Errorf("error occurred when task start prepare, and taskId: %s", task.TaskID)
 			continue
 		}
 		// 5. start local task
-		logger.Infof("start ToProcess task of loop, taskId: %s", task.ID)
+		logger.Infof("start ToProcess task of loop, taskId: %s", task.TaskID)
 		if err := t.MpcHandler.StartLocalMpcTask(startRequest, true); err != nil {
-			logger.WithError(err).Errorf("error occurred when execute task, and taskId: %s", task.ID)
+			logger.WithError(err).Errorf("error occurred when execute task, and taskId: %s", task.TaskID)
 			continue
 		}
 	}
@@ -331,13 +334,13 @@ func (t *TaskMonitor) RetryProcessingTask(ctx context.Context) {
 		// 2. prepare resources before starting local MPC task
 		startRequest, err := t.MpcHandler.TaskStartPrepare(task)
 		if err != nil {
-			logger.WithError(err).Errorf("error occurred when retry prepare task, and taskId: %s", task.ID)
+			logger.WithError(err).Errorf("error occurred when retry prepare task, and taskId: %s", task.TaskID)
 			continue
 		}
 		// 3. start local mpc task
-		logger.Infof("retry start Processing task, taskId: %s", task.ID)
+		logger.Infof("retry start Processing task, taskId: %s", task.TaskID)
 		if err := t.MpcHandler.StartLocalMpcTask(startRequest, true); err != nil {
-			logger.WithError(err).Errorf("error occurred when retry execute task, and taskId: %s", task.ID)
+			logger.WithError(err).Errorf("error occurred when retry execute task, and taskId: %s", task.TaskID)
 			continue
 		}
 	}
@@ -356,8 +359,11 @@ func (t *TaskMonitor) updateTaskExecStatus(taskId string) error {
 		CurrentTime: time.Now().UnixNano(),
 	}
 	// sign request
-	signExecMes := fmt.Sprintf("%x,%s,%d", execTaskOptions.Executor, execTaskOptions.TaskID, execTaskOptions.CurrentTime)
-	sig, err := ecdsa.Sign(t.PrivateKey, hash.HashUsingSha256([]byte(signExecMes)))
+	msg, err := util.GetSigMessage(execTaskOptions)
+	if err != nil {
+		return errorx.Internal(err, "failed to get the message to sign for publish fileAuthApplication")
+	}
+	sig, err := ecdsa.Sign(t.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 	if err != nil {
 		logger.WithError(err).Errorf("failed to sign exec task options, taskId: %s", taskId)
 		return err

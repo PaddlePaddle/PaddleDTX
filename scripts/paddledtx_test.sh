@@ -141,7 +141,7 @@ function uploadLinearTrainSampleFile() {
   # 数据持有节点1上传纵向线性训练样本文件
   data1Samples=`docker exec -it dataowner1.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,CRIM,ZN,INDUS,CHAS,NOX,RM\", \"TotalRows\":457}' -i /home/mpc-data/linear_boston_housing/$sampleFileAName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,CRIM,ZN,INDUS,CHAS,NOX,RM\", \"totalRows\":457}' -i /home/mpc-data/linear_boston_housing/$sampleFileAName \
     -d '$LINEAR_TRAIN_SAMPLE_FILE_DES'
   "`
   echo "======> DataOwner1 upload vertical_linear_train sample file: $data1Samples"
@@ -154,7 +154,7 @@ function uploadLinearTrainSampleFile() {
   # 数据持有节点2上传纵向线性训练样本文件
   data2Samples=`docker exec -it dataowner2.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,AGE,DIS,RAD,TAX,PTRATIO,B,LSTAT,MEDV\",\"TotalRows\":457}' -i /home/mpc-data/linear_boston_housing/$sampleFileBName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,AGE,DIS,RAD,TAX,PTRATIO,B,LSTAT,MEDV\",\"totalRows\":457}' -i /home/mpc-data/linear_boston_housing/$sampleFileBName \
     -d '$LINEAR_TRAIN_SAMPLE_FILE_DES'
   "`
   echo "======> DataOwner2 upload vertical_linear_train sample file: $data2Samples"
@@ -180,7 +180,7 @@ function uploadLinearPredictSampleFile() {
   # 数据持有节点1上传纵向线性预测样本文件
   data1Samples=`docker exec -it dataowner1.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,CRIM,ZN,INDUS,CHAS,NOX,RM\", \"TotalRows\":50}' -i /home/mpc-data/linear_boston_housing/$sampleFileAName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,CRIM,ZN,INDUS,CHAS,NOX,RM\", \"totalRows\":50}' -i /home/mpc-data/linear_boston_housing/$sampleFileAName \
     -d '$LINEAR_PREDICT_SAMPLE_FILE_DES'
   "`
   echo "======> DataOwner1 upload vertical_linear_prediction sample file: $data1Samples"
@@ -192,7 +192,7 @@ function uploadLinearPredictSampleFile() {
   # 数据持有节点2上传纵向线性预测样本文件
   data2Samples=`docker exec -it dataowner2.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,AGE,DIS,RAD,TAX,PTRATIO,B,LSTAT\",\"TotalRows\":50}' -i /home/mpc-data/linear_boston_housing/$sampleFileBName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,AGE,DIS,RAD,TAX,PTRATIO,B,LSTAT\",\"totalRows\":50}' -i /home/mpc-data/linear_boston_housing/$sampleFileBName \
     -d '$LINEAR_PREDICT_SAMPLE_FILE_DES'
   "`
   echo "======> DataOwner2 upload vertical_linear_prediction sample file: $data2Samples"
@@ -217,7 +217,7 @@ function uploadLogisticTrainSampleFile() {
   # 数据持有节点1上传纵向逻辑训练样本文件
   data1Samples=`docker exec -it dataowner1.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,Sepal Length,Sepal Width\", \"TotalRows\":135}' -i /home/mpc-data/logic_iris_plants/$sampleFileAName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,Sepal Length,Sepal Width\", \"totalRows\":135}' -i /home/mpc-data/logic_iris_plants/$sampleFileAName \
     -d $LOGISTIC_TRAIN_SAMPLE_FILE_DES
   "`
   echo "======> DataOwner1 upload vertical_logistic_train sample file: $data1Samples"
@@ -229,7 +229,7 @@ function uploadLogisticTrainSampleFile() {
   # 数据持有节点2上传纵向逻辑训练样本文件
   data2Samples=`docker exec -it dataowner2.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,Petal Length,Petal Width,Label\", \"TotalRows\":135}' -i /home/mpc-data/logic_iris_plants/$sampleFileBName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,Petal Length,Petal Width,Label\", \"totalRows\":135}' -i /home/mpc-data/logic_iris_plants/$sampleFileBName \
     -d $LOGISTIC_TRAIN_SAMPLE_FILE_DES
   "`
   echo "======> DataOwner2 upload vertical_logistic_train sample file: $data2Samples"
@@ -255,7 +255,7 @@ function uploadLogisticPredictSampleFile() {
   # 数据持有节点1上传纵向逻辑预测样本文件
   data1Samples=`docker exec -it dataowner1.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,Petal Length,Petal Width\", \"TotalRows\":15}' -i /home/mpc-data/logic_iris_plants/$sampleFileAName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,Petal Length,Petal Width\", \"totalRows\":15}' -i /home/mpc-data/logic_iris_plants/$sampleFileAName \
     -d $LOGISTIC_PREDICT_SAMPLE_FILE_DES
   "`
   echo "======> DataOwner1 upload vertical_logistic_prediction sample file: $data1Samples"
@@ -267,7 +267,7 @@ function uploadLogisticPredictSampleFile() {
   # 数据持有节点2上传纵向逻辑预测样本文件
   data2Samples=`docker exec -it dataowner2.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,Petal Length,Petal Width\", \"TotalRows\":15}' -i /home/mpc-data/logic_iris_plants/$sampleFileBName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,Petal Length,Petal Width\", \"totalRows\":15}' -i /home/mpc-data/logic_iris_plants/$sampleFileBName \
     -d $LOGISTIC_PREDICT_SAMPLE_FILE_DES
   "`
   echo "======> DataOwner2 upload vertical_logistic_prediction sample file: $data2Samples"
@@ -296,7 +296,7 @@ function uploadPaddleFLSampleFile() {
   # 数据持有节点1上传训练样本文件
   data1Samples=`docker exec -it dataowner1.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,CRIM,ZN,INDUS,CHAS,NOX\", \"TotalRows\":404}' -i /home/mpc-data/dnn_paddlefl/$sampleFileAName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,CRIM,ZN,INDUS,CHAS,NOX\", \"totalRows\":404}' -i /home/mpc-data/dnn_paddlefl/$sampleFileAName \
     -d $PADDLEFL_TRAIN_SAMPLE_FILE_DES
   "`
 
@@ -309,7 +309,7 @@ function uploadPaddleFLSampleFile() {
   # 数据持有节点2上传训练样本文件
   data2Samples=`docker exec -it dataowner2.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,RM,AGE,DIS,RAD,TAX\", \"TotalRows\":404}' -i /home/mpc-data/dnn_paddlefl/$sampleFileBName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,RM,AGE,DIS,RAD,TAX\", \"totalRows\":404}' -i /home/mpc-data/dnn_paddlefl/$sampleFileBName \
     -d $PADDLEFL_TRAIN_SAMPLE_FILE_DES
   "`
   echo "======> DataOwner2 upload train sample file: $data2Samples"
@@ -319,7 +319,7 @@ function uploadPaddleFLSampleFile() {
 
   data3Samples=`docker exec -it dataowner3.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner3.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileCName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,PTRATIO,B,LSTAT,MEDV\", \"TotalRows\":404}' -i /home/mpc-data/dnn_paddlefl/$sampleFileCName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,PTRATIO,B,LSTAT,MEDV\", \"totalRows\":404}' -i /home/mpc-data/dnn_paddlefl/$sampleFileCName \
     -d $PADDLEFL_TRAIN_SAMPLE_FILE_DES
   "`
   echo "======> DataOwner3 upload train sample file: $data3Samples"
@@ -347,7 +347,7 @@ function uploadPaddleFLPredictSampleFile() {
   # 数据持有节点1上传预测样本文件
   data1Samples=`docker exec -it dataowner1.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,CRIM,ZN,INDUS,CHAS,NOX\", \"TotalRows\":102}' -i /home/mpc-data/dnn_paddlefl/$sampleFileAName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,CRIM,ZN,INDUS,CHAS,NOX\", \"totalRows\":102}' -i /home/mpc-data/dnn_paddlefl/$sampleFileAName \
     -d $PADDLEFL_PREDICT_SAMPLE_FILE_DES
   "`
   echo "======> DataOwner1 upload prediction sample file: $data1Samples"
@@ -359,7 +359,7 @@ function uploadPaddleFLPredictSampleFile() {
   # 数据持有节点2上传预测样本文件
   data2Samples=`docker exec -it dataowner2.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner2.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileBName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,RM,AGE,DIS,RAD,TAX\", \"TotalRows\":102}' -i /home/mpc-data/dnn_paddlefl/$sampleFileBName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,RM,AGE,DIS,RAD,TAX\", \"totalRows\":102}' -i /home/mpc-data/dnn_paddlefl/$sampleFileBName \
     -d $PADDLEFL_PREDICT_SAMPLE_FILE_DES
   "`
   echo "======> DataOwner2 upload prediction sample file: $data2Samples"
@@ -371,7 +371,7 @@ function uploadPaddleFLPredictSampleFile() {
   # 数据持有节点1上传预测样本文件
   data3Samples=`docker exec -it dataowner3.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner3.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileCName \
-    --ext '{\"FileType\":\"csv\",\"Features\":\"id,PTRATIO,B,LSTAT,MEDV\", \"TotalRows\":102}' -i /home/mpc-data/dnn_paddlefl/$sampleFileCName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,PTRATIO,B,LSTAT,MEDV\", \"totalRows\":102}' -i /home/mpc-data/dnn_paddlefl/$sampleFileCName \
     -d $PADDLEFL_PREDICT_SAMPLE_FILE_DES
   "`
   echo "======> DataOwner3 upload prediction sample file: $data3Samples"
@@ -651,7 +651,7 @@ function taskList() {
 function getTaskById() {
   paramCheck "$TASKID" "TaskId cannot be empty"
   docker exec -it executor1.node.com sh -c " 
-  ./executor-cli task getbyid --host 127.0.0.1:80 -i $TASKID"
+  ./requester-cli task getbyid -i $TASKID"
 }
 
 function checkOperateResult() {

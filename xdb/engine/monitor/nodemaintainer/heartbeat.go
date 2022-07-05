@@ -16,12 +16,15 @@ package nodemaintainer
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/sirupsen/logrus"
+
+	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
+	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // heartbeat sends heartbeats regularly in order to claim it's alive
@@ -43,14 +46,26 @@ func (m *NodeMaintainer) heartbeat(ctx context.Context) {
 			return
 		case <-ticker.C:
 		}
+		// invoke contract
 		timestamp := time.Now().UnixNano()
-		mes := fmt.Sprintf("%s,%d", pubkey.String(), timestamp)
-		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(mes)))
+		opt := &blockchain.NodeHeartBeatOptions{
+			NodeID:        []byte(pubkey.String()),
+			CurrentTime:   timestamp,
+			BeginningTime: common.TodayBeginning(timestamp),
+		}
+		msg, err := util.GetSigMessage(opt)
+		if err != nil {
+			l.WithError(err).Warn("failed to get the message to sign for heartbeat")
+			continue
+		}
+		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 		if err != nil {
 			l.WithError(err).Warn("failed to sign heartbeat")
 			continue
 		}
-		if err := m.blockchain.Heartbeat([]byte(pubkey.String()), sig[:], timestamp); err != nil {
+		opt.Signature = sig[:]
+
+		if err := m.blockchain.Heartbeat(opt); err != nil {
 			l.WithError(err).Warn("failed to update heartbeat")
 			continue
 		}

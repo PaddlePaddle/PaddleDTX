@@ -15,7 +15,6 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -26,6 +25,7 @@ import (
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
 // PublishFile publishes file onto fabric
@@ -43,14 +43,12 @@ func (x *Xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 
 	// get file
 	f := opt.File
-	// marshal file
-	s, err := json.Marshal(f)
+	msg, err := util.GetSigMessage(opt)
 	if err != nil {
-		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal File").Error())
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
 	}
-
 	// verify sig
-	err = x.checkSign(opt.Signature, f.Owner, s)
+	err = x.checkSign(opt.Signature, f.Owner, []byte(msg))
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -91,6 +89,12 @@ func (x *Xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 		}
 	}
 
+	// marshal file
+	s, err := json.Marshal(f)
+	if err != nil {
+		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal File").Error())
+	}
+
 	// set id-file on chain
 	if resp := x.setValue(stub, []string{f.ID, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
@@ -102,10 +106,16 @@ func (x *Xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 			"failed to set index-id on chain: %s", resp.Message).Error())
 	}
 	// set filenameListIndex-id on chain
-	filenameListIndex := packFileNameListIndex(f.Owner, f.Namespace, f.Name, f.PublishTime)
+	filenameListIndex := packFileListByOwnerIndex(f.Owner, f.Namespace, f.Name, f.PublishTime)
 	if resp := x.setValue(stub, []string{filenameListIndex, f.ID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set listIndex-id on chain: %s", resp.Message).Error())
+	}
+	// set fileListByNsIndex-id on chain
+	fileListByNsIndex := packFileListByNsIndex(f.Owner, f.Namespace, f.Name, f.PublishTime)
+	if resp := x.setValue(stub, []string{fileListByNsIndex, f.ID}); resp.Status == shim.ERROR {
+		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
+			"failed to set fileListByNsIndex-id on chain: %s", resp.Message).Error())
 	}
 
 	// update file num of fileNsIndex
@@ -160,8 +170,13 @@ func (x *Xdata) AddFileNs(stub shim.ChaincodeStubInterface, args []string) pb.Re
 	if err != nil {
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal namespace").Error())
 	}
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
+	}
 	// verify sig
-	err = x.checkSign(opt.Signature, ns.Owner, s)
+	err = x.checkSign(opt.Signature, ns.Owner, []byte(msg))
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -199,9 +214,13 @@ func (x *Xdata) UpdateNsReplica(stub shim.ChaincodeStubInterface, args []string)
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"failed to unmarshal UpdateNsReplicaOptions").Error())
 	}
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
+	}
 	// verify sig
-	m := fmt.Sprintf("%s,%d,%d", opt.Name, opt.Replica, opt.CurrentTime)
-	if err := x.checkSign(opt.Signature, opt.Owner, []byte(m)); err != nil {
+	if err := x.checkSign(opt.Signature, opt.Owner, []byte(msg)); err != nil {
 		return shim.Error(err.Error())
 	}
 
@@ -254,12 +273,11 @@ func (x *Xdata) UpdateFilePublicSliceMeta(stub shim.ChaincodeStubInterface, args
 			"failed to unmarshal UpdateNsReplicaOptions").Error())
 	}
 	// verify sig
-	ns := opt.Slices
-	s, err := json.Marshal(ns)
+	msg, err := util.GetSigMessage(opt)
 	if err != nil {
-		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal slices").Error())
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
 	}
-	if err := x.checkSign(opt.Signature, opt.Owner, s); err != nil {
+	if err := x.checkSign(opt.Signature, opt.Owner, []byte(msg)); err != nil {
 		return shim.Error(err.Error())
 	}
 
@@ -396,8 +414,11 @@ func (x *Xdata) UpdateFileExpireTime(stub shim.ChaincodeStubInterface, args []st
 	}
 
 	// verify sig
-	m := fmt.Sprintf("%s,%d,%d", opt.FileID, opt.NewExpireTime, opt.CurrentTime)
-	err = x.checkSign(opt.Signature, f.Owner, []byte(m))
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
+	}
+	err = x.checkSign(opt.Signature, f.Owner, []byte(msg))
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -418,39 +439,37 @@ func (x *Xdata) UpdateFileExpireTime(stub shim.ChaincodeStubInterface, args []st
 
 // SliceMigrateRecord is used by node to slice migration record
 func (x *Xdata) SliceMigrateRecord(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) < 5 {
-		return shim.Error("invalid arguments. expecting nodeID, fileID, sliceID, signature and currentTime")
+	if len(args) < 1 {
+		return shim.Error("invalid arguments. expecting SliceMigrateOptions")
 	}
 
-	// get id
-	nodeID := []byte(args[0])
-	// get fileID
-	fid := args[1]
-	// get sliceID
-	sid := args[2]
-	// get timestamp
-	ctime, err := strconv.ParseInt(args[4], 10, 64)
-	if err != nil {
-		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to parse timestamp").Error())
+	// unmarshal opt
+	var opt blockchain.SliceMigrateOptions
+	if err := json.Unmarshal([]byte(args[0]), &opt); err != nil {
+		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
+			"failed to unmarshal SliceMigrateOptions").Error())
 	}
 
 	//get file from id
-	f, err := x.getFileByID(stub, fid)
+	f, err := x.getFileByID(stub, opt.FileID)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	// get signature
-	mes := fmt.Sprintf("%s%s%s%s", fid, sid, string(nodeID), fmt.Sprintf("%d", ctime))
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
+	}
 	// verify sig
-	err = x.checkSign([]byte(args[3]), f.Owner, []byte(mes))
+	err = x.checkSign(opt.Signature, f.Owner, []byte(msg))
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	hindex := packNodeSliceMigrateIndex(string(nodeID), ctime)
+	hindex := packNodeSliceMigrateIndex(string(opt.NodeID), opt.CurrentTime)
 	fs := map[string]interface{}{
-		"fileID":  fid,
-		"sliceID": sid,
+		"fileID":  opt.FileID,
+		"sliceID": opt.SliceID,
 	}
 	b, err := json.Marshal(fs)
 	if err != nil {
@@ -657,7 +676,7 @@ func (x *Xdata) getFileByID(stub shim.ChaincodeStubInterface, fileID string) (f 
 
 // check signature
 func (x *Xdata) checkSign(sign, owner, mes []byte) (err error) {
-	if len(sign) != ecdsa.SignatureLength {
+	if len(owner) != ecdsa.PublicKeyLength || len(sign) != ecdsa.SignatureLength {
 		return errorx.New(errorx.ErrCodeParam, "bad param:signature")
 	}
 	var pubkey [ecdsa.PublicKeyLength]byte

@@ -37,7 +37,7 @@ type Blockchain interface {
 	AddNode(opt *blockchain.AddNodeOptions) error
 	GetNode(id []byte) (blockchain.Node, error)
 	NodeOnline(opt *blockchain.NodeOperateOptions) error
-	Heartbeat(id, sig []byte, timestamp int64) error
+	Heartbeat(opt *blockchain.NodeHeartBeatOptions) error
 	ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([][2]string, error)
 }
 type SliceStorage interface {

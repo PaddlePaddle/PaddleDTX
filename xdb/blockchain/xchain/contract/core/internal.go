@@ -24,10 +24,11 @@ import (
 
 const (
 	// Define the contract prefix key of file and file namespace operations
-	prefixFilenameIndex     = "index_fn"
-	prefixFilenameListIndex = "index_fn_list"
-	prefixFileNsIndex       = "index_fns"
-	prefixFileNsListIndex   = "index_fns_list"
+	prefixFilenameIndex        = "index_fn"
+	prefixFileListByOwnerIndex = "index_fo_list"
+	prefixFileListByNsIndex    = "index_fs_list"
+	prefixFileNsIndex          = "index_fns"
+	prefixFileNsListIndex      = "index_fns_list"
 	// Define the contract prefix key of file authorization application operations
 	prefixFileAuthIndex           = "index_fileauth"
 	prefixFileAuthApplierIndex    = "index_fa_applier"
@@ -104,8 +105,13 @@ func packFileNameIndex(owner []byte, ns, name string) string {
 	return fmt.Sprintf("%s/%x/%s/%s", prefixFilenameIndex, owner, ns, name)
 }
 
-func packFileNameListIndex(owner []byte, ns, name string, pubTime int64) string {
-	return fmt.Sprintf("%s/%x/%s/%d/%s", prefixFilenameListIndex, owner, ns, subByInt64Max(pubTime), name)
+func packFileListByOwnerIndex(owner []byte, ns, name string, pubTime int64) string {
+	return fmt.Sprintf("%s/%x/%s/%d/%s", prefixFileListByOwnerIndex, owner, ns, subByInt64Max(pubTime), name)
+}
+
+// packFileListByNsIndex used to list files by ns, ns+owner+pubTime+name is combined into a contract unique key
+func packFileListByNsIndex(owner []byte, ns, name string, pubTime int64) string {
+	return fmt.Sprintf("%s/%s/%x/%d/%s", prefixFileListByNsIndex, ns, owner, subByInt64Max(pubTime), name)
 }
 
 func packFileNsIndex(owner []byte, ns string) string {
@@ -117,11 +123,19 @@ func packFileNsListIndex(owner []byte, ns string, createTime int64) string {
 }
 
 func packFileNsListFilter(owner []byte) string {
-	return prefixFileNsListIndex + "/" + fmt.Sprintf("%x/", owner)
+	filter := prefixFileNsListIndex + "/"
+	if len(owner) > 0 {
+		filter += fmt.Sprintf("%x/", owner)
+	}
+	return filter
 }
 
 func packFileNameFilter(owner []byte, ns string) string {
-	filter := prefixFilenameListIndex + "/"
+	filter := prefixFileListByOwnerIndex + "/" // default
+	if len(owner) == 0 && len(ns) > 0 {
+		filter = prefixFileListByNsIndex + "/"
+	}
+
 	if len(owner) > 0 {
 		filter += fmt.Sprintf("%x/", owner)
 	}
