@@ -235,6 +235,7 @@ func (x *Xdata) setTaskConfirmStatus(ctx code.Context, isConfirm bool) code.Resp
 }
 
 // StartTask is called when Requester starts task after Executors confirmed
+// task status will be updated from 'Ready' to 'ToProcess'
 func (x *Xdata) StartTask(ctx code.Context) code.Response {
 	var opt blockchain.StartFLTaskOptions
 	// get opt
@@ -287,6 +288,9 @@ func (x *Xdata) FinishTask(ctx code.Context) code.Response {
 	return x.setTaskExecuteStatus(ctx, true)
 }
 
+// setTaskExecuteStatus is called by the Executor when the task is started or when the task has finished
+// if the task status is 'ToProcess', update status to 'Processing'
+// if the task status is 'Processing', update status to 'Finished' or 'Failed'
 func (x *Xdata) setTaskExecuteStatus(ctx code.Context, isFinish bool) code.Response {
 	var opt blockchain.FLTaskExeStatusOptions
 	// get opt
@@ -352,6 +356,7 @@ func (x *Xdata) setTaskExecuteStatus(ctx code.Context, isFinish bool) code.Respo
 	return code.OK([]byte("OK"))
 }
 
+// getTaskById gets task details from the blockchain ledger
 func (x *Xdata) getTaskById(ctx code.Context, taskID string) (t blockchain.FLTask, err error) {
 	index := packFlTaskIndex(taskID)
 	s, err := ctx.GetObject([]byte(index))
@@ -367,6 +372,7 @@ func (x *Xdata) getTaskById(ctx code.Context, taskID string) (t blockchain.FLTas
 	return t, nil
 }
 
+// checkSign verifies the signature
 func (x *Xdata) checkSign(sign, owner, mes []byte) (err error) {
 	// verify sig
 	if len(sign) != ecdsa.SignatureLength {
@@ -382,6 +388,7 @@ func (x *Xdata) checkSign(sign, owner, mes []byte) (err error) {
 	return nil
 }
 
+// checkExecutor used for Executor validity check, only the Executor specified by the Requester can confirm the task
 func (x *Xdata) checkExecutor(executor []byte, dataSets []*pbTask.DataForTask) bool {
 	for _, ds := range dataSets {
 		if bytes.Equal(ds.Executor, executor) {
