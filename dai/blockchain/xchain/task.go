@@ -91,6 +91,8 @@ func (x *XChain) RejectTask(opt *blockchain.FLTaskConfirmOptions) error {
 	return x.setTaskConfirmStatus(opt, false)
 }
 
+// setTaskConfirmStatus is used by the Executor to confirm or reject the task
+// if isConfirm is false, update the task status from 'Confirming' to 'Rejected'
 func (x *XChain) setTaskConfirmStatus(opt *blockchain.FLTaskConfirmOptions, isConfirm bool) error {
 	opts, err := json.Marshal(*opt)
 	if err != nil {
@@ -137,6 +139,8 @@ func (x *XChain) FinishTask(opt *blockchain.FLTaskExeStatusOptions) error {
 	return x.setTaskExecuteStatus(opt, true)
 }
 
+// setTaskExecuteStatus updates task status when the Executor starts running the task or finished the task
+// call the contract's 'ExecuteTask' or 'FinishTask' method
 func (x *XChain) setTaskExecuteStatus(opt *blockchain.FLTaskExeStatusOptions, isFinish bool) error {
 	opts, err := json.Marshal(*opt)
 	if err != nil {

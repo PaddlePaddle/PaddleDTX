@@ -255,7 +255,7 @@ function uploadLogisticPredictSampleFile() {
   # 数据持有节点1上传纵向逻辑预测样本文件
   data1Samples=`docker exec -it dataowner1.node.com sh -c "
     ./xdb-cli files upload --keyPath ./ukeys --host http://dataowner1.node.com:80  -e '$FILE_EXPIRE_TIME' -n $NAMESPACE -m $fileAName \
-    --ext '{\"fileType\":\"csv\",\"features\":\"id,Petal Length,Petal Width\", \"totalRows\":15}' -i /home/mpc-data/logic_iris_plants/$sampleFileAName \
+    --ext '{\"fileType\":\"csv\",\"features\":\"id,Sepal Length,Sepal Width\", \"totalRows\":15}' -i /home/mpc-data/logic_iris_plants/$sampleFileAName \
     -d $LOGISTIC_PREDICT_SAMPLE_FILE_DES
   "`
   echo "======> DataOwner1 upload vertical_logistic_prediction sample file: $data1Samples"
