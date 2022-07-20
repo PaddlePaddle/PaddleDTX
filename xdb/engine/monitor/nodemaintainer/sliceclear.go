@@ -99,6 +99,8 @@ func (m *NodeMaintainer) sliceClear(ctx context.Context) {
 			// delete pairing based challenge material if exists
 			if exist, _ := m.proveStorage.Exist(sliceSigmas); exist {
 				deleteSigmas, deleteSigmasErr = m.proveStorage.Delete(sliceSigmas)
+			} else {
+				deleteSigmas = true
 			}
 			if !deleteContent || !deleteSigmas {
 				break
