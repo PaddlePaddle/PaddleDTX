@@ -52,6 +52,8 @@ var VlAlgorithmListName = map[string]pbCom.Algorithm{
 	AlgorithmVDnn:  pbCom.Algorithm_DNN_PADDLEFL_VL,
 }
 
+// VlAlgorithmListValue the mapping of vertical algorithm value and name
+// key is the int value of the algorithm
 var VlAlgorithmListValue = map[pbCom.Algorithm]string{
 	pbCom.Algorithm_LINEAR_REGRESSION_VL: AlgorithmVLine,
 	pbCom.Algorithm_LOGIC_REGRESSION_VL:  AlgorithmVLog,
@@ -59,11 +61,14 @@ var VlAlgorithmListValue = map[pbCom.Algorithm]string{
 }
 
 // TaskTypeListName the mapping of train task type name and value
+// key is the task type name of the training task or prediction task
 var TaskTypeListName = map[string]pbCom.TaskType{
 	TaskTypeTrain:   pbCom.TaskType_LEARN,
 	TaskTypePredict: pbCom.TaskType_PREDICT,
 }
 
+// TaskTypeListValue the mapping of train task type value and name
+// key is the int value of the training task or prediction task
 var TaskTypeListValue = map[pbCom.TaskType]string{
 	pbCom.TaskType_LEARN:   TaskTypeTrain,
 	pbCom.TaskType_PREDICT: TaskTypePredict,
@@ -75,11 +80,14 @@ var RegModeListName = map[string]pbCom.RegMode{
 	RegModeL2: pbCom.RegMode_Reg_Ridge,
 }
 
+// RegModeListValue the mapping of train regMode value and name
 var RegModeListValue = map[pbCom.RegMode]string{
 	pbCom.RegMode_Reg_Lasso: RegModeL1,
 	pbCom.RegMode_Reg_Ridge: RegModeL2,
 }
 
+// FLInfo used to parse the content contained in the extra field of the file on the chain,
+// only files that can be parsed can be used for task training or prediction
 type FLInfo struct {
 	FileType  string `json:"fileType"`  // file type, only supports "csv"
 	Features  string `json:"features"`  // feature list
@@ -154,3 +162,4 @@ type AddNodeOptions struct {
 	Node      ExecutorNode `json:"node"`
 	Signature []byte       `json:"signature"`
 }
+
