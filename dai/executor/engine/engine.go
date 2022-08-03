@@ -41,6 +41,11 @@ var (
 )
 
 // Engine task processing engine
+//  chain is the handler for blockchain operation, which includes node, task and file operations
+//  node denotes executor node identity, which includes node id, node private key, host address...
+//  storage is the handler for results storage, which includes trained model and prediction result storage
+//  mpcHandler is the handler for mpc task execution, which includes task preparation, task execution, results storage...
+//  monitor is the handler for task monitoring, that is, monitoring tasks to be executed
 type Engine struct {
 	chain      handler.Blockchain
 	node       handler.Node
@@ -49,7 +54,7 @@ type Engine struct {
 	monitor    *monitor.TaskMonitor
 }
 
-// NewEngine initiates Engine
+// NewEngine initiates Engine by executor node configuration
 func NewEngine(conf *config.ExecutorConf) (e *Engine, err error) {
 	return initEngine(conf)
 }
@@ -223,7 +228,10 @@ func (e *Engine) StartTask(ctx context.Context, in *pbTask.TaskRequest) (*pbTask
 	}, nil
 }
 
-// checkSign checks signature
+// checkSign verify if signature is valid
+//  sign is the signature signed by private key
+//  owner is the public key of signer
+//  mes is the signed message
 func (e *Engine) checkSign(sign, owner, mes []byte) (err error) {
 	// verify sig
 	if len(sign) != ecdsa.SignatureLength {

@@ -98,7 +98,7 @@ func newBlockchain(conf *config.ExecutorBlockchainConf) (b handler.Blockchain, e
 	return b, err
 }
 
-// newNode loads account
+// newNode loads executor node account, which includes node name, private key, host address...
 func newNode(conf *config.ExecutorConf) (node handler.Node, err error) {
 	sk, err := ecdsa.DecodePrivateKeyFromString(conf.PrivateKey)
 
