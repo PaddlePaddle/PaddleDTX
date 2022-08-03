@@ -83,14 +83,14 @@ type FlTask struct {
 	ExpiredTime int64
 }
 
-// MpcModelHandler Controller for training or predicting tasks
+// MpcModelHandler handler for mpc training or prediction tasks
 type MpcModelHandler struct {
 	Config             mpc.Config
-	Node               Node
-	Storage            FileStorage
-	Download           FileDownload
-	Chain              Blockchain
-	MpcTaskMaxExecTime time.Duration
+	Node               Node          // executor node information
+	Storage            FileStorage   // handler for computing results storage
+	Download           FileDownload  // handler for file download, 'proxy' or 'self'
+	Chain              Blockchain    // handler for blockchain operation
+	MpcTaskMaxExecTime time.Duration // maximum execution time for mpc task
 	Mpc                mpc.Mpc
 	ClusterP2p         *p2p.P2P
 	// store execution mpc tasks
@@ -100,10 +100,10 @@ type MpcModelHandler struct {
 
 // ParticipantParams local parameters required for task execution
 type ParticipantParams struct {
-	otherParts    []string
-	fileText      []byte
-	isTagPart     bool
-	psiLabel      string
+	otherParts    []string // other execution parties
+	fileText      []byte   // sample file content
+	isTagPart     bool     // if local party contains label feature
+	psiLabel      string   // feature name for psi
 	PaddleFLRole  int
 	PaddleFLNodes [3]string
 }
