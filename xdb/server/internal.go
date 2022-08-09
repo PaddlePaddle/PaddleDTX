@@ -26,8 +26,13 @@ import (
 func responseError(ctx iris.Context, err error) {
 	logrus.WithError(err).Warn("error from server")
 
-	ctx.StatusCode(http.StatusInternalServerError)
-	ctx.JSON(errorx.ParseAndWrap(err, "from xdb api"))
+	ctx.StatusCode(http.StatusOK)
+	code, message := errorx.Parse(err)
+	ctx.JSON(response{
+		Code:    code,
+		Message: message,
+		Data:    nil,
+	})
 }
 
 type response struct {
@@ -39,8 +44,9 @@ type response struct {
 func responseJSON(ctx iris.Context, o interface{}) {
 	ctx.StatusCode(http.StatusOK)
 	ctx.JSON(response{
-		Code: errorx.SuccessCode,
-		Data: o,
+		Code:    errorx.SuccessCode,
+		Message: "",
+		Data:    o,
 	})
 }
 
