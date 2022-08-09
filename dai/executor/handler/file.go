@@ -325,6 +325,7 @@ func (f *FileDownload) pull(ctx context.Context, id, storIndex, fileId, nodeAddr
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to sign slice pull")
 	}
+	// assemble the pull request url
 	url := fmt.Sprintf("http://%s/v1/slice/pull?slice_id=%s&slice_stor_index=%s&file_id=%s&timestamp=%d&pubkey=%s&signature=%s",
 		nodeAddress, id, storIndex, fileId, timestamp, pubkey.String(), sig.String())
 

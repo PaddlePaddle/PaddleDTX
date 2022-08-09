@@ -73,6 +73,8 @@ func (n *Node) Register(chain Blockchain) error {
 }
 
 // autoRegister automatically registers executor node on blockchain when server starts
+// after registration, the grpc address of the executor node can be queried from the chain 
+// for multi-party tasks traing or tasks prediction
 func (n *Node) autoRegister(chain Blockchain) error {
 	logrus.WithField("module", "handler.node")
 
@@ -81,6 +83,7 @@ func (n *Node) autoRegister(chain Blockchain) error {
 		logrus.Info("node already registered on blockchain")
 		return nil
 	}
+	// if executor node not exist, registers executor node into blockchain
 	timestamp := time.Now().UnixNano()
 	opt := blockchain.AddNodeOptions{
 		Node: blockchain.ExecutorNode{

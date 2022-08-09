@@ -14,9 +14,9 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -87,15 +87,10 @@ func do(ctx context.Context, method string, url string, input io.Reader) (io.Rea
 	if err != nil {
 		return nil, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to do request")
 	}
-	if resp.StatusCode != http.StatusOK {
-		bs, _ := ioutil.ReadAll(resp.Body)
-		code, message, success := errorx.TryParseFromString(string(bs))
-		if !success {
-			code = errorx.ErrCodeInternal
-			message = fmt.Sprintf("http status: %d, message: %s", resp.StatusCode, string(bs))
-		}
+	bs, _ := ioutil.ReadAll(resp.Body)
+	code, message, _ := errorx.TryParseFromString(string(bs))
+	if code != errorx.SuccessCode {
 		return nil, errorx.New(code, message)
 	}
-
-	return resp.Body, nil
+	return ioutil.NopCloser(bytes.NewReader(bs)), nil
 }
