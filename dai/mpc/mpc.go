@@ -378,16 +378,14 @@ func newMpc(mh ModelHolder, p2p P2P, conf Config) *mpc {
 	}
 	trainCallback := TrainCallBack{ModelHolder: mh, Mpc: m}
 	m.trainer = trainer.NewTrainer(conf.Address, rpcHandler, &trainCallback, conf.TrainTaskLimit*21+600)
-	//there will be 10 more leaners running in parallel if one 10-fold cross validation is invoked
-	//there will be 20 more leaners running in parallel if one 10-fold cross validation is invoked together with live evaluation
-	//there will be 1 more leaners running in parallel if one live evaluation is invoked
+	//there will be 10 more learners running in parallel if one 10-fold cross validation is invoked
+	//there will be 1 more learners running in parallel if one live evaluation is invoked
 	//and, reserve 600 positions for LOO(one way to evaluate model)
 
 	predictCallBack := PredictCallBack{ModelHolder: mh, Mpc: m}
 	m.predictor = predictor.NewPredictor(conf.Address, rpcHandler, &predictCallBack, conf.PredictTaskLimit+conf.TrainTaskLimit*21+600)
 	//there will be 10 more models running in parallel if one 10-fold cross validation is invoked
-	//there will be 20 more models running in parallel if one 10-fold cross validation is invoked together with live evaluation
-	//there will be 1 more model running in parallel if one live evaluation is invoked
+	//there will be several more models running if one live evaluation is invoked
 	//and, reserve 600 positions for LOO(one way to evaluate model)
 
 	return m

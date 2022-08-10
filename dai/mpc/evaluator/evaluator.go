@@ -329,7 +329,6 @@ func (e *evaluator) packParamsForTrain(index int, file []byte) *pbCom.StartTaskR
 		Algo:        e.taskParams.Algo,
 		TaskType:    e.taskParams.TaskType,
 		TrainParams: e.taskParams.TrainParams,
-		LivalParams: e.taskParams.LivalParams,
 	}
 
 	//if the training task is from Evaluator, the TaskID conforms such form like `{uuid}_{k}_train_Eva`,
