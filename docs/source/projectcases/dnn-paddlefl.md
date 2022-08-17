@@ -20,7 +20,7 @@
 ## 测试脚本说明
 
 本案例采用 [paddledtx_test.sh](https://github.com/PaddlePaddle/PaddleDTX/tree/master/scripts) 演示：
-``` shell linenums="1"
+``` shell
 Usage:
   ./paddledtx_test.sh <mode> [-f <sample files>] [-m <model task id>] [-i <task id>]
     <mode> - one of 'upload_sample_files', 'start_vl_linear_train', 'start_vl_linear_predict', 'start_vl_logistic_train'
@@ -57,7 +57,7 @@ Usage:
 
 任务的发布与执行离不开样本文件，故在计算需求方发布任务之前，需确保数据持有方已上传各自所拥有的样本文件。
 
-``` shell linenums="1"
+``` shell
 # 上传样本文件
 $ sh paddledtx_test.sh upload_sample_files
 
@@ -86,7 +86,7 @@ PaddleFL prediction sample files: 25ec6fd0-904e-4737-9bcc-c1cc11df1170,4442acae-
 
 查看 XuperDB 中的样本文件：
 
-``` shell linenums="1"
+``` shell
 # 数据持有方A查询train_dataA.csv文件：
 $ docker exec -it dataowner1.node.com sh -c './xdb-cli files getbyid -i 34cf2ee3-81b2-4865-907d-a9eab3c5b384 --host http://127.0.0.1:80'
 
@@ -110,7 +110,7 @@ $ docker exec -it dataowner3.node.com sh -c './xdb-cli files getbyid -i 73176b51
 
 发布和启动训练任务：
 
-``` shell linenums="1"
+``` shell
 # -f 取值样本上传upload_sample_files命令返回的PaddleFL train sample files
 $ sh paddledtx_test.sh start_vl_dnn_train -f 34cf2ee3-81b2-4865-907d-a9eab3c5b384,9dc7e0b7-18dd-4d5a-a3a1-6dace6d04fc8,3eaee2ea-4680-4b0b-bde3-ab4a4949159e
 
@@ -136,7 +136,7 @@ $ sh paddledtx_test.sh gettaskbyid -i 96aaa3a1-5532-4d00-be6a-721540518be3
 
 发布和启动波士顿房价预测任务：
 
-``` shell linenums="1"
+``` shell
 # -f 取值样本上传upload_sample_files命令返回的Vertical linear prediction sample files，-m 取值为训练任务返回的TaskID
 $ ./paddledtx_test.sh start_vl_dnn_predict -f c21b367f-2cb8-4859-87d8-18c52d397b13,043b9f55-68f6-4587-be8b-2340ea4432c2,b36442b6-ea3d-4530-910a-ec44291cd66c -m 96aaa3a1-5532-4d00-be6a-721540518be3
 
@@ -161,4 +161,3 @@ Root mean square error of Boston house price prediction is: 5.513432645452959
 
 预测任务执行完成后，同时输出了波士顿房价预测模型的均方根误差，为 5.513432645452959 。
 
-<br>

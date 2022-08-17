@@ -7,33 +7,25 @@
 ## 快速入口
 
 <div class="intro">
-    <div class="card-holder container">
-        <div class="card rocket container">
-            <p class="introtitle">编译安装</p>
-            <p class="introcontent">PaddleDTX提供了脚本安装、源码编译、docker安装三种方式，支持用户按需搭建业务系统所需的服务，方便本地运行测试。</p>
-            <p class="introdetails"><b><a href="./quickstart/quickstart ">查看详情</a></b></p>
-        </div>
+    <div class="card-holder">
+        <p class="introtitle">编译安装</p>
+        <p class="introcontent">PaddleDTX提供了脚本安装、源码编译、docker安装三种方式，支持用户按需搭建业务系统所需的服务，方便本地运行测试。</p>
+        <p class="introdetails"><b><a href="./quickstart/quickstart ">查看详情</a></b></p>
     </div>
-    <div class="card-holder container">
-        <div class="card rocket container">
-            <p class="introtitle">基本操作</p>
-            <p class="introcontent">用户安装完可信分布式AI网络后，即可操作XuperDB、DAI客户端工具进行文件上传、任务发布等，针对各节点的详细命令操作，可参考进阶使用章节。</p>
-            <p class="introdetails"><b><a href="./quickstart/client">查看详情</a></b></p>
-        </div>
+    <div class="card-holder">
+        <p class="introtitle">基本操作</p>
+        <p class="introcontent">用户安装完可信分布式AI网络后，即可操作XuperDB、DAI客户端工具进行文件上传、任务发布等，针对各节点的详细命令操作，可参考进阶使用章节。</p>
+        <p class="introdetails"><b><a href="./quickstart/client">查看详情</a></b></p>
     </div>
-    <div class="card-holder container">
-        <div class="card rocket container">
-            <p class="introtitle">业务集成</p>
-            <p class="introcontent">用户可以通过HTTP API、GRPC API方式将业务系统集成到PaddleDTX，进行训练或预测任务的发布、数据存储、数据共享等，PaddleDTX支持底层区块网络的灵活切换。</p>
-            <p class="introdetails"><b><a href="./development/api">查看详情</a></b></p>
-        </div>
+    <div class="card-holder">
+        <p class="introtitle">业务集成</p>
+        <p class="introcontent">用户可以通过HTTP API、GRPC API方式将PaddleDTX集成到业务系统，进行任务的发布、数据的存储，其支持底层区块网络的灵活切换。</p>
+        <p class="introdetails"><b><a href="./development/api">查看详情</a></b></p>
     </div>
-    <div class="card-holder container">
-        <div class="card rocket container">
-            <p class="introtitle">应用案例</p>
-            <p class="introcontent">通过测试案例可以评估模型训练、预测的效果，PaddleDTX提供了基于波士顿房价预测的线性回归、神经网络算法和基于鸢尾花的逻辑回归算法。</p>
-            <p class="introdetails"><b><a href="./projectcases/linear">查看详情</a></b></p>
-        </div>
+    <div class="card-holder">
+        <p class="introtitle">应用案例</p>
+        <p class="introcontent">通过测试案例可以评估模型训练、预测的效果，PaddleDTX提供了基于波士顿房价预测的线性回归、神经网络算法和基于鸢尾花的逻辑回归算法。</p>
+        <p class="introdetails"><b><a href="./projectcases/linear">查看详情</a></b></p>
     </div>
 </div>
 
@@ -88,14 +80,36 @@
         &emsp; [Get Start](projectcases/linear.md){ .md-button } -->
 
 
-## Need Help
+<!-- ## Need Help
 
 通过以下链接联系 PaddleDTX 团队：
 
 <img src='./_static/discuss.png' width = "5%" height = "5%" align="middle" />
 [社区交流](https://developer.baidu.com/singleTagPage.html?tagId=269&type=QUESTION)  &emsp;
 <img src='./_static/issue.png' width = "4%" height = "4%" align="middle" />
-[Github Issues](https://github.com/PaddlePaddle/PaddleDTX/issues)
+[Github Issues](https://github.com/PaddlePaddle/PaddleDTX/issues) -->
 
+## Need Help
+<div class="helpBox">
+    <div class="desc">您可以通过以下方式联系 百度超级链<span class="name"> PaddleDTX </span>团队（微信公众号）：</div>
+    <!-- <div class="desc"></div> -->
+    <img src='./_static/00_001.png' style="width: 100px; height: auto; border: none"/>
+    <hr style="margin: 10px 0 24px"/>
+    <div class="main-footer-box">
+        <div class="main-footer">
+            <div class="info">
+                <div class="row"><span>微博：</span><a href="https://weibo.com/u/7256002395">百度超级链XUPER</a></div>
+                <div class="row"><span>百度开发者中心：</span><a href="https://developer.baidu.com/singleTagPage.html?tagId=269&type=QUESTION">超级链社区交流</a></div>
+            </div>
+            <div class="info">
+                <div class="row">
+                    <span>官方邮箱：</span><a href="mailto:xchain-help@baidu.com">xchain-help@baidu.com</a>
+                </div>
+                <div class="row">
+                    <span>Github：</span><a href="https://github.com/PaddlePaddle/PaddleDTX/issues">Github Issues</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<br>

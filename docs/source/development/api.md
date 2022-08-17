@@ -68,7 +68,7 @@ PaddleDTX的四类节点（数据持有节点、存储节点、任务执行节�
 如下为任务执行节点对外提供的API接口，接口参数说明参考 [task.proto](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/protos/task/task.proto)：
 #### 1.1 任务操作
 
-``` proto linenums="1"
+``` proto
 // Cluster defines communication communication between client and server, and communication between cluster members.
 service Task {
     // ListTask is provided by Executor server for Executor client to list tasks with filters.
@@ -103,7 +103,7 @@ DAI底链使用的是的Xuperchain，其提供了http_gateway，用于转发用�
 
 ## 响应状态码
 当请求成功，HTTP API返回code值为"0"，否则请求失败，失败的code值列表说明如下：
-``` go linenums="1"
+``` go
 // error code list
 const (
 	ErrCodeInternal = "10001" // internal error
@@ -123,5 +123,3 @@ const (
 	ErrCodeAlreadyUpdate   = "10013" // duplicate updating error
 )
 ```
-
-<br>

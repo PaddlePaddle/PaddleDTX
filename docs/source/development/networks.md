@@ -3,13 +3,13 @@ PaddleDTX提供了可信分布式AI网络的 **标准通信协议**，计算需�
 
 
 ### 区块链网络
-!!! note ""
+!!! info ""
     DAI使用的XuperChain网络，其提供了多语言版本的SDK（JS，Golang，C#，Java，Python），这里以Golang为例来介绍一下基于XuperChain的可信分布式AI合约调用流程。
 	合约调用源码可参考 [计算需求节点](https://github.com/PaddlePaddle/PaddleDTX/blob/master/dai/requester/client/client.go)。
 
 #### 1.PublishTask
 合约方法PublishTask用于发布计算任务：
-``` go linenums="1"
+``` go
 // PublishFLTaskOptions contains parameters for publishing tasks
 type PublishFLTaskOptions struct {
 	FLTask    FLTask
@@ -37,7 +37,7 @@ message FLTask {
 ```
 #### 2.ListTask
 ListTask用于查询计算任务列表：
-``` go linenums="1"
+``` go
 // ListFLTaskOptions contains parameters for listing tasks
 // support listing tasks a requester published or tasks an executor involved
 type ListFLTaskOptions struct {
@@ -48,6 +48,7 @@ type ListFLTaskOptions struct {
 	Limit     int64  // limit number of tasks in list request, default 'all'
 }
 ```
+
 #### 3.GetTaskByID
 通过任务ID查询任务详情，合约参数为id。
 
@@ -63,7 +64,7 @@ ListExecutorNodes用于查询区块链网络中的任务执行节点列表。
 ### 任务执行节点
 #### 1.下载预测结果
 通过ListExecutorNodes查询到任务执行节点列表后，调用GRPC/HTTP API请求拥有标签方的任务执行节点下载预测结果：
-``` go linenums="1"
+``` go
 service Task {
 	// GetPredictResult is provided by Executor server for Executor client to get prediction result.
     rpc GetPredictResult(TaskRequest) returns (PredictResponse) {
@@ -88,6 +89,3 @@ message PredictResponse {
 }
 
 ```
-
-<br>
-

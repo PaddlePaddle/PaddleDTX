@@ -33,7 +33,7 @@ $ sh network_up.sh stop
 
 网络启动之后，当收到返回 **PaddleDTX starts successfully ! ** 即启动成功，用户可通过 ==./paddledtx_test.sh== 脚本，开启你的PaddleDTX初体验。
 
-!!! note "说明"
+!!! info "说明"
 
     1、我们推荐用户采用Linux环境安装，若采用Mac启动，需修改docker运行资源限制，设置较高的Cpus（>4）、Memory（>4GB）、Swap（>4GB）。
 
@@ -123,7 +123,7 @@ Usage:
   ./paddledtx_test.sh gettaskbyid -i 9b3ff4be-bfcd-4520-a23b-4aa6ea4d59f1
   ./paddledtx_test.sh tasklist
 ```
-!!! note "说明"
+!!! info "说明"
 
     用户可通过cat ./paddledtx_test.sh查看脚本默认创建的文件存储命名空间、上传文件列表等，如有额外需求，可自定义配置；
 
@@ -208,5 +208,3 @@ Usage:
     # 命令行方式：
     $ docker exec -it executor1.node.com sh -c "./executor-cli task getbyid --host 127.0.0.1:80 -i $taskID"
     ```
-
-<br>

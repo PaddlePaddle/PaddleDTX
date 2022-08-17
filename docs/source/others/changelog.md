@@ -38,5 +38,3 @@ This is the first public release of PaddleDTX.
     5. oblivious transfer
     6. secret sharing
     7. proof of replication holding
-
-<br>

@@ -105,7 +105,7 @@ level = "debug"
 path = "./logs"
 
 ```
-!!! note "配置说明"
+!!! info "配置说明"
 
     1. allowCros配置定义了是否允许xdb请求跨域，默认为false，生产环境慎用。
     2. dataOwner.slicer 定义切片大小、文件切分时并行队列数；
@@ -204,12 +204,9 @@ path = "./logs"
 
 ```
 
-!!! note "配置说明"
+!!! info "配置说明"
 
     1. storage.blockchain 定义了节点操作区块链网络所需的配置，当前支持Xchain、Fabric网络；
     2. storage.prover 用于指定挑战应答时保存临时数据的本地存储路径；
     3. storage.mode 用于指定存储节点的存储方式，当前支持本地文件系统和ipfs方式存储；
     4. storage.monitor 用于存储节点开启心跳检测、配置文件清理时间间隔等；
-
-
-<br>
