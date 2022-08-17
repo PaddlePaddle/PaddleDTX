@@ -24,6 +24,7 @@ $ ./xdb-cli key genkey -o ./ukeys
 # $publicKey为1.1步骤生成的客户端端公钥，cat ./ukeys/public.key
 $ ./xdb-cli key addukey -o ./authkeys -u $publicKey
 ```
+
 该命令会将客户端公钥添加到服务端授权白名单，只有授权通过的客户端才允许请求数据持有节点进行文件上传下载。授权记录存储在服务端的 authkeys 文件夹中，-u 取值为客户端公钥。
 
 #### 1.3 创建命名空间
@@ -62,6 +63,7 @@ $ ./xdb-cli --host http://127.0.0.1:8121 files upload -n paddlempc -m train_data
 # 命令返回
 FileID: 01edba10-ef04-4096-a984-c81191262d03
 ```
+
 各参数说明如下：
 
 * 通过修改 host 来指定不同的数据持有节点
@@ -88,6 +90,7 @@ $ ./xdb-cli files getbyid -i 01edba10-ef04-4096-a984-c81191262d03 --host http://
 ```
 $ ./xdb-cli --host http://localhost:8121 files listauth -a 6a5ba56bccf843c591a3a32baa5aa76deebffe2695d48521799b77fb0a32e286ae493143560d1f548dd494bf266d4df39375f755f6008e8db7444cd8a96258c6 -o 71c516458ef075609be6a7ebaeca23dc42a3ff3aa0597d0abd3843253da09ee5bcdc292d517617bb7eb610a5351ae92240a803cc5769346d81def574adbfdd1d
 ```
+
 通过修改 host 来指定不同的数据持有节点，-a 为任务执行节点公钥，-o 为文件持有方公钥。
 
 查询文件授权申请列表后，可以通过confirmauth命令进行文件授权使用确认，-i 为待授权文件ID：
@@ -209,5 +212,3 @@ $ ./requester-cli task result --id a7dfac43-fa51-423e-bd05-8e0965c708a8 --keyPat
 * --keyPath: 默认取值'./keys'，从该文件夹中读取私钥，计算需求方的私钥，表明了计算需求方的身份，可以用-k 参数直接指定私钥
 * --conf: 指定使用的配置文件
 * -o: 预测结果的导出文件
-
-<br>

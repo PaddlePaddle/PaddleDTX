@@ -25,6 +25,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	$ cd PaddleDTX/xdb
 	$ make
 	```
+
 	编译产出为 output 文件夹，内容为：
 	```
 	├── conf
@@ -38,6 +39,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	$ cd ../dai
 	$ make
 	```
+
 	编译产出为 output 文件夹，内容为：
 	```
 	├── conf
@@ -51,6 +53,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	```
 	$ go build -o paddlempc ./blockchain/xchain/contract
 	```
+
 	编译产出为 paddlempc 合约文件，为安装在xchain 区块链上的合约文件。
 
 ### 1.3 网络部署
@@ -64,7 +67,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	您需要了解如何创建合约账户、部署智能合约，详细参考 [部署 native 合约](https://xuper.baidu.com/n/xuperdoc/v3.9/advanced_usage/create_contracts.html?highlight=native#native) ，更多内容请参考[XuperChain官方文档](https://xuper.baidu.com/n/xuperdoc/index.html) 。
 	<br>
 	合约安装过程如下：
-	``` shell linenums="1"
+	``` shell
 	# 定义合约账户和合约名称
 	$ export contractAccount='1234567890123456'
 	$ export contractName='paddlempc'
@@ -93,15 +96,16 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	```
 	$ ./xdb-cli key genkey -o ./keys
 	```
+
 	请妥善保存您创建的公私钥对，在后续的配置及命令行使用时您将会频繁的用到它。
-	<br><br>
+
 	^^XuperDB 包含两种类型的节点服务，数据持有节点和存储节点，我们需要分别启动这两种服务^^。为了方便，我们这里两种类型的服务分别启动一个。
 	首先进入到 xdb 的编译产出 output 文件中：
 
 	1.  启动数据存储节点
 
 		修改配置文件，修改内容如下：
-		``` toml linenums="1"
+		``` toml
 		# vim conf/config-storage.toml
 		#
 		type = "storage"
@@ -154,6 +158,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		level = "debug"
 		path = "./logs"
 		```
+
 		其中，listenAddress和publicAddress 指定服务监听的地址及对外暴露的地址，blockchain配置中指定了使用区块链网络部署时创建的账户助记词、合约账户及合约名，storage.mode定义了存储节点采取的存储方式，支持本地文件系统和ipfs方式。
 
 		启动服务：
@@ -164,7 +169,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	2.  启动数据持有节点
    
 		修改配置文件，修改内容如下：
-		``` toml linenums="1"
+		``` toml
 		# vim conf/config-dataowner.toml
 		#
 		type = "dataOwner"
@@ -233,13 +238,14 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 		level = "debug"
 		path = "./logs"
 		```
+		
 		其中，listenAddress和publicAddress 指定服务监听的地址及对外暴露的地址，blockchain配置中使用区块链网络部署时创建的账户助记词、合约账户及合约名。
 
 		启动服务：
 		```
 		$ nohup ./xdb -c conf/config-dataowner.toml > dataowner.log &
 		```
-		!!! note ""
+		!!! info ""
 			注意：一般构建 PaddleDTX 网络至少需要两方参与，对应两个计算任务执行节点，每个任务执行节点可以从一个或多个数据持有节点获取数据，这里为了说明方便启动一个数据持有节点，您也可以根据实际需求自行启动多个数据存储节点和数据持有节点；配置中的keyPath参数为节点的身份，不同keyPath即对应了不同的身份。
 
 	3. 查看服务状态: 使用 xdb-cli 客户端执行如下命令，请求数据持有节点查看存储节点的在线状态：
@@ -254,8 +260,9 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	```
 	$ ./executor-cli key genkey -o ./keys
 	```
+
 	请妥善保存您创建的公私钥对，在后续的配置及命令行使用时您将会频繁的用到它。
-	!!! note ""
+	!!! info ""
 		注意: 任务发布后时，任务执行节点会向数据持有节点发起文件授权申请，数据持有节点可通过或拒绝样本文件授权申请。
 		当前开源的多元线性回归、多元逻辑回归算法支持两个任务执行节点，神经网络算法需要三个任务执行节点，如果需要使用神经网络，请部署3个任务执行节点。
 
@@ -269,7 +276,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 
 		=== "executor1/conf/config.toml"
 
-			``` toml linenums="1"
+			``` toml
 			# executor1
 			listenAddress = ":8184"
 			publicAddress = "127.0.0.1:8184"
@@ -311,7 +318,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 
 		=== "executor2/conf/config.toml"
 
-			``` toml linenums="1"
+			``` toml
 			# executor2
 			listenAddress = ":8185"
 			publicAddress = "127.0.0.1:8185"
@@ -366,4 +373,3 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 
 步骤3为用户演示了源码安装区块链网络、去中心化存储网络（1个数据持有节点、1个数据存储节点）、Distributed AI（2个任务执行节点）流程，成功启动之后，可参考 [客户端工具](./client.md) 操作您的网络。
 
-<br>

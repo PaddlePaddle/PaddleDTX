@@ -21,6 +21,3 @@
 <video controls="controls" width="60%" height="auto" style="margin: 10px">
     <source src="https://cms-store.bj.bcebos.com/example.mp4" type="video/mp4">
 </video>
-
-
-<br>
