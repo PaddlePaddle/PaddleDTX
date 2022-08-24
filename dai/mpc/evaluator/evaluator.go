@@ -76,7 +76,7 @@ type Trainer interface {
 	SavePredictAndEvaluatResult(result *pbCom.TrainTaskResult)
 }
 
-// BinClassValidation performs validation of Binary Classfication case
+// BinClassValidation performs validation of Binary Classification case
 type BinClassValidation interface {
 	// Splitter divides data set into several subsets with some strategies (such as KFolds, LOO),
 	// and hold out one subset as validation set and others as training set
@@ -145,15 +145,15 @@ type Splitter interface {
 	// And could be only called successfully after split.
 	GetAllFolds() ([][][]string, error)
 
-	// GetTrainSet holds out the subset to which refered by `idxHO`
-	// and returns the remainings as training set.
+	// GetTrainSet holds out the subset to which referred by `idxHO`
+	// and returns the remaining as training set.
 	GetTrainSet(idxHO int) ([][]string, error)
 
-	// GetPredictSet returns the subset to which refered by `idx`
+	// GetPredictSet returns the subset to which referred by `idx`
 	// as predicting set (without label feature).
 	GetPredictSet(idx int) ([][]string, error)
 
-	// GetPredictSet returns the subset to which refered by `idx`
+	// GetPredictSet returns the subset to which referred by `idx`
 	// as validation set.
 	GetValidSet(idx int) ([][]string, error)
 }
@@ -331,7 +331,7 @@ func (e *evaluator) packParamsForTrain(index int, file []byte) *pbCom.StartTaskR
 		TrainParams: e.taskParams.TrainParams,
 	}
 
-	//if the training task is from Evaluator, the TaskID conforms such form like `{uuid}_{k}_train_Eva`,
+	// if the training task is from Evaluator, the TaskID conforms such form like `{uuid}_{k}_train_Eva`
 	res := pbCom.StartTaskRequest{
 		TaskID: fmt.Sprintf("%s_%d_train_Eva", e.id, index),
 		File:   file,
@@ -342,7 +342,7 @@ func (e *evaluator) packParamsForTrain(index int, file []byte) *pbCom.StartTaskR
 	return &res
 }
 
-// Stop deletes all the leaners created by Evaluator as well as other objects
+// Stop deletes all the learners created by Evaluator as well as other objects
 func (e *evaluator) Stop() {
 	for i := 0; i < e.numValidates; i++ {
 		if _, ok := e.predicResults.Load(i); !ok {
@@ -424,6 +424,7 @@ func (e *evaluator) packParamsForPredict(index int, model *pbCom.TrainModels, fi
 	// set idName
 	model.IdName = e.taskParams.TrainParams.IdName
 
+	// set task params
 	taskParams := pbCom.TaskParams{
 		Algo:        e.taskParams.Algo,
 		TaskType:    pbCom.TaskType_PREDICT,
@@ -450,7 +451,7 @@ func (e *evaluator) SavePredictOut(res *pbCom.PredictTaskResult) error {
 		return nil
 	}
 
-	//if the prediction task is from Evaluator, the TaskID conforms such form like `{uuid}_{k}_predict_Eva`.
+	// if the prediction task is from Evaluator, the TaskID conforms such form like `{uuid}_{k}_predict_Eva`
 	ss := strings.SplitN(res.TaskID, "_", 3)
 	if len(ss) < 3 {
 		return errorx.New(errcodes.ErrCodeParam, "evaluator[%s] got invalid TaskID[%s]", e.id, res.TaskID)
@@ -476,7 +477,6 @@ func (e *evaluator) calMetricScoresAndCallbackCaseRegression(index int, res *pbC
 	// but during evaluation it cooperates with other parties for model training and prediction.
 
 	if e.taskParams.TrainParams.IsTagPart {
-
 		pred, err := convert.PredictResultFromBytes(res.Outcomes)
 		if err != nil {
 			logger.Warningf("evaluator[%s] failed to convert bytes to PredictResult instance and error is[%s].", e.id, res.ErrMsg)
@@ -484,7 +484,7 @@ func (e *evaluator) calMetricScoresAndCallbackCaseRegression(index int, res *pbC
 		}
 		lout := len(pred)
 		if lout <= 1 {
-			logger.Warningf("evaluator[%s] got invalid prediction result[%d] beacause it was too small.", e.id, index)
+			logger.Warningf("evaluator[%s] got invalid prediction result[%d] because it was too small.", e.id, index)
 			return
 		}
 		predMap := make(map[string]float64, lout-1)
@@ -492,7 +492,7 @@ func (e *evaluator) calMetricScoresAndCallbackCaseRegression(index int, res *pbC
 			idValue := pred[i][0]
 			labelVal, err := strconv.ParseFloat(pred[i][1], 64)
 			if err != nil {
-				logger.Warningf("evaluator[%s] got invalid prediction result[%d] beacause label was not type Float64.", e.id, index)
+				logger.Warningf("evaluator[%s] got invalid prediction result[%d] because label was not type Float64.", e.id, index)
 				return
 			}
 			predMap[idValue] = labelVal
@@ -501,7 +501,7 @@ func (e *evaluator) calMetricScoresAndCallbackCaseRegression(index int, res *pbC
 		// set prediction outcomes to validator for further metric scores
 		// keep the same order with samples in Validation/Prediction Set
 
-		// to get Validation Set is more quicky than Prediction Set
+		// to get Validation Set is more quickly than Prediction Set
 		validSet, err := e.splitter.GetValidSet(index)
 		if err != nil {
 			logger.Warningf("evaluator[%s] failed to get validation set[%d] and error is[%s].", e.id, index, res.ErrMsg)
@@ -509,12 +509,12 @@ func (e *evaluator) calMetricScoresAndCallbackCaseRegression(index int, res *pbC
 		}
 		lvs := len(validSet)
 		if lvs <= 1 {
-			logger.Warningf("evaluator[%s] got invalid validation set[%d] beacuse it was too small.", e.id, index)
+			logger.Warningf("evaluator[%s] got invalid validation set[%d] becuse it was too small.", e.id, index)
 			return
 		}
 		idIdx := fundIDIndex(validSet, e.taskParams.TrainParams.IdName)
 		if idIdx < 0 {
-			logger.Warningf("evaluator[%s] got invalid validation set[%d] beacuse it had no ID.", e.id, index)
+			logger.Warningf("evaluator[%s] got invalid validation set[%d] becuse it had no ID.", e.id, index)
 			return
 		}
 
@@ -596,6 +596,7 @@ func (e *evaluator) calMetricScoresAndCallbackCaseRegression(index int, res *pbC
 }
 
 type metricsRelatedConfusionMatrix struct {
+	// evaluation metrics for classification problems
 	TP        float64
 	FP        float64
 	FN        float64
@@ -630,7 +631,7 @@ func (e *evaluator) calMetricScoresAndCallbackCaseBinClass(index int, res *pbCom
 		}
 		lout := len(pred)
 		if lout <= 1 {
-			logger.Warningf("evaluator[%s] got invalid prediction result[%d] beacause it was too small.", e.id, index)
+			logger.Warningf("evaluator[%s] got invalid prediction result[%d] because it was too small.", e.id, index)
 			return
 		}
 		predMap := make(map[string]float64, lout-1)
@@ -638,7 +639,7 @@ func (e *evaluator) calMetricScoresAndCallbackCaseBinClass(index int, res *pbCom
 			idValue := pred[i][0]
 			labelVal, err := strconv.ParseFloat(pred[i][1], 64)
 			if err != nil {
-				logger.Warningf("evaluator[%s] got invalid prediction result[%d] beacause label was not type Float64.", e.id, index)
+				logger.Warningf("evaluator[%s] got invalid prediction result[%d] because label was not type Float64.", e.id, index)
 				return
 			}
 			predMap[idValue] = labelVal
@@ -655,12 +656,12 @@ func (e *evaluator) calMetricScoresAndCallbackCaseBinClass(index int, res *pbCom
 		}
 		lvs := len(validSet)
 		if lvs <= 1 {
-			logger.Warningf("evaluator[%s] got invalid validation set[%d] beacuse it was too small.", e.id, index)
+			logger.Warningf("evaluator[%s] got invalid validation set[%d] because it was too small.", e.id, index)
 			return
 		}
 		idIdx := fundIDIndex(validSet, e.taskParams.TrainParams.IdName)
 		if idIdx < 0 {
-			logger.Warningf("evaluator[%s] got invalid validation set[%d] beacuse it had no ID.", e.id, index)
+			logger.Warningf("evaluator[%s] got invalid validation set[%d] because it had no ID.", e.id, index)
 			return
 		}
 
@@ -796,7 +797,6 @@ func (e *evaluator) calMetricScoresAndCallbackCaseBinClass(index int, res *pbCom
 		}
 		go e.trainer.SavePredictAndEvaluatResult(trainTaskResult)
 	}
-
 }
 
 func fundIDIndex(fileRows [][]string, idName string) int {
@@ -811,6 +811,7 @@ func fundIDIndex(fileRows [][]string, idName string) int {
 	return idx
 }
 
+// NewEvaluator create Evaluator by task params
 func NewEvaluator(req *pbCom.StartTaskRequest, mpc Mpc, trainer Trainer) (Evaluator, error) {
 	getCaseType := func(algo pbCom.Algorithm) (pbCom.CaseType, error) {
 		switch algo {
@@ -823,7 +824,7 @@ func NewEvaluator(req *pbCom.StartTaskRequest, mpc Mpc, trainer Trainer) (Evalua
 		}
 	}
 
-	// check CaseType
+	// check task CaseType, whether regression or classification
 	caseType, err := getCaseType(req.Params.Algo)
 	if err != nil {
 		return nil, err
