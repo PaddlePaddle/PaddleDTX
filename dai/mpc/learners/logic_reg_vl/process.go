@@ -31,10 +31,10 @@ import (
 type process struct {
 	round    uint64
 	homoPriv *paillier.PrivateKey // homomorphic private key for parameter encryption/decryption
-	params   *pbCom.TrainParams
-	fileRows [][]string
+	params   *pbCom.TrainParams // params for the training task
+	fileRows [][]string // file rows obtained from sample file
 
-	trainDataSet   *mlCom.TrainDataSet
+	trainDataSet   *mlCom.TrainDataSet // own data set for training, formatted from filesRow
 	homoPubOfOther []byte // public key of other part
 
 	mutex sync.Mutex
@@ -70,7 +70,7 @@ func (p *process) init(fileRows [][]string) error {
 	// fileRows
 	p.fileRows = fileRows
 
-	// trainset
+	// resolve data set from fileRows
 	trainDataSet, err := logic.GetTrainDataSetFromFile(p.fileRows, *p.params)
 
 	if err != nil {
@@ -79,13 +79,14 @@ func (p *process) init(fileRows [][]string) error {
 
 	p.trainDataSet = trainDataSet
 
-	// thetas
+	// init thetas
 	thetas := logic.InitThetas(trainDataSet, *p.params)
 	p.thetas = thetas
 
 	return nil
 }
 
+// upRound enter next round
 func (p *process) upRound(newRound uint64) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -310,6 +311,7 @@ func (p *process) updateCostAndGradient() (bool, error) {
 	return stopped, nil
 }
 
+// setOtherStatus set other's stop status
 func (p *process) setOtherStatus(otherStopped bool) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -325,6 +327,7 @@ func (p *process) setOtherStatus(otherStopped bool) {
 	}
 }
 
+// stop check if training should be stopped
 func (p *process) stop() (decided bool, stopped bool) {
 	if p.otherStopped != 0 && p.stopped != 0 {
 		logger.Infof("stop or not, otherStopped %d, stopped %d, round %d", p.otherStopped, p.stopped, p.round)
@@ -340,6 +343,7 @@ func (p *process) stop() (decided bool, stopped bool) {
 	return
 }
 
+// getTrainModels retrieve own model
 func (p *process) getTrainModels() ([]byte, error) {
 	modelBytes, err := vlCom.TrainModelsToBytes(p.thetas, p.trainDataSet, *p.params)
 	if err != nil {
@@ -349,10 +353,12 @@ func (p *process) getTrainModels() ([]byte, error) {
 	return modelBytes, nil
 }
 
+// setHomoPubOfOther save homomorphic public key from other party, used for secret transmission
 func (p *process) setHomoPubOfOther(homoPubOfOther []byte) {
 	p.homoPubOfOther = homoPubOfOther
 }
 
+// newProcess init process by homomorphic key and training task params
 func newProcess(homoPriv *paillier.PrivateKey, params *pbCom.TrainParams) *process {
 	return &process{
 		round:    0,
