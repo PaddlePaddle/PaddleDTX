@@ -24,7 +24,7 @@ import (
 	requestClient "github.com/PaddlePaddle/PaddleDTX/dai/requester/client"
 )
 
-// getByIDCmd
+// getByIDCmd get task by taskID
 var getByIDCmd = &cobra.Command{
 	Use:   "getbyid",
 	Short: "get the task by id",

@@ -38,6 +38,7 @@ import (
 	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
+// Client requester client, used to publish task and retrieve task result
 type Client struct {
 	XchainClient *xchainblockchain.XChain
 }
@@ -173,7 +174,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 	return dataSets, nil
 }
 
-// Publish publishes a task
+// Publish publishes a task, returns taskID
 func (c *Client) Publish(opt PublishOptions) (taskId string, err error) {
 	pubkey, privkey, err := checkUserPrivateKey(opt.PrivateKey)
 	if err != nil {
@@ -251,7 +252,7 @@ func (c *Client) ListTask(pubkeyStr, status string, start, end,
 	return
 }
 
-// StartTask starts task by taskID
+// StartTask starts task by taskID, only task with 'Ready' status can be started
 func (c *Client) StartTask(privateKey, id string) (err error) {
 	_, privkey, err := checkUserPrivateKey(privateKey)
 	if err != nil {
@@ -342,12 +343,12 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 	return nil
 }
 
-// ListExecutorNodes list executor nodes
+// ListExecutorNodes list all executor nodes
 func (c *Client) ListExecutorNodes() (nodes blockchain.ExecutorNodes, err error) {
 	return c.XchainClient.ListExecutorNodes()
 }
 
-// GetExecutorNodeByID get executor node by nodeID
+// GetExecutorNodeByID get the executor node by nodeID, which is the public key of the node
 func (c *Client) GetExecutorNodeByID(pubkeyStr string) (node blockchain.ExecutorNode, err error) {
 	_, err = hex.DecodeString(pubkeyStr)
 	if err != nil {
@@ -361,7 +362,7 @@ func (c *Client) GetExecutorNodeByName(name string) (node blockchain.ExecutorNod
 	return c.XchainClient.GetExecutorNodeByName(name)
 }
 
-// GetAuthByID get file authorization application detail by authID
+// GetFileAuthByID get file authorization application detail by authID
 func (c *Client) GetFileAuthByID(id string) (fileAuth xdbchain.FileAuthApplication, err error) {
 	return c.XchainClient.GetAuthApplicationByID(id)
 }
