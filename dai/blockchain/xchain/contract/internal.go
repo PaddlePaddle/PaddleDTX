@@ -21,11 +21,12 @@ import (
 )
 
 const (
-	prefixFlTaskIndex     = "index_fltask"
-	prefixFlTaskListIndex = "index_fltask_list"
-	prefixNodeIndex       = "index_executor_node"
-	prefixNodeNameIndex   = "index_executor_name"
-	prefixNodeListIndex   = "index_executor_node_list"
+	prefixFlTaskIndex       = "index_fltask"
+	prefixFlTaskListIndex   = "index_fltask_list"
+	prefixREFlTaskListIndex = "index_re_fltask_list"
+	prefixNodeIndex         = "index_executor_node"
+	prefixNodeNameIndex     = "index_executor_name"
+	prefixNodeListIndex     = "index_executor_node_list"
 )
 
 // subByInt64Max return maxInt64 - N
@@ -48,9 +49,22 @@ func packExecutorTaskListIndex(executor []byte, task blockchain.FLTask) string {
 	return fmt.Sprintf("%s/%x/%d/%s", prefixFlTaskListIndex, executor, subByInt64Max(task.PublishTime), task.TaskID)
 }
 
+// packRequesterExecutorTaskIndex pack index for saving tasks for requester and executor, in time descending order
+func packRequesterExecutorTaskIndex(executor []byte, task blockchain.FLTask) string {
+	return fmt.Sprintf("%s/%x/%x/%d/%s", prefixREFlTaskListIndex, task.Requester, executor, subByInt64Max(task.PublishTime), task.TaskID)
+}
+
 // packFlTaskFilter pack filter index with public key for searching tasks for requester or executor
-func packFlTaskFilter(pubkey []byte) string {
-	filter := prefixFlTaskListIndex + "/" + fmt.Sprintf("%x/", pubkey)
+func packFlTaskFilter(rPubkey, ePubkey []byte) string {
+	// If requester and executor public key not empty
+	filter := prefixFlTaskListIndex + "/"
+	if len(rPubkey) > 0 && len(ePubkey) > 0 {
+		filter = prefixREFlTaskListIndex + "/" + fmt.Sprintf("%x/%x", rPubkey, ePubkey)
+	} else if len(rPubkey) > 0 {
+		filter += fmt.Sprintf("%x/", rPubkey)
+	} else {
+		filter += fmt.Sprintf("%x/", ePubkey)
+	}
 	return filter
 }
 

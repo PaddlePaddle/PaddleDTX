@@ -4,7 +4,7 @@ docs_dir: source
 theme:
   name: 'material'
   logo: _static/logo.png
-  favicon: _static/logo.png
+  favicon: _static/favicon.ico
   # custom_dir: source
   # 404 page
   # static_templates:

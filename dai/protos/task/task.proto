@@ -47,11 +47,12 @@ message TaskResponse {
 
 // ListTaskRequest is message sent to Executor server to list tasks
 message ListTaskRequest {
-    bytes pubKey = 1;  // requester or executor's public key
-    string status = 2;
-    int64 timeStart = 3;
-    int64 timeEnd = 4;
-    int64 limit = 5;
+    bytes pubKey = 1;  // requester's public key
+    bytes ePubKey = 2;  // executor's public key
+    string status = 3;
+    int64 timeStart = 4;
+    int64 timeEnd = 5;
+    int64 limit = 6;
 }
 
 // DataForTask is a message received from Executor

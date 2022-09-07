@@ -128,11 +128,12 @@ type StartFLTaskOptions struct {
 // ListFLTaskOptions contains parameters for listing tasks
 // support listing tasks a requester published or tasks an executor involved
 type ListFLTaskOptions struct {
-	PubKey    []byte `json:"pubKey"`    // requester or executor's public key
-	Status    string `json:"status"`    // task status
-	TimeStart int64  `json:"timeStart"` // task publish time period, only task published after TimeStart and before TimeEnd will be listed
-	TimeEnd   int64  `json:"timeEnd"`
-	Limit     int64  `json:"limit"` // limit number of tasks in list request, default 'all'
+	PubKey     []byte `json:"pubKey"`    // requester's public key
+	ExecPubKey []byte `json:"exePubKey"` // executor's public key
+	Status     string `json:"status"`    // task status
+	TimeStart  int64  `json:"timeStart"` // task publish time period, only task published after TimeStart and before TimeEnd will be listed
+	TimeEnd    int64  `json:"timeEnd"`
+	Limit      int64  `json:"limit"` // limit number of tasks in list request, default 'all'
 }
 
 // FLTaskConfirmOptions contains parameters for confirming task
@@ -162,4 +163,3 @@ type AddNodeOptions struct {
 	Node      ExecutorNode `json:"node"`
 	Signature []byte       `json:"signature"`
 }
-

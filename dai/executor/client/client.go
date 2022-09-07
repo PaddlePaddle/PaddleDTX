@@ -63,19 +63,25 @@ func (c *Client) GetTaskById(ctx context.Context, id string) (*pbTask.FLTask, er
 // status is task status to search
 // only task published after "start" before "end" will be listed
 // limit is the maximum number of tasks to response
-func (c *Client) ListTask(ctx context.Context, pubkeyStr, status string, start, end,
+func (c *Client) ListTask(ctx context.Context, rPubkeyStr, ePubkeyStr, status string, start, end,
 	limit int64) (ts *pbTask.FLTasks, err error) {
 	if c.conn != nil {
 		defer c.conn.Close()
 	}
 
-	// check public key
-	pubkey, err := hex.DecodeString(pubkeyStr)
+	// check requester public key
+	rPubkey, err := hex.DecodeString(rPubkeyStr)
 	if err != nil {
-		return ts, errorx.Wrap(err, "failed to decode public key")
+		return ts, errorx.Wrap(err, "failed to decode requester public key")
+	}
+	// check executor public key
+	ePubkey, err := hex.DecodeString(ePubkeyStr)
+	if err != nil {
+		return ts, errorx.Wrap(err, "failed to decode executor public key")
 	}
 	in := &pbTask.ListTaskRequest{
-		PubKey:    pubkey[:],
+		PubKey:    rPubkey[:],
+		EPubKey:   ePubkey[:],
 		TimeStart: start,
 		TimeEnd:   end,
 		Status:    status,
