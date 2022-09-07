@@ -235,19 +235,24 @@ func (c *Client) GetTaskById(id string) (t blockchain.FLTask, err error) {
 // status is task status to search
 // only task published after "start" before "end" will be listed
 // limit is the maximum number of tasks to response
-func (c *Client) ListTask(pubkeyStr, status string, start, end,
+func (c *Client) ListTask(rPubkeyStr, ePubkeyStr, status string, start, end,
 	limit int64) (tasks blockchain.FLTasks, err error) {
-	pubkey, err := hex.DecodeString(pubkeyStr)
+	rPubkey, err := hex.DecodeString(rPubkeyStr)
 	if err != nil {
-		return tasks, errorx.Wrap(err, "failed to decode public key")
+		return tasks, errorx.Wrap(err, "failed to decode requester public key")
+	}
+	ePubkey, err := hex.DecodeString(ePubkeyStr)
+	if err != nil {
+		return tasks, errorx.Wrap(err, "failed to decode executor public key")
 	}
 
 	tasks, err = c.XchainClient.ListTask(&blockchain.ListFLTaskOptions{
-		PubKey:    pubkey[:],
-		TimeStart: start,
-		TimeEnd:   end,
-		Status:    status,
-		Limit:     limit,
+		PubKey:     rPubkey[:],
+		ExecPubKey: ePubkey[:],
+		TimeStart:  start,
+		TimeEnd:    end,
+		Status:     status,
+		Limit:      limit,
 	})
 	return
 }

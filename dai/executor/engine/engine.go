@@ -83,11 +83,12 @@ func (e *Engine) GetMpcService() *cluster.Service {
 // ListTask lists tasks from blockchain by requester or executor's Public Key
 func (e *Engine) ListTask(ctx context.Context, in *pbTask.ListTaskRequest) (*pbTask.FLTasks, error) {
 	listOptions := &blockchain.ListFLTaskOptions{
-		PubKey:    in.PubKey,
-		Status:    in.Status,
-		TimeStart: in.TimeStart,
-		TimeEnd:   in.TimeEnd,
-		Limit:     in.Limit,
+		PubKey:     in.PubKey,
+		ExecPubKey: in.EPubKey,
+		Status:     in.Status,
+		TimeStart:  in.TimeStart,
+		TimeEnd:    in.TimeEnd,
+		Limit:      in.Limit,
 	}
 	// invoke contract to list tasks
 	fts, err := e.chain.ListTask(listOptions)

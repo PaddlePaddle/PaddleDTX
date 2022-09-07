@@ -79,11 +79,11 @@ func (t *TaskMonitor) loopRequest(ctx context.Context) {
 func (t *TaskMonitor) getUnconfirmedTaskAndConfirm() error {
 	// 1. find all confirming tasks from chain
 	taskList, err := t.Blockchain.ListTask(&blockchain.ListFLTaskOptions{
-		PubKey:    t.PublicKey[:],
-		Status:    blockchain.TaskConfirming,
-		TimeStart: 0,
-		TimeEnd:   time.Now().UnixNano(),
-		Limit:     blockchain.TaskListMaxNum,
+		ExecPubKey: t.PublicKey[:],
+		Status:     blockchain.TaskConfirming,
+		TimeStart:  0,
+		TimeEnd:    time.Now().UnixNano(),
+		Limit:      blockchain.TaskListMaxNum,
 	})
 	if err != nil {
 		return errorx.Wrap(err, "failed to find Confirming task list")
@@ -245,11 +245,11 @@ func (t *TaskMonitor) publishFileAuthApplication(fileID, taskID string, fileOwne
 func (t *TaskMonitor) getToProcessTaskAndStart() error {
 	// 1. find all ready tasks from chain
 	taskList, err := t.Blockchain.ListTask(&blockchain.ListFLTaskOptions{
-		PubKey:    t.PublicKey[:],
-		Status:    blockchain.TaskToProcess,
-		TimeStart: 0,
-		TimeEnd:   time.Now().UnixNano(),
-		Limit:     blockchain.TaskListMaxNum,
+		ExecPubKey: t.PublicKey[:],
+		Status:     blockchain.TaskToProcess,
+		TimeStart:  0,
+		TimeEnd:    time.Now().UnixNano(),
+		Limit:      blockchain.TaskListMaxNum,
 	})
 	if err != nil {
 		return errorx.Wrap(err, "failed to find ToProcess task list")
@@ -309,10 +309,10 @@ func (t *TaskMonitor) RetryProcessingTask(ctx context.Context) {
 
 	// 1. find all processing task
 	taskList, err := t.Blockchain.ListTask(&blockchain.ListFLTaskOptions{
-		PubKey:    t.PublicKey[:],
-		Status:    blockchain.TaskProcessing,
-		TimeStart: 0,
-		TimeEnd:   time.Now().UnixNano(),
+		ExecPubKey: t.PublicKey[:],
+		Status:     blockchain.TaskProcessing,
+		TimeStart:  0,
+		TimeEnd:    time.Now().UnixNano(),
 	})
 
 	if err != nil {

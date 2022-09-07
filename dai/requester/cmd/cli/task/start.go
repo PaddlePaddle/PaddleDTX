@@ -54,7 +54,7 @@ func init() {
 	rootCmd.AddCommand(startTaskByIDCmd)
 
 	startTaskByIDCmd.Flags().StringVarP(&privateKey, "privkey", "k", "", "requester private key hex string")
-	startTaskByIDCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./keys", "key path")
+	startTaskByIDCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./reqkeys", "key path")
 	startTaskByIDCmd.Flags().StringVarP(&id, "id", "i", "", "id of task to start, but only Ready and Failed tasks can be started")
 
 	startTaskByIDCmd.MarkFlagRequired("id")

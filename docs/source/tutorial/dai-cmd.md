@@ -67,7 +67,7 @@ The subcommand `requester-cli key` used to generate the Requester client private
 
 生成节点公私钥：
 ```
-$  ./requester-cli key genkey -o ./keys
+$  ./requester-cli key genkey -o ./reqkeys
 ```
 
 ### 3. 查询任务执行节点
@@ -144,8 +144,9 @@ $  ./requester-cli task getbyid  -i 87d22f67-6b84-4266-aec5-581ac3df09f9
 #### 4.2 list
 |  flag  | short flag | explanation | necessary |
 | :------: | :----------: | :------------: | :---------: |
-|   --pubkey  |      -p    |   public key |    you can replace 'pubkey' with 'keyPath'    |
-|   --keyPath  |        |  the file path of the requester client's public key |    no, default './keys'    |
+|   --rPubkey  |      -r    |  requester public key |    no, default './reqkeys/public.key'   |
+|   --ePubkey  |      -p    |  executor public key  |    no, executor public key hex string    |
+|   --keyPath  |        |  the file path of the requester client's public key |    no, default './reqkeys'    |
 |   --st  |      -s    |   start of time ranges |    no    |
 |   --et  |      -e    |   end of time ranges |    no, default 'now'    |
 |   --limit  |      -l    |   maximum of tasks can be queried |    no, default is 100    |
@@ -153,7 +154,7 @@ $  ./requester-cli task getbyid  -i 87d22f67-6b84-4266-aec5-581ac3df09f9
 
 查询已发布的任务列表：
 ```
-$  ./requester-cli task list  --keyPath ./keys
+$  ./requester-cli task list  --keyPath ./reqkeys
 ```
 
 #### 4.3 publish
@@ -162,7 +163,7 @@ $  ./requester-cli task list  --keyPath ./keys
 | :-------------: | :----------: | :------------: | :---------: |
 |   --name  |      -n    |   task's name |    yes    |
 |   --privkey  |      -k    |   private key |    no, can be replaced by 'keyPath'    |
-|   --keyPath  |        |  the file path of the requester client's private key |    no, default './keys'    |
+|   --keyPath  |        |  the file path of the requester client's private key |    no, default './reqkeys'    |
 |   --type  |      -t    |   task type, 'train' or 'predict' |   yes    |
 |   --algorithm  |      -a    |   algorithm assigned to task, 'linear-vl' or 'logistic-vl' |    yes    |
 |   --files  |    -f      |  files IDs with ',' as delimiter |   yes   |
@@ -196,11 +197,11 @@ $  ./requester-cli task publish -a "linear-vl" -l "MEDV" -k 14a54c188d0071bc1b16
 | :------: | :----------: | :------------: | :---------: |
 |   --id  |      -i    |   task's id |    yes    |
 |   --privkey  |      -k    |   private key |    you can replace 'privkey' with 'keyPath'    |
-|   --keyPath  |        |  the file path of the requester client's private key |    no, default './keys'    |
+|   --keyPath  |        |  the file path of the requester client's private key |    no, default './reqkeys'    |
 
 启动发布的任务：
 ```
-$  ./requester-cli task start -i a109984d-d741-4aea-800e-a5d0cf2b1eaf --keyPath ./keys
+$  ./requester-cli task start -i a109984d-d741-4aea-800e-a5d0cf2b1eaf --keyPath ./reqkeys
 ```
 
 #### 4.5 result
@@ -208,12 +209,12 @@ $  ./requester-cli task start -i a109984d-d741-4aea-800e-a5d0cf2b1eaf --keyPath 
 | :------: | :----------: | :------------: | :---------: |
 |   --id  |      -i    |   task's id |    yes    |
 |   --privkey  |      -k    |   private key |    you can replace 'privkey' with 'keyPath'    |
-|   --keyPath  |        |  the file path of the requester client's private key |    no, default './keys'    |
+|   --keyPath  |        |  the file path of the requester client's private key |    no, default './reqkeys'    |
 |   --output  |      -o    |  file to store prediction outcomes  |    yes    |
 
 获取预测任务的预测结果：
 ``` 
-$  ./requester-cli task result -i a109984d-d741-4aea-800e-a5d0cf2b1eaf --keyPath ./keys -o ./output.csv --config ./conf/config.toml
+$  ./requester-cli task result -i a109984d-d741-4aea-800e-a5d0cf2b1eaf --keyPath ./reqkeys -o ./output.csv --config ./conf/config.toml
 ```
 
 ## 任务执行节点
@@ -271,7 +272,8 @@ $ ./executor-cli --host localhost:8184 task getbyid -i 87d22f67-6b84-4266-aec5-5
 
 |  flag  | short flag | explanation | necessary |
 | :------: | :----------: | :------------: | :------------: |
-|   --pubkey  |      -p    |   public key |  requester or executor public key hex string, you can replace 'pubkey' with 'keyPath'    |
+|   --ePubkey  |      -p    |  executor public key  |  no, default './keys/public.key'   |
+|   --rPubkey  |      -r    |  requester public key |    no, requester public key hex string    |
 |   --keyPath  |        |  the file path of the node's public key |    no, default './keys'    |
 |   --start  |      -s    |   start of time ranges |    no    |
 |   --end  |      -e    |   end of time ranges |    no, default 'now'    |

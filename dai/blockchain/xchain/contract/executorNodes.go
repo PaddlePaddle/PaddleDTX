@@ -18,6 +18,7 @@ import (
 	"regexp"
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
+	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 	"github.com/xuperchain/xuperchain/core/contractsdk/go/code"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
@@ -50,8 +51,14 @@ func (x *Xdata) RegisterExecutorNode(ctx code.Context) code.Response {
 		return code.Error(errorx.New(errorx.ErrCodeParam,
 			"bad param, nodeName only supports numbers and lowercase letters with a length of 4-16"))
 	}
+
+	// get the message to sign
+	msg, err := util.GetSigMessage(opt)
+	if err != nil {
+		return code.Error(errorx.Internal(err, "failed to get the message to sign"))
+	}
 	// verify sig
-	if err := x.checkSign(opt.Signature, node.ID, s); err != nil {
+	if err := x.checkSign(opt.Signature, node.ID, []byte(msg)); err != nil {
 		return code.Error(err)
 	}
 

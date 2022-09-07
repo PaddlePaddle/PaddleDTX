@@ -83,6 +83,12 @@ func (x *Xdata) PublishTask(ctx code.Context) code.Response {
 			return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
 				"fail to put executor listIndex-fltask on xchain"))
 		}
+		// put requester and executor listIndex-fltask on xchain
+		index_re := packRequesterExecutorTaskIndex(ds.Executor, t)
+		if err := ctx.PutObject([]byte(index_re), []byte(t.TaskID)); err != nil {
+			return code.Error(errorx.NewCode(err, errorx.ErrCodeWriteBlockchain,
+				"fail to put requester and executor listIndex-fltask on xchain"))
+		}
 	}
 	return code.OK([]byte("added"))
 }
@@ -104,7 +110,7 @@ func (x *Xdata) ListTask(ctx code.Context) code.Response {
 	var tasks blockchain.FLTasks
 
 	// get fltasks by list_prefix
-	prefix := packFlTaskFilter(opt.PubKey)
+	prefix := packFlTaskFilter(opt.PubKey, opt.ExecPubKey)
 	iter := ctx.NewIterator(code.PrefixRange([]byte(prefix)))
 	defer iter.Close()
 	for iter.Next() {

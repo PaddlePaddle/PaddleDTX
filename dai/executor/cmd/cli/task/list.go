@@ -27,8 +27,9 @@ import (
 )
 
 var (
-	status string
-	pubkey string
+	status  string
+	rPubkey string
+	ePubkey string
 )
 
 // listTasksCmd lists tasks from blockchain with specific participant public key and task status
@@ -59,16 +60,16 @@ var listTasksCmd = &cobra.Command{
 			fmt.Printf("invalid limit, the value must smaller than %v \n", blockchain.TaskListMaxNum)
 			return
 		}
-		if pubkey == "" {
+		if ePubkey == "" {
 			pubkeyBytes, err := file.ReadFile(keyPath, file.PublicKeyFileName)
 			if err != nil {
 				fmt.Printf("Read publicKey failed, err: %v\n", err)
 				return
 			}
-			pubkey = strings.TrimSpace(string(pubkeyBytes))
+			ePubkey = strings.TrimSpace(string(pubkeyBytes))
 		}
 
-		tasks, err := client.ListTask(context.Background(), pubkey, status, startTime, endTime.UnixNano(), limit)
+		tasks, err := client.ListTask(context.Background(), rPubkey, ePubkey, status, startTime, endTime.UnixNano(), limit)
 		if err != nil {
 			fmt.Printf("ListTask failed：%v\n", err)
 			return
@@ -87,7 +88,8 @@ var listTasksCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(listTasksCmd)
 
-	listTasksCmd.Flags().StringVarP(&pubkey, "pubkey", "p", "", "requester or executor public key hex string, support listing tasks a requester published or tasks an executor involved")
+	listTasksCmd.Flags().StringVarP(&ePubkey, "ePubkey", "p", "", "executor public key hex string, list executor's tasks, default './keys/public.key'")
+	listTasksCmd.Flags().StringVarP(&rPubkey, "rPubkey", "r", "", "requester public key hex string, list requester's tasks")
 	listTasksCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./keys", "executor's key path")
 	listTasksCmd.Flags().StringVarP(&start, "start", "s", "", "start of time range during which tasks were published, example '2021-06-10 12:00:00'")
 	listTasksCmd.Flags().StringVarP(&end, "end", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate), "end of time range during which tasks were published, example '2021-06-10 12:00:00'")

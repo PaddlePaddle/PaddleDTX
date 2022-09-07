@@ -26,11 +26,12 @@ import (
 )
 
 var (
-	pubkey string
-	start  string
-	end    string
-	status string
-	limit  int64
+	rPubkey string
+	ePubkey string
+	start   string
+	end     string
+	status  string
+	limit   int64
 )
 
 // listTasksCmd lists tasks from blockchain
@@ -62,16 +63,16 @@ var listTasksCmd = &cobra.Command{
 			fmt.Printf("invalid limit, the value must smaller than %v \n", blockchain.TaskListMaxNum)
 			return
 		}
-		if pubkey == "" {
+		if rPubkey == "" {
 			pubkeyBytes, err := file.ReadFile(keyPath, file.PublicKeyFileName)
 			if err != nil {
 				fmt.Printf("Read publicKey failed, err: %v\n", err)
 				return
 			}
-			pubkey = strings.TrimSpace(string(pubkeyBytes))
+			rPubkey = strings.TrimSpace(string(pubkeyBytes))
 		}
 
-		tasks, err := client.ListTask(pubkey, status, startTime, endTime.UnixNano(), limit)
+		tasks, err := client.ListTask(rPubkey, ePubkey, status, startTime, endTime.UnixNano(), limit)
 		if err != nil {
 			fmt.Printf("ListTask failed：%v\n", err)
 			return
@@ -89,8 +90,9 @@ var listTasksCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(listTasksCmd)
 
-	listTasksCmd.Flags().StringVarP(&pubkey, "pubkey", "p", "", "requester or executor's public key hex string, support listing tasks who published or involved")
-	listTasksCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./keys", "key path")
+	listTasksCmd.Flags().StringVarP(&rPubkey, "rPubkey", "r", "", "requester public key hex string, list requester's tasks, default './reqkeys/public.key'")
+	listTasksCmd.Flags().StringVarP(&ePubkey, "ePubkey", "p", "", "executor public key hex string, list executor's tasks")
+	listTasksCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./reqkeys", "key path")
 	listTasksCmd.Flags().StringVarP(&start, "st", "s", "", "start of time range during which tasks were published, example '2021-06-10 12:00:00'")
 	listTasksCmd.Flags().StringVarP(&end, "et", "e", time.Unix(0, time.Now().UnixNano()).Format(timeTemplate), "end of time range during which tasks were published, example '2021-06-10 12:00:00'")
 	listTasksCmd.Flags().Int64VarP(&limit, "limit", "l", blockchain.TaskListMaxNum, "maximum of tasks can be queried")

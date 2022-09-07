@@ -186,7 +186,7 @@ func init() {
 
 	publishCmd.Flags().StringVarP(&taskName, "name", "n", "", "task's name")
 	publishCmd.Flags().StringVarP(&privateKey, "privkey", "k", "", "requester's private key hex string")
-	publishCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./keys", "requester's key path")
+	publishCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./reqkeys", "requester's key path")
 	publishCmd.Flags().StringVarP(&taskType, "type", "t", "", "task type, 'train' or 'predict'")
 	publishCmd.Flags().StringVarP(&algorithm, "algorithm", "a", "", "algorithm assigned to task, 'linear-vl' and 'logistic-vl' are supported")
 	publishCmd.Flags().StringVarP(&files, "files", "f", "", "sample files IDs with ',' as delimiter, like '123,456'")

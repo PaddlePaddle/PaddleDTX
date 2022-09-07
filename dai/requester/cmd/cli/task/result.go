@@ -59,7 +59,7 @@ func init() {
 	rootCmd.AddCommand(getPredictResCmd)
 
 	getPredictResCmd.Flags().StringVarP(&privateKey, "privkey", "k", "", "requester private key hex string")
-	getPredictResCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./keys", "requester's key path")
+	getPredictResCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./reqkeys", "requester's key path")
 	getPredictResCmd.Flags().StringVarP(&id, "id", "i", "", "prediction task id")
 	getPredictResCmd.Flags().StringVarP(&output, "output", "o", "", "file to store prediction outcomes")
 
