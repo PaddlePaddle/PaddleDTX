@@ -137,18 +137,21 @@ func newFileMaintainer(conf *config.MonitorConf, opt *NewEngineOption, interval 
 
 // Start starts Monitor
 func (m *Monitor) Start(ctx context.Context) error {
-	if m.challengingMonitor != nil {
-		serType := config.GetServerType()
-		switch serType {
-		case config.NodeTypeDataOwner:
+	serType := config.GetServerType()
+	switch serType {
+	case config.NodeTypeDataOwner:
+		m.fileMaintainer.Migrate(ctx)
+		if m.challengingMonitor != nil {
 			m.challengingMonitor.StartChallengeRequest(ctx)
-			m.fileMaintainer.Migrate(ctx)
-		case config.NodeTypeStorage:
-			if err := m.nodeMaintainer.NodeAutoRegister(); err != nil {
-				return err
-			}
-			m.nodeMaintainer.StartFileClear(ctx)
-			m.nodeMaintainer.HeartBeat(ctx)
+		}
+
+	case config.NodeTypeStorage:
+		if err := m.nodeMaintainer.NodeAutoRegister(); err != nil {
+			return err
+		}
+		m.nodeMaintainer.StartFileClear(ctx)
+		m.nodeMaintainer.HeartBeat(ctx)
+		if m.challengingMonitor != nil {
 			m.challengingMonitor.StartChallengeAnswer(ctx)
 		}
 	}
