@@ -109,6 +109,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 		cancel()
 		return nil, errorx.New(errorx.ErrCodeNotAuthorized, "not authorized")
 	}
+	opt.FileID = f.ID
 
 	// recover structure
 	fs, err := e.recoverChainFileStructure(f.Structure, opt.FileID)
@@ -152,10 +153,10 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 			r, err := e.copier.Pull(ctx, target.ID, target.StorIndex, f.ID, &node)
 			if err != nil {
 				logger.WithFields(logrus.Fields{
-					"slice_id":    target.ID,
+					"slice_id":         target.ID,
 					"slice_stor_index": target.StorIndex,
-					"file_id":     opt.FileID,
-					"target_node": string(node.ID),
+					"file_id":          opt.FileID,
+					"target_node":      string(node.ID),
 				}).WithError(err).Warn("failed to pull slice")
 				continue
 			}
