@@ -71,6 +71,14 @@
     float: right;
 }
 
+.injected {
+    display: none;
+}
+
+.md-sidebar {
+    width: 10.1rem
+}
+
 header .md-header__source {
     font-size: 14px;
     color: var(--main-deep-color);
