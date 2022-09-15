@@ -67,6 +67,10 @@
     font-size: 12px;
 }
 
+.md-nav__icon {
+    float: right;
+}
+
 header .md-header__source {
     font-size: 14px;
     color: var(--main-deep-color);
