@@ -11,3 +11,10 @@ type = 'xchain'
     contractAccount = "XC1111111111111111@xuper"
     chainAddress = "10.144.94.17:37104"
     chainName = "xuper"
+
+[dataOwner.blockchain.fabric]
+    configFile = "./conf/fabric/config.yaml"
+    channelId = "mychannel"
+    chaincode = "mycc"
+    userName = "Admin"
+    orgName = "org1"

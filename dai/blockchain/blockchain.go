@@ -162,4 +162,3 @@ type AddNodeOptions struct {
 	Node      ExecutorNode `json:"node"`
 	Signature []byte       `json:"signature"`
 }
-

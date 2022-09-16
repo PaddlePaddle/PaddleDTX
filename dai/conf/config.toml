@@ -98,7 +98,8 @@ allowCros = false
 # Blockchain used by the executor.
 # Blockchain records the computing and scheduling process of task, to enhance the credibility of the system.
 [executor.blockchain]
-    # blockchain type, only 'xchain' supported currently
+    # blockchain type,  'xchain' 'fabric' supported currently
+
     type = 'xchain'
     [executor.blockchain.xchain]
         mnemonic = "助 应 讨 乳 拔 夏 弃 从 干 歌 吊 像 目 那 革 摩 姜 扣 赵 秘 扬 杜 烷 法"
@@ -106,6 +107,14 @@ allowCros = false
         contractAccount = "XC1111111111111111@xuper"
         chainAddress = "10.144.94.17:37104"
         chainName = "xuper"
+
+    [dataOwner.blockchain.fabric]
+        configFile = "./conf/fabric/config.yaml"
+        channelId = "mychannel"
+        chaincode = "mycc"
+        userName = "Admin"
+        orgName = "org1"
+
 
 #########################################################################
 #

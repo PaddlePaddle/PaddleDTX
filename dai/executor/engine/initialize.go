@@ -21,6 +21,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/peer"
 
+	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain/fabric"
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain/xchain"
 	"github.com/PaddlePaddle/PaddleDTX/dai/config"
 	"github.com/PaddlePaddle/PaddleDTX/dai/executor/handler"
@@ -92,6 +93,8 @@ func newBlockchain(conf *config.ExecutorBlockchainConf) (b handler.Blockchain, e
 	switch conf.Type {
 	case "xchain":
 		b, err = xchain.New(conf.Xchain)
+	case "fabric":
+		b, err = fabric.New(conf.Fabric)
 	default:
 		return b, errorx.New(errorx.ErrCodeConfig, "invalid blockchain type: %s", conf.Type)
 	}
