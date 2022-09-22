@@ -16,7 +16,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain/fabric/chaincode/core"
+	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain/fabric/chaincode/core"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )

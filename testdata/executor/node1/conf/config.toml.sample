@@ -40,13 +40,20 @@ allowCros = true
         localPredictStoragePath = "./predictions"
 
 [executor.blockchain]
-    type = 'xchain'
+    type = "${BLOCKCHAIN_TYPE}"
     [executor.blockchain.xchain]
         mnemonic = "${MNEMONIC}"
         contractName = "${CONTRACT_NAME}"
         contractAccount = "XC${CONTRACT_ACCOUNT}@xuper"
         chainAddress = "xchain1.node.com:37101"
         chainName = "xuper"
+
+    [executor.blockchain.fabric]
+        configFile = "/home/conf/fabric/config.yaml"
+        channelId = "${CHANNEL_NAME}"
+        chaincode = "${CONTRACT_NAME}"
+        userName = "Admin"
+        orgName = "Org1"
 
 [log]
 level = "debug"
