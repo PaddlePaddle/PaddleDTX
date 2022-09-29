@@ -27,9 +27,9 @@ func checkConfig(configPath string) error {
 		return errorx.New(errorx.ErrCodeConfig, "load config file failed: %s", err)
 	}
 	cliConf := config.GetCliConf()
-	// only support xchain
+
 	blockchainType := cliConf.Type
-	if blockchainType != "xchain" {
+	if blockchainType != "xchain" && blockchainType != "fabric" {
 		return errorx.New(errorx.ErrCodeConfig, "invalid blockchain type: %s", blockchainType)
 	}
 	return nil

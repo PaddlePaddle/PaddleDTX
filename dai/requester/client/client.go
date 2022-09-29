@@ -29,6 +29,8 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
+	fabricblockchain "github.com/PaddlePaddle/PaddleDTX/dai/blockchain/xchain"
+	xchainblockchain "github.com/PaddlePaddle/PaddleDTX/dai/blockchain/xchain"
 	"github.com/PaddlePaddle/PaddleDTX/dai/config"
 	"github.com/PaddlePaddle/PaddleDTX/dai/crypto/vl/common/csv"
 	pbCom "github.com/PaddlePaddle/PaddleDTX/dai/protos/common"
@@ -61,6 +63,18 @@ type Client struct {
 	chainClient Blockchain
 }
 
+func newChainClient(conf *config.ExecutorBlockchainConf) (b Blockchain, err error) {
+	switch conf.Type {
+	case "xchain":
+		b, err = xchainblockchain.New(conf.Xchain)
+	case "fabric":
+		b, err = fabricblockchain.New(conf.Fabric)
+	default:
+		return b, errorx.New(errorx.ErrCodeConfig, "invalid blockchain type: %s", conf.Type)
+	}
+	return b, err
+}
+
 // GetRequestClient returns client for Requester by blockchain configuration
 func GetRequestClient(configPath string) (*Client, error) {
 	// check blockchain config yaml
@@ -70,7 +84,7 @@ func GetRequestClient(configPath string) (*Client, error) {
 	}
 	// clear the standard output of the chain contract invoke
 	log.SetOutput(ioutil.Discard)
-	chainClient, err := blockchain.New(config.GetCliConf().Type)
+	chainClient, err := newChainClient(config.GetCliConf())
 	if err != nil {
 		return nil, err
 	}
