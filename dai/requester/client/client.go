@@ -29,7 +29,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
-	xchainblockchain "github.com/PaddlePaddle/PaddleDTX/dai/blockchain/xchain"
 	"github.com/PaddlePaddle/PaddleDTX/dai/config"
 	"github.com/PaddlePaddle/PaddleDTX/dai/crypto/vl/common/csv"
 	pbCom "github.com/PaddlePaddle/PaddleDTX/dai/protos/common"
@@ -38,8 +37,28 @@ import (
 	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
+type Blockchain interface {
+	// executor operation
+	GetExecutorNodeByName(name string) (blockchain.ExecutorNode, error)
+	ListExecutorNodes() (blockchain.ExecutorNodes, error)
+	GetExecutorNodeByID(id string) (blockchain.ExecutorNode, error)
+	// task operation
+	GetTaskById(id string) (blockchain.FLTask, error)
+	PublishTask(opt *blockchain.PublishFLTaskOptions) error
+	ListTask(opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error)
+	StartTask(opt *blockchain.StartFLTaskOptions) error
+	// get file stored in xuperDB by id
+	GetFileByID(id string) (xdbchain.File, error)
+	// GetAuthByID get file authorization application detail by authID
+	GetAuthApplicationByID(authID string) (xdbchain.FileAuthApplication, error)
+	// query the list of authorization applications
+	ListFileAuthApplications(opt *xdbchain.ListFileAuthOptions) (xdbchain.FileAuthApplications, error)
+
+	Close()
+}
+
 type Client struct {
-	XchainClient *xchainblockchain.XChain
+	chainClient Blockchain
 }
 
 // GetRequestClient returns client for Requester by blockchain configuration
@@ -51,13 +70,11 @@ func GetRequestClient(configPath string) (*Client, error) {
 	}
 	// clear the standard output of the chain contract invoke
 	log.SetOutput(ioutil.Discard)
-
-	// get blockchain client
-	xchainClient, err := xchainblockchain.New(config.GetCliConf().Xchain)
+	chainClient, err := blockchain.New(config.GetCliConf().Type)
 	if err != nil {
 		return nil, err
 	}
-	return &Client{XchainClient: xchainClient}, nil
+	return &Client{chainClient: chainClient}, nil
 }
 
 // PublishOptions define parameters used to publishing a task
@@ -128,7 +145,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 	var isTagPart bool
 	isLabelExist := 0
 	for index, fileID := range fileIDs {
-		file, err := c.XchainClient.GetFileByID(fileID)
+		file, err := c.chainClient.GetFileByID(fileID)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +171,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 		}
 
 		// get dataID address
-		executorNode, err := c.XchainClient.GetExecutorNodeByName(executors[index])
+		executorNode, err := c.chainClient.GetExecutorNodeByName(executors[index])
 		if err != nil {
 			return nil, errorx.Wrap(err, "failed to get executor node by node name")
 		}
@@ -213,8 +230,7 @@ func (c *Client) Publish(opt PublishOptions) (taskId string, err error) {
 		FLTask:    &task,
 		Signature: sig[:],
 	}
-
-	if err := c.XchainClient.PublishTask(pubOpt); err != nil {
+	if err := c.chainClient.PublishTask(pubOpt); err != nil {
 		return taskId, err
 	}
 	return task.TaskID, nil
@@ -222,7 +238,7 @@ func (c *Client) Publish(opt PublishOptions) (taskId string, err error) {
 
 // GetTaskById gets task by taskID
 func (c *Client) GetTaskById(id string) (t blockchain.FLTask, err error) {
-	t, err = c.XchainClient.GetTaskById(id)
+	t, err = c.chainClient.GetTaskById(id)
 	if err != nil {
 		return t, err
 	}
@@ -240,8 +256,7 @@ func (c *Client) ListTask(pubkeyStr, status string, start, end,
 	if err != nil {
 		return tasks, errorx.Wrap(err, "failed to decode public key")
 	}
-
-	tasks, err = c.XchainClient.ListTask(&blockchain.ListFLTaskOptions{
+	tasks, err = c.chainClient.ListTask(&blockchain.ListFLTaskOptions{
 		PubKey:    pubkey[:],
 		TimeStart: start,
 		TimeEnd:   end,
@@ -267,7 +282,7 @@ func (c *Client) StartTask(privateKey, id string) (err error) {
 		return errorx.Wrap(err, "failed to sign fl task")
 	}
 	sParams.Signature = sig[:]
-	err = c.XchainClient.StartTask(&sParams)
+	err = c.chainClient.StartTask(&sParams)
 	return err
 }
 
@@ -280,7 +295,7 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 	}
 
 	// get prediction task
-	task, err := c.XchainClient.GetTaskById(taskID)
+	task, err := c.chainClient.GetTaskById(taskID)
 	if err != nil {
 		return err
 	}
@@ -289,7 +304,7 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 		return errorx.New(errorx.ErrCodeParam, "invalid task type, not a predict task")
 	}
 	// get training task
-	modelTask, err := c.XchainClient.GetTaskById(task.AlgoParam.ModelTaskID)
+	modelTask, err := c.chainClient.GetTaskById(task.AlgoParam.ModelTaskID)
 	if err != nil {
 		return err
 	}
@@ -344,7 +359,7 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 
 // ListExecutorNodes list executor nodes
 func (c *Client) ListExecutorNodes() (nodes blockchain.ExecutorNodes, err error) {
-	return c.XchainClient.ListExecutorNodes()
+	return c.chainClient.ListExecutorNodes()
 }
 
 // GetExecutorNodeByID get executor node by nodeID
@@ -353,20 +368,20 @@ func (c *Client) GetExecutorNodeByID(pubkeyStr string) (node blockchain.Executor
 	if err != nil {
 		return node, errorx.Wrap(err, "failed to decode executor public key")
 	}
-	return c.XchainClient.GetExecutorNodeByID(pubkeyStr)
+	return c.chainClient.GetExecutorNodeByID(pubkeyStr)
 }
 
 // GetExecutorNodeByName get executor node by nodeName
 func (c *Client) GetExecutorNodeByName(name string) (node blockchain.ExecutorNode, err error) {
-	return c.XchainClient.GetExecutorNodeByName(name)
+	return c.chainClient.GetExecutorNodeByName(name)
 }
 
 // GetAuthByID get file authorization application detail by authID
 func (c *Client) GetFileAuthByID(id string) (fileAuth xdbchain.FileAuthApplication, err error) {
-	return c.XchainClient.GetAuthApplicationByID(id)
+	return c.chainClient.GetAuthApplicationByID(id)
 }
 
 // ListFileAuthApplications query the list of authorization applications
 func (c *Client) ListFileAuthApplications(opt *xdbchain.ListFileAuthOptions) (fileAuths xdbchain.FileAuthApplications, err error) {
-	return c.XchainClient.ListFileAuthApplications(opt)
+	return c.chainClient.ListFileAuthApplications(opt)
 }
