@@ -21,3 +21,4 @@ require (
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
 	google.golang.org/grpc v1.41.0
 )
+replace github.com/go-kit/kit => github.com/go-kit/kit v0.8.0

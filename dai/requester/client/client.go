@@ -29,7 +29,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
-	fabricblockchain "github.com/PaddlePaddle/PaddleDTX/dai/blockchain/xchain"
+	fabricblockchain "github.com/PaddlePaddle/PaddleDTX/dai/blockchain/fabric"
 	xchainblockchain "github.com/PaddlePaddle/PaddleDTX/dai/blockchain/xchain"
 	"github.com/PaddlePaddle/PaddleDTX/dai/config"
 	"github.com/PaddlePaddle/PaddleDTX/dai/crypto/vl/common/csv"

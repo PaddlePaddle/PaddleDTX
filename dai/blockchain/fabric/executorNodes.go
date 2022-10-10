@@ -58,7 +58,7 @@ func (f *Fabric) ListExecutorNodes() (blockchain.ExecutorNodes, error) {
 // GetExecutorNodeByID gets Executor node by ID
 func (f *Fabric) GetExecutorNodeByID(id string) (node blockchain.ExecutorNode, err error) {
 	mName := "GetExecutorNodeByID"
-	s, err := f.QueryContract([][]byte{id}, mName)
+	s, err := f.QueryContract([][]byte{[]byte(id)}, mName)
 	if err != nil {
 		return node, err
 	}

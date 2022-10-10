@@ -35,11 +35,11 @@ type Fabric struct {
 // New creates a XChain client used for connecting and requesting blockchain
 func New(conf *config.FabricConf) (*Fabric, error) {
 	config := &xdataconfig.FabricConf{
-		ConfigFile:  conf.ConfigFile,
-		ChannelID:   conf.ChannelID,
-		ChaincodeID: conf.Chaincode,
-		UserName:    conf.UserName,
-		OrgName:     conf.OrgName,
+		ConfigFile: conf.ConfigFile,
+		ChannelID:  conf.ChannelID,
+		Chaincode:  conf.Chaincode,
+		UserName:   conf.UserName,
+		OrgName:    conf.OrgName,
 	}
 
 	fa, err := fabricblockchain.New(config)
@@ -49,13 +49,5 @@ func New(conf *config.FabricConf) (*Fabric, error) {
 	}
 	return &Fabric{*fa}, nil
 }
-
 func (f *Fabric) Close() {
-	if err := f.Fabric.FabricClient.FabricConn.Close(); err != nil {
-		logger.WithError(err).Error("failed to close fabric client")
-	}
-	if err := f.Fabric.FabricClient.XendorserConn.Close(); err != nil {
-		logger.WithError(err).Error("failed to close endorser client")
-	}
-	logger.Info("close fabric client")
 }

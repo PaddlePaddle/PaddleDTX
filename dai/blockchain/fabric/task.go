@@ -62,7 +62,7 @@ func (f *Fabric) ListTask(opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks
 func (f *Fabric) GetTaskById(id string) (blockchain.FLTask, error) {
 	var t blockchain.FLTask
 	mName := "GetTaskById"
-	s, err := x.QueryContract([][]byte{[]byte(id)}, mName)
+	s, err := f.QueryContract([][]byte{[]byte(id)}, mName)
 	if err != nil {
 		return t, err
 	}
