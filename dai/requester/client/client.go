@@ -59,6 +59,7 @@ type Blockchain interface {
 	Close()
 }
 
+// Client requester client, used to publish task and retrieve task result
 type Client struct {
 	chainClient Blockchain
 }
@@ -270,12 +271,13 @@ func (c *Client) ListTask(pubkeyStr, status string, start, end,
 	if err != nil {
 		return tasks, errorx.Wrap(err, "failed to decode public key")
 	}
-	tasks, err = c.chainClient.ListTask(&blockchain.ListFLTaskOptions{
-		PubKey:    pubkey[:],
-		TimeStart: start,
-		TimeEnd:   end,
-		Status:    status,
-		Limit:     limit,
+	tasks, err = c.XchainClient.ListTask(&blockchain.ListFLTaskOptions{
+		PubKey:     rPubkey[:],
+		ExecPubKey: ePubkey[:],
+		TimeStart:  start,
+		TimeEnd:    end,
+		Status:     status,
+		Limit:      limit,
 	})
 	return
 }
