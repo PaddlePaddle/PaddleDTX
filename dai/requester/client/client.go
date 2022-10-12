@@ -39,26 +39,6 @@ import (
 	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
-type Blockchain interface {
-	// executor operation
-	GetExecutorNodeByName(name string) (blockchain.ExecutorNode, error)
-	ListExecutorNodes() (blockchain.ExecutorNodes, error)
-	GetExecutorNodeByID(id string) (blockchain.ExecutorNode, error)
-	// task operation
-	GetTaskById(id string) (blockchain.FLTask, error)
-	PublishTask(opt *blockchain.PublishFLTaskOptions) error
-	ListTask(opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error)
-	StartTask(opt *blockchain.StartFLTaskOptions) error
-	// get file stored in xuperDB by id
-	GetFileByID(id string) (xdbchain.File, error)
-	// GetAuthByID get file authorization application detail by authID
-	GetAuthApplicationByID(authID string) (xdbchain.FileAuthApplication, error)
-	// query the list of authorization applications
-	ListFileAuthApplications(opt *xdbchain.ListFileAuthOptions) (xdbchain.FileAuthApplications, error)
-
-	Close()
-}
-
 // Client requester client, used to publish task and retrieve task result
 type Client struct {
 	chainClient Blockchain
