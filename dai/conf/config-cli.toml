@@ -2,8 +2,8 @@
 # Blockchain used by the executor.
 # Client initiate a task to the executor by the blockchain.
 [blockchain]
-# blockchain type, only 'xchain' supported currently
-type = 'xchain'
+# blockchain type
+type = "${BLOCKCHAIN_TYPE}"
 
 [blockchain.xchain]
     mnemonic = "助 应 讨 乳 拔 夏 弃 从 干 歌 吊 像 目 那 革 摩 姜 扣 赵 秘 扬 杜 烷 法"
@@ -11,3 +11,11 @@ type = 'xchain'
     contractAccount = "XC1111111111111111@xuper"
     chainAddress = "10.144.94.17:37104"
     chainName = "xuper"
+
+# The configuration of how to invoke contracts using fabric. It is necessary when type is 'fabric'.
+[blockchain.fabric]
+    configFile = "./conf/fabric/config.yaml"
+    channelId = "mychannel"
+    chaincode = "mycc"
+    userName = "Admin"
+    orgName = "org1"

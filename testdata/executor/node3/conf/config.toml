@@ -48,6 +48,12 @@ allowCros = true
         chainAddress = "xchain1.node.com:37101"
         chainName = "xuper"
 
+    [executor.blockchain.fabric]
+        configFile = "/home/conf/fabric/config.yaml"
+        channelId = "mychannel"
+        chaincode = "${CONTRACT_NAME}"
+        userName = "Admin"
+        orgName = "Org1"
 [log]
 level = "debug"
 path = "./logs"

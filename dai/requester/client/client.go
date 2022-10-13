@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
+	fabricblockchain "github.com/PaddlePaddle/PaddleDTX/dai/blockchain/fabric"
 	xchainblockchain "github.com/PaddlePaddle/PaddleDTX/dai/blockchain/xchain"
 	"github.com/PaddlePaddle/PaddleDTX/dai/config"
 	"github.com/PaddlePaddle/PaddleDTX/dai/crypto/vl/common/csv"
@@ -40,7 +41,19 @@ import (
 
 // Client requester client, used to publish task and retrieve task result
 type Client struct {
-	XchainClient *xchainblockchain.XChain
+	chainClient Blockchain
+}
+
+func newChainClient(conf *config.ExecutorBlockchainConf) (b Blockchain, err error) {
+	switch conf.Type {
+	case "xchain":
+		b, err = xchainblockchain.New(conf.Xchain)
+	case "fabric":
+		b, err = fabricblockchain.New(conf.Fabric)
+	default:
+		return b, errorx.New(errorx.ErrCodeConfig, "invalid blockchain type: %s", conf.Type)
+	}
+	return b, err
 }
 
 // GetRequestClient returns client for Requester by blockchain configuration
@@ -52,13 +65,11 @@ func GetRequestClient(configPath string) (*Client, error) {
 	}
 	// clear the standard output of the chain contract invoke
 	log.SetOutput(ioutil.Discard)
-
-	// get blockchain client
-	xchainClient, err := xchainblockchain.New(config.GetCliConf().Xchain)
+	chainClient, err := newChainClient(config.GetCliConf())
 	if err != nil {
 		return nil, err
 	}
-	return &Client{XchainClient: xchainClient}, nil
+	return &Client{chainClient: chainClient}, nil
 }
 
 // PublishOptions define parameters used to publishing a task
@@ -129,7 +140,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 	var isTagPart bool
 	isLabelExist := 0
 	for index, fileID := range fileIDs {
-		file, err := c.XchainClient.GetFileByID(fileID)
+		file, err := c.chainClient.GetFileByID(fileID)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +166,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 		}
 
 		// get dataID address
-		executorNode, err := c.XchainClient.GetExecutorNodeByName(executors[index])
+		executorNode, err := c.chainClient.GetExecutorNodeByName(executors[index])
 		if err != nil {
 			return nil, errorx.Wrap(err, "failed to get executor node by node name")
 		}
@@ -214,8 +225,7 @@ func (c *Client) Publish(opt PublishOptions) (taskId string, err error) {
 		FLTask:    &task,
 		Signature: sig[:],
 	}
-
-	if err := c.XchainClient.PublishTask(pubOpt); err != nil {
+	if err := c.chainClient.PublishTask(pubOpt); err != nil {
 		return taskId, err
 	}
 	return task.TaskID, nil
@@ -223,7 +233,7 @@ func (c *Client) Publish(opt PublishOptions) (taskId string, err error) {
 
 // GetTaskById gets task by taskID
 func (c *Client) GetTaskById(id string) (t blockchain.FLTask, err error) {
-	t, err = c.XchainClient.GetTaskById(id)
+	t, err = c.chainClient.GetTaskById(id)
 	if err != nil {
 		return t, err
 	}
@@ -245,7 +255,6 @@ func (c *Client) ListTask(rPubkeyStr, ePubkeyStr, status string, start, end,
 	if err != nil {
 		return tasks, errorx.Wrap(err, "failed to decode executor public key")
 	}
-
 	tasks, err = c.XchainClient.ListTask(&blockchain.ListFLTaskOptions{
 		PubKey:     rPubkey[:],
 		ExecPubKey: ePubkey[:],
@@ -273,7 +282,7 @@ func (c *Client) StartTask(privateKey, id string) (err error) {
 		return errorx.Wrap(err, "failed to sign fl task")
 	}
 	sParams.Signature = sig[:]
-	err = c.XchainClient.StartTask(&sParams)
+	err = c.chainClient.StartTask(&sParams)
 	return err
 }
 
@@ -286,7 +295,7 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 	}
 
 	// get prediction task
-	task, err := c.XchainClient.GetTaskById(taskID)
+	task, err := c.chainClient.GetTaskById(taskID)
 	if err != nil {
 		return err
 	}
@@ -295,7 +304,7 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 		return errorx.New(errorx.ErrCodeParam, "invalid task type, not a predict task")
 	}
 	// get training task
-	modelTask, err := c.XchainClient.GetTaskById(task.AlgoParam.ModelTaskID)
+	modelTask, err := c.chainClient.GetTaskById(task.AlgoParam.ModelTaskID)
 	if err != nil {
 		return err
 	}
@@ -350,7 +359,7 @@ func (c *Client) GetPredictResult(privateKey, taskID, output string) (err error)
 
 // ListExecutorNodes list all executor nodes
 func (c *Client) ListExecutorNodes() (nodes blockchain.ExecutorNodes, err error) {
-	return c.XchainClient.ListExecutorNodes()
+	return c.chainClient.ListExecutorNodes()
 }
 
 // GetExecutorNodeByID get the executor node by nodeID, which is the public key of the node
@@ -359,20 +368,20 @@ func (c *Client) GetExecutorNodeByID(pubkeyStr string) (node blockchain.Executor
 	if err != nil {
 		return node, errorx.Wrap(err, "failed to decode executor public key")
 	}
-	return c.XchainClient.GetExecutorNodeByID(pubkeyStr)
+	return c.chainClient.GetExecutorNodeByID(pubkeyStr)
 }
 
 // GetExecutorNodeByName get executor node by nodeName
 func (c *Client) GetExecutorNodeByName(name string) (node blockchain.ExecutorNode, err error) {
-	return c.XchainClient.GetExecutorNodeByName(name)
+	return c.chainClient.GetExecutorNodeByName(name)
 }
 
 // GetFileAuthByID get file authorization application detail by authID
 func (c *Client) GetFileAuthByID(id string) (fileAuth xdbchain.FileAuthApplication, err error) {
-	return c.XchainClient.GetAuthApplicationByID(id)
+	return c.chainClient.GetAuthApplicationByID(id)
 }
 
 // ListFileAuthApplications query the list of authorization applications
 func (c *Client) ListFileAuthApplications(opt *xdbchain.ListFileAuthOptions) (fileAuths xdbchain.FileAuthApplications, err error) {
-	return c.XchainClient.ListFileAuthApplications(opt)
+	return c.chainClient.ListFileAuthApplications(opt)
 }
