@@ -4,7 +4,7 @@
 Usage: ./network_up.sh { start | stop | restart }
 
 ### 1.1 服务启动
-- -b $blockchainType，网络类型，取值xchain或fabric，默认xchain网络
+- -b $blockchainType，网络类型，取值为 xchain或fabric，默认 xchain网络
 - -s $storageModeType，底层存储引擎，本地存储为 local，IPFS 为 ipfs，默认 local
 ```shell
 ./network_up.sh start -b $blockchainType -s $storageModeType
