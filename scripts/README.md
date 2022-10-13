@@ -10,12 +10,12 @@ Usage: ./network_up.sh { start | stop | restart }
 ./network_up.sh start -b $blockchainType -s $storageModeType
 ```
 
--p 如果需要使用 PaddleFL 的能力, 需要启动 PaddleFL 的容器, 默认为不启动
+- -p 如果需要使用 PaddleFL 的能力, 需要启动 PaddleFL 的容器, 默认为不启动
 ```shell
 ./network_up.sh start -p true
 ```
 
--h 如果需要使用PaddleDTX可视化能力，需启动可视化服务paddledtx-visual，启动时指定可被浏览器访问的计算节点IP地址，默认为不启动。在host为“106.13.169.234”的机器上启动PaddleDTX及其可视化服务，命令如下：
+- -h 如果需要使用PaddleDTX可视化能力，需启动可视化服务paddledtx-visual，启动时指定可被浏览器访问的计算节点IP地址，默认为不启动。在host为“106.13.169.234”的机器上启动PaddleDTX及其可视化服务，命令如下：
 ```shell
 ./network_up.sh start -h 106.13.169.234
 ```
@@ -70,15 +70,15 @@ Usage: ./paddledtx_test.sh {upload_sample_files | start_vl_linear_train | start_
 
 ### 2.2 启动纵向线性回归训练任务
 - vlLinTrainfiles 取值为步骤2.1获取到的 vertical linear train sample files
-- ### 2.2.1 发布纵向线性回归训练任务，不启动模型评估
+#### 2.2.1 发布纵向线性回归训练任务，不启动模型评估
 ```shell
 ./paddledtx_test.sh start_vl_linear_train -f $vlLinTrainfiles
 ```
-- ### 2.2.2 发布纵向线性回归训练任务，启动模型评估
+#### 2.2.2 发布纵向线性回归训练任务，启动模型评估
 ```shell
 ./paddledtx_test.sh start_vl_linear_train -f $vlLinTrainfiles -e true
 ```
-- ### 2.2.3 发布纵向线性回归训练任务，启动动态模型评估
+#### 2.2.3 发布纵向线性回归训练任务，启动动态模型评估
 ```shell
 ./paddledtx_test.sh start_vl_linear_train -f $vlLinTrainfiles -l true
 ```
@@ -93,15 +93,15 @@ Usage: ./paddledtx_test.sh {upload_sample_files | start_vl_linear_train | start_
 
 ### 2.4 启动纵向逻辑回归训练任务
 - vlLogTrainfiles 取值为步骤2.1获取到的 vertical logistic train sample files
-- ### 2.4.1 发布纵向逻辑回归训练任务，不启动模型评估
+#### 2.4.1 发布纵向逻辑回归训练任务，不启动模型评估
 ```shell
 ./paddledtx_test.sh start_vl_logistic_train -f $vlLogTrainfiles
 ```
-- ### 2.4.2 发布纵向逻辑回归训练任务，启动模型评估
+#### 2.4.2 发布纵向逻辑回归训练任务，启动模型评估
 ```shell
 ./paddledtx_test.sh start_vl_logistic_train -f $vlLogTrainfiles -e true
 ```
-- ### 2.4.3 发布纵向逻辑回归训练任务，启动动态模型评估
+#### 2.4.3 发布纵向逻辑回归训练任务，启动动态模型评估
 ```shell
 ./paddledtx_test.sh start_vl_logistic_train -f $vlLogTrainfiles -l true
 ```
@@ -139,4 +139,3 @@ docker exec -it executor1.node.com sh -c "
 ```shell
 docker exec -it executor1.node.com sh -c "./executor-cli task getbyid --host 127.0.0.1:80 -i $taskID"
 ```
-
