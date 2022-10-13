@@ -46,7 +46,7 @@
 
 样本文件查看：
 
-``` shell linenums="1"
+``` shell
 # 数据持有方A查询train_dataA.csv文件：
 $ docker exec -it dataowner1.node.com sh -c './xdb-cli files getbyid -i 9fb28896-eb6c-48f2-b356-2ab342a2aa6d --host http://127.0.0.1:80'
 
@@ -64,7 +64,7 @@ $ docker exec -it dataowner2.node.com sh -c './xdb-cli files getbyid -i abacaded
 
 发布和启动训练任务：
 
-``` shell linenums="1"
+``` shell
 # -f 取值样本上传upload_sample_files命令返回的Vertical logistic train sample files
 $ sh paddledtx_test.sh start_vl_logistic_train -f 9fb28896-eb6c-48f2-b356-2ab342a2aa6d,8b79fddd-3370-402c-ba9b-1f239156ec51
 
@@ -91,7 +91,7 @@ $ sh paddledtx_test.sh gettaskbyid -i 95104913-c6cc-4520-bab1-2be814f0d81e
 
 发布和启动预测任务：
 
-``` shell linenums="1"
+``` shell
 # -f 取值样本上传upload_sample_files命令返回的Vertical logistic prediction sample files，-m 取值为训练任务返回的TaskID
 $ sh paddledtx_test.sh start_vl_logistic_predict -f 96140537-8c7a-46cb-b2d3-0540e8cadc0e,abacaded-afdd-419d-bc52-0d90b5641aa2 -m 95104913-c6cc-4520-bab1-2be814f0d81e
 
@@ -118,4 +118,3 @@ Accuracy of Iris plants prediction is: 1.00
 
 预测任务执行完成后，同时输出了鸢尾花品种分类模型的预测结果，在测试集上准确率为 100%。
 
-<br>

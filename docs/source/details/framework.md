@@ -2,9 +2,9 @@
 
 PaddleDTX 主要由计算需求方、任务执行节点、数据持有节点、存储节点和区块链节点组成，部署架构如下图所示：
 
-<img src='../../_static/deployment.png' width = "60%" height = "60%" align="middle"/>
+<img src='../../_static/deployment.png' width = "80%" height = "80%" align="middle"/>
 
-!!! note "说明"
+!!! info "说明"
 
     部署架构图展示了3类客户端，xdb-cli：用于操作数据持有节点、存储节点，executor-cli：操作任务执行节点，requester-cli：用于计算需求方进行任务发布、预测结果下载。
 
@@ -27,5 +27,3 @@ PaddleDTX 主要由计算需求方、任务执行节点、数据持有节点、�
 区块链节点(Blockchain Node)记录PaddleDTX网络中流转的关键信息，包括数据摘要、网络节点的去中心化治理、计算任务等信息，保证数据的安全可信。
 
 从海量隐私数据存储到多方数据联合建模，PaddleDTX提供了全链路可信方案。在实际应用中，各方机构根据自身的需求和能力，部署某类服务节点，共建去中心化可信网络。
-
-<br>

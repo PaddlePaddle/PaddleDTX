@@ -28,31 +28,34 @@ import (
 var defaultConcurrency uint64 = 10
 
 // Define the ExecutionType of the executor, used to download sample files during task training
+//  ProxyExecutionMode indicates to execute tasks using others' data
+//  SelfExecutionMode indicates to execute tasks using own data
 const (
 	ProxyExecutionMode = "Proxy"
 	SelfExecutionMode  = "Self"
 )
 
-// Storage stores files locally or xuperdb
+// Storage files operations, read and write
+//  supports local storage and xuperdb storage
 type Storage interface {
 	Write(value io.Reader, key string) (string, error)
 	Read(key string) (io.ReadCloser, error)
 }
 
-// FileStorage contains model storage and prediction result storage.
+// FileStorage contains model storage, evaluation storage and prediction result storage
 type FileStorage struct {
 	ModelStorage      Storage
 	EvaluationStorage Storage
 	PredictStorage    Storage
 }
 
-// FileDownload mode for download the sample file during the task execution.
+// FileDownload mode for download the sample file during the task execution
 type FileDownload struct {
-	Type           string           // value is 'Proxy' or 'Self'
-	NodePrivateKey ecdsa.PrivateKey // the executor node's privatekey
+	Type           string           // support 'Proxy' and 'Self'
+	NodePrivateKey ecdsa.PrivateKey // the executor node's private key
 
-	PrivateKey ecdsa.PrivateKey // used when the Type is 'Self'
-	Host       string
+	PrivateKey ecdsa.PrivateKey // key authorized by data owner node, used when the Type is 'Self'
+	Host       string           // data owner host address, used when the Type is 'Self'
 }
 
 // GetSampleFile download sample files, if f.Type is 'Self', download files from dataOwner nodes.
@@ -322,6 +325,7 @@ func (f *FileDownload) pull(ctx context.Context, id, storIndex, fileId, nodeAddr
 	if err != nil {
 		return nil, errorx.Wrap(err, "failed to sign slice pull")
 	}
+	// assemble the pull request url
 	url := fmt.Sprintf("http://%s/v1/slice/pull?slice_id=%s&slice_stor_index=%s&file_id=%s&timestamp=%d&pubkey=%s&signature=%s",
 		nodeAddress, id, storIndex, fileId, timestamp, pubkey.String(), sig.String())
 

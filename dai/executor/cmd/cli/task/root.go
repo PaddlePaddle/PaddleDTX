@@ -40,7 +40,7 @@ func RootCmd() *cobra.Command {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&host, "host", "", "server address of the executorc node, example '127.0.0.1:8184'")
+	rootCmd.PersistentFlags().StringVar(&host, "host", "", "server grpc address of the executorc node, example '127.0.0.1:8184'")
 
 	rootCmd.MarkPersistentFlagRequired("host")
 }

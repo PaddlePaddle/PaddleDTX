@@ -40,14 +40,14 @@ var (
 	amplitude   float64
 	accuracy    uint64
 	taskId      string
-	description string
-	psiLabel    string
-	batchSize   uint64
-	ev          bool  // whether perform model evaluation
-	evRule      int32 // evRule is the way to evaluate model, 0 means `Random Split`, 1 means `Cross Validation`, 2 means `Leave One Out`
-	percentLO   int32 // percentage to leave out as validation set when perform model evaluation in the way of `Random Split`
-	folds       int32 // number of folds, 5 or 10 supported, default `10`, a optional parameter when perform model evaluation in the way of `Cross Validation`
-	shuffle     bool  // whether to randomly disorder the samples before dividion, default `false`, a optional parameter when perform model evaluation in the way of `Cross Validation`
+	description string // task description
+	psiLabel    string // id features list
+	batchSize   uint64 // batch size for each round
+	ev          bool   // whether perform model evaluation
+	evRule      int32  // evRule is the way to evaluate model, 0 means `Random Split`, 1 means `Cross Validation`, 2 means `Leave One Out`
+	percentLO   int32  // percentage to leave out as validation set when perform model evaluation in the way of `Random Split`
+	folds       int32  // number of folds, 5 or 10 supported, default `10`, a optional parameter when perform model evaluation in the way of `Cross Validation`
+	shuffle     bool   // whether to randomly disorder the samples before division, default `false`, a optional parameter when perform model evaluation in the way of `Cross Validation`
 
 	le         bool  // whether perform live model evaluation
 	lPercentLO int32 // percentage to leave out as validation set when perform live model evaluation
@@ -186,7 +186,7 @@ func init() {
 
 	publishCmd.Flags().StringVarP(&taskName, "name", "n", "", "task's name")
 	publishCmd.Flags().StringVarP(&privateKey, "privkey", "k", "", "requester's private key hex string")
-	publishCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./keys", "requester's key path")
+	publishCmd.Flags().StringVarP(&keyPath, "keyPath", "", "./reqkeys", "requester's key path")
 	publishCmd.Flags().StringVarP(&taskType, "type", "t", "", "task type, 'train' or 'predict'")
 	publishCmd.Flags().StringVarP(&algorithm, "algorithm", "a", "", "algorithm assigned to task, 'linear-vl' and 'logistic-vl' are supported")
 	publishCmd.Flags().StringVarP(&files, "files", "f", "", "sample files IDs with ',' as delimiter, like '123,456'")

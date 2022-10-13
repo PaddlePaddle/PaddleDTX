@@ -4,7 +4,7 @@ docs_dir: source
 theme:
   name: 'material'
   logo: _static/logo.png
-  favicon: _static/logo.png
+  favicon: _static/favicon.ico
   # custom_dir: source
   # 404 page
   # static_templates:
@@ -26,14 +26,15 @@ theme:
         name: Switch to light mode
   language: zh
   features:
-    - navigation.instant
-    - navigation.top
-    - toc.integrate
+    # - navigation.instant
+    # - navigation.top
+    # - toc.integrate
+    - navigation.indexes
   font:
     text: Lora
     code: Roboto Mono
 repo_url: https://github.com/PaddlePaddle/PaddleDTX
-repo_name: PaddlePaddle/PaddleDTX
+# repo_name: PaddlePaddle/PaddleDTX
 edit_uri: tree/master/docs/source/
 nav:
   - index.md
@@ -84,7 +85,7 @@ extra:
     - name: English
       link: https://github.com/PaddlePaddle/PaddleDTX/tree/master/README.md
       lang: en
-  # generator: false
+  generator: false
 copyright: Copyright &copy; 2022 Baidu PaddleDTX
 # Extensions
 markdown_extensions:

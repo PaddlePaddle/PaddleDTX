@@ -1,6 +1,6 @@
 ## Distributed AI
 任务执行节点提供的GRPC接口如下：
-``` proto linenums="1"
+``` proto
 syntax = "proto3";
 
 import "common/common.proto";
@@ -74,5 +74,3 @@ message PredictResponse {
 }
 
 ```
-
-<br>

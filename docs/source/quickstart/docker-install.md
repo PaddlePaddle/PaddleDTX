@@ -13,7 +13,9 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 	$ cd PaddleDTX/xdb
 	$ sh build_image.sh
 	```
+
 	产出为数据存储节点和数据持有节点两个镜像，镜像名和版本号分别为：
+
 	* registry.baidubce.com/paddledtx/xdb-storage:2.1
 	* registry.baidubce.com/paddledtx/xdb-dataowner:2.1
 
@@ -24,6 +26,7 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 	$ cd PaddleDTX/dai
 	$ sh build_image.sh
 	```
+	
 	产出镜像名和版本号为 *registry.baidubce.com/paddledtx/paddledtx-dai:2.1* ，可以通过修改 *build_image.sh* 脚本来修改镜像名和版本号。
 
 3. 编译合约
@@ -45,12 +48,13 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 	$ cd PaddleDTX/testdata/blockchain
 	$ docker-compose -f docker-compose.yml up -d
 	```
+
 	搭建了三个节点的区块链网络，对应的区块链相关配置在文件夹 blockchain/xchain1/conf、blockchain/xchain2/conf、blockchain/xchain3/conf 下，需要调整配置时在网络拉起前进行修改。
 
 	可以通过容器中的 xchain-cli客户端进行区块链上的一些操作，例如创建合约账户及安装智能合约。
 	
 
-	``` shell linenums="1"
+	``` shell
 	# 定义合约账户和合约名称
 	$ export contractAccount='1234567890123456'
 	$ export contractName='paddlempc'
@@ -82,8 +86,8 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 
 	数据持有节点将自己的隐私数据进行加密、切分、副本复制后分发到存储节点，存储节点是数据存储的物理节点。这里部署三个存储节点和两个数据持有节点，两个数据节点模拟分别提供部分数据的两方。
 	
-	修改配置文件：
-	``` shell linenums="1"
+	a. 修改配置文件：
+	``` shell
 	$ vim PaddleDTX/testdata/xdb/data1/conf/config.toml
 	$ vim PaddleDTX/testdata/xdb/data2/conf/config.toml
 
@@ -98,7 +102,7 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
         chainName = "xuper"
 	```
 
-	```  shell linenums="1"
+	```  shell
 	$ vim xdb/storage1/conf/config.toml
 	$ vim xdb/storage2/conf/config.toml
 	$ vim xdb/storage3/conf/config.toml
@@ -114,7 +118,7 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
         chainName = "xuper"
 	```
 
-	启动服务：
+	b. 启动服务：
 	```
 	$ cd PaddleDTX/testdata/xdb
 	$ docker-compose -f docker-compose.yml up -d
@@ -124,15 +128,15 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 	```
 	$ docker exec -it dataowner1.node.com sh -c "./xdb-cli nodes list --host http://dataowner1.node.com:80"
 	```
-	!!! note ""
+	!!! info ""
 		注意：如果用户想启动基于Fabric的XuperDB服务，可参考[XuperDB服务启动和命令使用说明](https://github.com/PaddlePaddle/PaddleDTX/tree/master/xdb/scripts)。
 
 3. 部署 Distributed AI
 
 	部署两个任务执行节点，模拟由两方组成的多方安全计算网络，两个任务执行节点分别对应不同的数据持有节点。
 
-	修改配置文件：
-	```  shell linenums="1"
+	a. 修改配置文件：
+	```  shell
 	$ vim PaddleDTX/testdata/executor/node1/conf/config.toml
 	$ vim PaddleDTX/testdata/executor/node2/conf/config.toml
 	# 使用在区块链部署时创建的合约账户、合约以及助记词
@@ -146,7 +150,7 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
         chainName = "xuper"
 	```
 
-	启动服务：
+	b. 启动服务：
 	```
 	$ cd PaddleDTX/testdata/executor
 	$ docker-compose -f docker-compose.yml up -d
@@ -155,5 +159,3 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 ### 1.4 客户端操作
 
 上述为用户演示了docker-compose方式启动网络流程，在实际应用中，用户可以通过K8S跨主机集群部署PaddleDTX，网络操作参考 [客户端工具](./client.md)。
-
-<br>

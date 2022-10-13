@@ -83,14 +83,14 @@ type FlTask struct {
 	ExpiredTime int64
 }
 
-// MpcModelHandler Controller for training or predicting tasks
+// MpcModelHandler handler for mpc training or prediction tasks
 type MpcModelHandler struct {
 	Config             mpc.Config
-	Node               Node
-	Storage            FileStorage
-	Download           FileDownload
-	Chain              Blockchain
-	MpcTaskMaxExecTime time.Duration
+	Node               Node          // executor node information
+	Storage            FileStorage   // handler for computing results storage
+	Download           FileDownload  // handler for file download, 'proxy' or 'self'
+	Chain              Blockchain    // handler for blockchain operation
+	MpcTaskMaxExecTime time.Duration // maximum execution time for mpc task
 	Mpc                mpc.Mpc
 	ClusterP2p         *p2p.P2P
 	// store execution mpc tasks
@@ -100,10 +100,10 @@ type MpcModelHandler struct {
 
 // ParticipantParams local parameters required for task execution
 type ParticipantParams struct {
-	otherParts    []string
-	fileText      []byte
-	isTagPart     bool
-	psiLabel      string
+	otherParts    []string // other execution parties
+	fileText      []byte   // sample file content
+	isTagPart     bool     // if local party contains label feature
+	psiLabel      string   // feature name for psi
 	PaddleFLRole  int
 	PaddleFLNodes [3]string
 }
@@ -114,6 +114,7 @@ func (m *MpcModelHandler) GetMpcClusterService() *cluster.Service {
 }
 
 // GetAvailableTasksNum returns left number of tasks could be executed
+// Returns the number of tasks that can participate in training or prediction
 func (m *MpcModelHandler) GetAvailableTasksNum() (tNum int, pNum int) {
 	trainTaskNum := 0
 	predictTaskNum := 0
@@ -257,6 +258,7 @@ func (m *MpcModelHandler) sendTaskStartRequestToOthers(otherParts []string, task
 }
 
 // sendTaskStartRequest sends "start task" signal to other Executor
+// if task.AlgoParam.Algo is "dnn-paddlefl-vl", the model will be trained by three parties
 func (m *MpcModelHandler) sendTaskStartRequest(executorHost, taskID string) (err error) {
 	pubkey := ecdsa.PublicKeyFromPrivateKey(m.Node.PrivateKey)
 	in := &pbTask.TaskRequest{
@@ -313,7 +315,7 @@ func (m *MpcModelHandler) UpdateTaskFinishStatus(taskId, taskErr, taskResult str
 	if task.Status != blockchain.TaskProcessing {
 		return errorx.New(errorx.ErrCodeInternal, "update task status error, task status is not processing")
 	}
-
+	// invoke the contract to update the task's status
 	pubkey := ecdsa.PublicKeyFromPrivateKey(m.Node.PrivateKey)
 	execTaskOptions := &blockchain.FLTaskExeStatusOptions{
 		Executor:    pubkey[:],
@@ -349,6 +351,7 @@ func (m *MpcModelHandler) SaveModel(result *pbCom.TrainTaskResult) error {
 	}
 	m.RUnlock()
 
+	// if the model training fails, update task status from 'Processing' to 'Failed'
 	if !result.Success {
 		m.updateTaskStatusAndStopLocalMpc(result.TaskID, result.ErrMsg, "")
 		return nil
@@ -555,6 +558,7 @@ func (m *MpcModelHandler) getTaskModel(taskId string) (*pbCom.TrainModels, error
 	if err != nil {
 		return nil, err
 	}
+	// retrieve train models from bytes
 	reTrainModel, err := reModel.TrainModelsFromBytes(trainModel)
 	if err != nil {
 		return nil, err

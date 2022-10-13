@@ -508,5 +508,3 @@ $ ./xdb-cli --host http://localhost:8122 nodes offline --keyPath ./keys
 ```
 $ ./xdb-cli --host http://localhost:8122 nodes online --keyPath ./keys
 ```
-
-<br>

@@ -16,7 +16,7 @@ PaddleDTX实现的多方安全计算框架，具备以下特征：
 - 可执行模型评估和动态模型评估
 - 以区块链、隐私计算、ACL技术为支撑，保证数据、模型的隐私性和可信性
 
-<img src='../../_static/smpc.png' width = "70%" height = "70%" align="middle"/>
+<img src='../../_static/smpc.png' width = "80%" height = "80%" align="middle"/>
 
 ## 3. 可信联邦学习
 PaddleDTX中，联邦学习分为训练过程和预测过程。计算需求方通过发布训练任务，任务执行节点会向数据持有节点做数据可信性背书，继而触发训练过程，最终得到满足条件的模型。如果有预测需求，计算需求方发布预测任务，任务执行节点会向数据持有节点做数据可信性背书，继而触发预测过程，最终得到预测结果。目前已集成的算法及其原理和实现，在 [crypto](./crypto.md#id2) 部分有更多体现。
@@ -41,7 +41,7 @@ K 折交叉验证高效利用数据，计算成本适度，是最基本最常用
 ### 4.2 评估指标
 分类问题相关的指标：
 
-``` proto linenums="1"
+``` proto
 message BinaryClassCaseMetricScores {
     CaseType    caseType                                = 1;
     double      avgAccuracy                             = 2; // Accuracy 的平均值
@@ -70,7 +70,7 @@ message BinaryClassCaseMetricScores {
 
 回归问题相关的指标：
 
-``` proto linenums="1"
+``` proto
 message RegressionCaseMetricScores {
     CaseType caseType           = 1;
     map<int32, double> RMSEs    = 2; // 每次 “训练-预测” 完成后，计算得到的 RMSE (Root Mean Squard Error) 
@@ -93,7 +93,7 @@ message RegressionCaseMetricScores {
 
 Evaluator 接口定义：
 
-``` go linenums="1"
+``` go
 type Evaluator interface {
     // Start 启动模型评估
     // 1、划分数据集, 采用 Random Split、Cross Validation、Leave One Out 中的一种方式
@@ -127,6 +127,7 @@ type Evaluator interface {
 训练样本中含有目标特征的**任务执行节点**会生成阶段性模型评估结果，目前会在服务日志中体现，后续会写入可视化模块，训练过程中实时展示模型效果。
 
 ### 5.3 LiveEvaluator
+
 动态模型评估的步骤可以简述为：
 
 1. 初始化
@@ -140,7 +141,7 @@ type Evaluator interface {
 
 LiveEvaluator 接口定义：
 
-``` go linenums="1"
+``` go
 type LiveEvaluator interface {
     // Trigger 触发模型评估
     // 参数包含的消息分为两类：
@@ -178,5 +179,3 @@ type LiveEvaluator interface {
 [Requester命令使用说明](../tutorial/dai-cmd.md#_2)
 
 [Executor命令使用说明](../tutorial/dai-cmd.md#_3)
-
-<br>

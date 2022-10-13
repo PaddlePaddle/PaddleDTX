@@ -92,5 +92,3 @@ git branch -D new_feature
 ### 2. 提交Issue
 
 打开 https://github.com/PaddlePaddle/PaddleDTX/issues，点击`New issue`，即可提交用户在使用中的各类问题。
-
-<br>
