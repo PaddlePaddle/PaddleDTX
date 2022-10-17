@@ -4,9 +4,10 @@
 Usage: ./network_up.sh { start | stop | restart }
 
 ### 1.1 服务启动
+- -b $blockchainType，网络类型，取值xchain或fabric，默认xchain网络
 - -s $storageModeType，底层存储引擎，本地存储为 local，IPFS 为 ipfs，默认 local
 ```shell
-./network_up.sh start -s $storageModeType
+./network_up.sh start -b $blockchainType -s $storageModeType
 ```
 
 - -p 如果需要使用 PaddleFL 的能力, 需要启动 PaddleFL 的容器, 默认为不启动
@@ -49,14 +50,13 @@ paddledtx-visual启动之后，浏览器输入 http://106.13.169.234:8233/ 即�
 }
 ```
 
-
 ### 1.2 服务停止
 ```shell
-./network_up.sh stop
+./network_up.sh stop -b $blockchainType
 ```
 ### 1.3 服务重启
 ```shell
-./network_up.sh restart -s $storageModeType
+./network_up.sh restart -b $blockchainType -s $storageModeType
 ```
 
 ## 二、任务发布和执行 [./paddledtx_test.sh]
@@ -138,4 +138,3 @@ docker exec -it executor1.node.com sh -c "
 ```shell
 docker exec -it executor1.node.com sh -c "./executor-cli task getbyid --host 127.0.0.1:80 -i $taskID"
 ```
-
