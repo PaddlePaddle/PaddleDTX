@@ -9,27 +9,27 @@ services:
         - 8908:8084
     volumes:
         - ./user:/home/work/xchain/user
-        - ./blockchain/xchain1/conf:/home/work/xchain/conf
-        - ./blockchain/xchain1/data/keys:/home/work/xchain/data/keys
-        - ./blockchain/xchain1/data/config:/home/work/xchain/data/config
+        - ./xchain1/conf:/home/work/xchain/conf
+        - ./xchain1/data/keys:/home/work/xchain/data/keys
+        - ./xchain1/data/config:/home/work/xchain/data/config
     networks:
         - xchain_network
   xchain2.node.com:
     image: registry.baidubce.com/paddledtx/xchain:v3.9
     container_name: xchain2.node.com
     volumes:
-        - ./blockchain/xchain2/conf:/home/work/xchain/conf
-        - ./blockchain/xchain2/data/keys:/home/work/xchain/data/keys
-        - ./blockchain/xchain2/data/config:/home/work/xchain/data/config
+        - ./xchain2/conf:/home/work/xchain/conf
+        - ./xchain2/data/keys:/home/work/xchain/data/keys
+        - ./xchain2/data/config:/home/work/xchain/data/config
     networks:
         - xchain_network
   xchain3.node.com:
     image: registry.baidubce.com/paddledtx/xchain:v3.9
     container_name: xchain3.node.com
     volumes:
-        - ./blockchain/xchain3/conf:/home/work/xchain/conf
-        - ./blockchain/xchain3/data/keys:/home/work/xchain/data/keys
-        - ./blockchain/xchain3/data/config:/home/work/xchain/data/config
+        - ./xchain3/conf:/home/work/xchain/conf
+        - ./xchain3/data/keys:/home/work/xchain/data/keys
+        - ./xchain3/data/config:/home/work/xchain/data/config
     networks:
         - xchain_network
 

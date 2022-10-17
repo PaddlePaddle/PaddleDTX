@@ -2,10 +2,16 @@
 基于docker-compose一键启动PaddleDTX分布式机器学习所需的节点配置文件及docker-compose.yml文件.
 
 ## 一、文件目录说明
-- blockchain【区块链网络】: 三个节点的xchain网络
-    - blockchain: 区块链节点配置目录，包含三个网络节点账户配置
-    - user: 用户安装合约所使用的区块链账户地址，包含用户的助记词、公私钥等信息
-    - docker-compose.yml: xchain网络启动所需的配置
+- blockchain【区块链网络】: 
+    - xchain: 三个节点的xchain网络
+        - xchain1/xchain2/xchain3: 区块链节点配置目录，包含各个网络节点账户配置
+        - user: 用户安装合约所使用的区块链账户地址，包含用户的助记词、公私钥等信息
+        - docker-compose.yml: xchain网络启动所需的配置
+    - fabric: 4个peer节点，一个order节点, fabric版本为1.4.8
+        - base: order和peer节点启动所需要的yaml文件
+        - chaincode: 用户安装链码所需要go mod配置
+        - conf: 证书和创世区块生成，以及fabric sdk调用所需要yaml配置文件
+        - docker-compose.yml: fabric网络启动后创建通道、安装链码所需的文件
 
 - xdb【去中心化存储服务】：两个数据持有节点，三个存储节点
     - data1: 数据持有节点1配置目录

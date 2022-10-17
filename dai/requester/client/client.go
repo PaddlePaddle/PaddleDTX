@@ -39,6 +39,25 @@ import (
 	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
 )
 
+// Blockchain defines some contract methods
+type Blockchain interface {
+	// executor operation
+	GetExecutorNodeByID(id string) (blockchain.ExecutorNode, error)
+	GetExecutorNodeByName(name string) (blockchain.ExecutorNode, error)
+	ListExecutorNodes() (blockchain.ExecutorNodes, error)
+
+	// task operation
+	ListTask(opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error)
+	PublishTask(opt *blockchain.PublishFLTaskOptions) error
+	StartTask(opt *blockchain.StartFLTaskOptions) error
+	GetTaskById(id string) (blockchain.FLTask, error)
+
+	// file operation
+	GetFileByID(id string) (xdbchain.File, error)
+	ListFileAuthApplications(opt *xdbchain.ListFileAuthOptions) (xdbchain.FileAuthApplications, error)
+	GetAuthApplicationByID(authID string) (xdbchain.FileAuthApplication, error)
+}
+
 // Client requester client, used to publish task and retrieve task result
 type Client struct {
 	chainClient Blockchain
@@ -255,7 +274,7 @@ func (c *Client) ListTask(rPubkeyStr, ePubkeyStr, status string, start, end,
 	if err != nil {
 		return tasks, errorx.Wrap(err, "failed to decode executor public key")
 	}
-	tasks, err = c.XchainClient.ListTask(&blockchain.ListFLTaskOptions{
+	tasks, err = c.chainClient.ListTask(&blockchain.ListFLTaskOptions{
 		PubKey:     rPubkey[:],
 		ExecPubKey: ePubkey[:],
 		TimeStart:  start,
