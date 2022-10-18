@@ -13,7 +13,7 @@ services:
         - ./xchain1/data/keys:/home/work/xchain/data/keys
         - ./xchain1/data/config:/home/work/xchain/data/config
     networks:
-        - xchain_network
+        - network
   xchain2.node.com:
     image: registry.baidubce.com/paddledtx/xchain:v3.9
     container_name: xchain2.node.com
@@ -22,7 +22,7 @@ services:
         - ./xchain2/data/keys:/home/work/xchain/data/keys
         - ./xchain2/data/config:/home/work/xchain/data/config
     networks:
-        - xchain_network
+        - network
   xchain3.node.com:
     image: registry.baidubce.com/paddledtx/xchain:v3.9
     container_name: xchain3.node.com
@@ -31,10 +31,10 @@ services:
         - ./xchain3/data/keys:/home/work/xchain/data/keys
         - ./xchain3/data/config:/home/work/xchain/data/config
     networks:
-        - xchain_network
+        - network
 
 networks:
-  xchain_network:
+  network:
     driver: bridge
     ipam:
       config:

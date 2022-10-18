@@ -6,7 +6,7 @@ services:
     container_name: ipfs_host_0
     image: ipfs/go-ipfs:latest
     networks:
-       - blockchain_xchain_network
+       - blockchain_network
     restart: always
     volumes:
       - ./ipfs_data_0:/data/ipfs                
@@ -19,7 +19,7 @@ services:
   #   container_name: ipfs_host_1
   #   image: ipfs/go-ipfs:latest
   #   networks:
-  #      - blockchain_xchain_network
+  #      - blockchain_network
   #   restart: always
   #   volumes:
   #     - ./ipfs_data_1:/data/ipfs                
@@ -32,7 +32,7 @@ services:
   #   container_name: ipfs_host_2
   #   image: ipfs/go-ipfs:latest
   #   networks:
-  #      - blockchain_xchain_network
+  #      - blockchain_network
   #   restart: always
   #   volumes:
   #     - ./ipfs_data_2:/data/ipfs
@@ -41,11 +41,11 @@ services:
   #   container_name: ipfs_host_3
   #   image: ipfs/go-ipfs:latest
   #   networks:
-  #      - blockchain_xchain_network
+  #      - blockchain_network
   #   restart: always
   #   volumes:
   #     - ./ipfs_data_3:/data/ipfs
 
 networks:
-  blockchain_xchain_network:
+  blockchain_network:
     external: true

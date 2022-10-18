@@ -36,7 +36,7 @@ BLOCKCHAIN_TYPE="xchain"
 
 # User's blockchain account address, used invoke contract 
 # 用户安装合约所使用的区块链账户地址
-ADDRESS_PATH=../$TMP_CONF_PATH/blockchain/user
+ADDRESS_PATH=../$TMP_CONF_PATH/blockchain/xchain/user
 TRANSFER_AMOUNT=110009887797
 
 #The storage mode used by the storage node, 
@@ -97,14 +97,31 @@ function start() {
     startPaddleFL
   fi
   startPaddleDTX
-
 }
 
 function stop() {
   # Stop PaddleDTX
   # 停止多方安全计算网络
   print_blue "==========> Stop executor network ..."
-  docker-compose -f ../$TMP_CONF_PATH/executor/docker-compose.yml down
+  docker-compose -p dtx -f ../$TMP_CONF_PATH/executor/docker-compose.yml down
+
+  # Stop decentralized storage network
+  # 停止去中心化存储网络
+  print_blue "==========> Stop decentralized storage network ..."
+  docker-compose -p xdb -f ../$TMP_CONF_PATH/xdb/docker-compose.yml down
+
+  # Stop IPFS network
+  # 停止IPFS网络
+  print_blue "==========> Stop IPFS network ..."
+  docker-compose -p ipfs -f ../$TMP_CONF_PATH/ipfs/docker-compose.yml down
+  # 停止 PaddleFL
+  print_blue "==========> Stop executor paddlefl network ..."
+  docker-compose -p paddlefl -f ../$TMP_CONF_PATH/executor/docker-compose-paddlefl.yml down
+
+  # Stop visualization
+  # 停止可视化服务
+  print_blue "==========> Stop visualization ..."
+  docker-compose -p visual -f ../$TMP_CONF_PATH/visualization/docker-compose.yml down
 
   # Stop blockchain network
   # 停止区块链网络
@@ -116,27 +133,10 @@ function stop() {
     # Cleanup chaincode images
     # 清除链码容器镜像
     removeChaincodeImages
-  else 
-    print_blue "==========> Stop decentralized storage network ..."
-    docker-compose -f ../$TMP_CONF_PATH/xdb/docker-compose.yml down
+  else
+    print_blue "==========> Stop xchain network ..."
+    docker-compose -f ../$TMP_CONF_PATH/blockchain/xchain/docker-compose.yml down
   fi
-  # Stop IPFS network
-  # 停止IPFS网络
-  print_blue "==========> Stop IPFS network ..."
-  docker-compose -f ../$TMP_CONF_PATH/ipfs/docker-compose.yml down
-  # 停止 PaddleFL
-  print_blue "==========> Stop executor paddlefl network ..."
-  docker-compose -p paddlefl -f ../$TMP_CONF_PATH/executor/docker-compose-paddlefl.yml down
-  
-  # Stop visualization
-  # 停止可视化服务
-  print_blue "==========> Stop visualization ..."
-  docker-compose -f ../$TMP_CONF_PATH/visualization/docker-compose.yml down 
-
-  # Stop xchain network
-  # 停止区块链网络
-  print_blue "==========> Stop xchain network ..."
-  docker-compose -f ../$TMP_CONF_PATH/blockchain/docker-compose.yml down
 
   # Delete temporary profiles by container
   # 通过容器方式删除临时配置文件, 防止因为文件权限问题导致的删除失败
@@ -145,7 +145,6 @@ function stop() {
     golang:1.13.4 sh -c "cd /workspace && rm -rf $TMP_CONF_PATH"
   print_green "==========> PaddleDTX stopped !"
 }
-
 
 function standardizeConf() {
   rm -rf ../$TMP_CONF_PATH && mkdir ../$TMP_CONF_PATH && cp -r ../testdata/* ../$TMP_CONF_PATH/
@@ -167,7 +166,7 @@ EOF
 # 通过docker-compose启动区块链网络
 function startXchain() {
   print_blue "==========> Xchain network start ..."
-  docker-compose -f ../$TMP_CONF_PATH/blockchain/docker-compose.yml up -d
+  docker-compose -f ../$TMP_CONF_PATH/blockchain/xchain/docker-compose.yml up -d
   sleep 6
 
   xchainContainers="xchain1.node.com xchain2.node.com xchain3.node.com"
@@ -290,14 +289,14 @@ function removeChaincodeImages() {
 function startXdb() {
   if [ $STORAGE_MODE_TYPE = "ipfs" ]; then
     print_blue "==========> IPFS network starts ..."
-    docker-compose -f ../$TMP_CONF_PATH/ipfs/docker-compose.yml up -d
+    docker-compose -p ipfs -f ../$TMP_CONF_PATH/ipfs/docker-compose.yml up -d
     sleep 6
     
     checkContainerStatus "ipfs_host_0" "IPFS storage network"
   fi
 
   print_blue "==========> Decentralized storage network start ..."
-  docker-compose -f ../$TMP_CONF_PATH/xdb/docker-compose.yml up -d
+  docker-compose -p xdb -f ../$TMP_CONF_PATH/xdb/docker-compose.yml up -d
   sleep 6
 
   xdbContainers="dataowner1.node.com dataowner2.node.com dataowner3.node.com storage1.node.com storage2.node.com storage3.node.com"
@@ -309,7 +308,7 @@ function startXdb() {
 # 通过docker-compose启动多网安全计算网络
 function startPaddleDTX() {
   print_blue "==========> Executor network start ..."
-  docker-compose -f ../$TMP_CONF_PATH/executor/docker-compose.yml up -d
+  docker-compose -p dtx -f ../$TMP_CONF_PATH/executor/docker-compose.yml up -d
   sleep 6
 
   executorContainers="executor1.node.com executor2.node.com executor3.node.com"
@@ -335,11 +334,11 @@ function startPaddleFL() {
 # 通过docker-compose启动可视化服务
 function startVisual() {
   print_blue "==========> Visualization start ..."
-  docker-compose -f ../$TMP_CONF_PATH/visualization/docker-compose.yml up -d
+  docker-compose -p visual -f ../$TMP_CONF_PATH/visualization/docker-compose.yml up -d
   sleep 6
 
-  xchainContainers="paddledtx-visual"
-  checkContainerStatus "$xchainContainers" "Visualization service"
+  visualContainer="paddledtx-visual"
+  checkContainerStatus "$visualContainer" "Visualization service"
   print_green "==========> PaddleDTX Visualization starts successfully !"
 }
 
@@ -356,7 +355,9 @@ function checkContainerStatus() {
   done
 }
 
-function compileContract() {
+# compileXchainContract compiling xchain contract through golang: 1.13.4 container
+# 通过golang:1.13.4容器编译xchain智能合约
+function compileXchainContract() {
   docker run -it --rm \
       -v $(dirname ${PWD}):/workspace \
       -v ~/.ssh:/root/.ssh \
@@ -364,16 +365,17 @@ function compileContract() {
       -e GONOSUMDB=* \
       -e GOPROXY=https://goproxy.cn \
       -e GO111MODULE=on \
-      golang:1.13.4 sh -c "cd dai && go build -o ../$TMP_CONF_PATH/blockchain/contract/$CONTRACT_NAME ./blockchain/xchain/contract"
-  
+      golang:1.13.4 sh -c "cd dai && go build -o ../$TMP_CONF_PATH/blockchain/xchain/contract/$CONTRACT_NAME ./blockchain/xchain/contract"
   # Copy contract file to xchain1 container
   # 将本地合约编译结果拷贝到区块链节点1容器中
-  docker cp ../$TMP_CONF_PATH/blockchain/contract/$CONTRACT_NAME xchain1.node.com:/home/work/xchain/$CONTRACT_NAME
+  docker cp ../$TMP_CONF_PATH/blockchain/xchain/contract/$CONTRACT_NAME xchain1.node.com:/home/work/xchain/$CONTRACT_NAME
 }
 
-function installContract() {
+# installXchainContract install xchain contract by xchain contractAccount
+# 通过合约账户安装xchain智能合约
+function installXchainContract() {
   print_blue "==========> Install $CONTRACT_NAME contract start ..."
-  compileContract
+  compileXchainContract
 
   address=`cat $ADDRESS_PATH/address`
   echo "user address $address ..."
@@ -381,7 +383,7 @@ function installContract() {
   # Transfer token from miner's account to user's account
   # 从矿工账户给用户账户转移token
   transferAddressResult=`docker exec -it xchain1.node.com sh -c "
-    ./xchain-cli transfer --to $address --amount $TRANSFER_AMOUNT --keys ./data/keys --host xchain1.node.com:37101 
+    ./xchain-cli transfer --to $address --amount $TRANSFER_AMOUNT --keys ./data/keys --host xchain1.node.com:37101
   "`
   checkOperateResult "$transferAddressResult"
   # Get required fee to create the contract account
@@ -402,7 +404,7 @@ function installContract() {
   # Transfer token from miner's account to contract account
   # 从矿工账户给用户创建的合约账户转移token
   transferAccountResult=`docker exec -it xchain1.node.com sh -c "
-    ./xchain-cli transfer --to XC${CONTRACT_ACCOUNT}@xuper --amount $TRANSFER_AMOUNT --keys ./data/keys  --host xchain1.node.com:37101 
+    ./xchain-cli transfer --to XC${CONTRACT_ACCOUNT}@xuper --amount $TRANSFER_AMOUNT --keys ./data/keys  --host xchain1.node.com:37101
   "`
   checkOperateResult "$transferAccountResult"
 
@@ -498,6 +500,3 @@ restart)
   exit 1
   ;;
 esac
-
-
-

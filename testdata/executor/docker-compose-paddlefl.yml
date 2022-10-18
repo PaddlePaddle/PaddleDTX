@@ -6,7 +6,7 @@ services:
     image: registry.baidubce.com/paddledtx/paddledtx-paddfl:1.1.2
     container_name: paddlefl-env1
     networks:
-      - blockchain_xchain_network
+      - blockchain_network
     ports:
       - 38302:38302
     command: /bin/bash -c "while true;do echo '';sleep 2;done"
@@ -18,7 +18,7 @@ services:
     image: registry.baidubce.com/paddledtx/paddledtx-paddfl:1.1.2
     container_name: paddlefl-env2
     networks:
-      - blockchain_xchain_network   
+      - blockchain_network
     ports:
       - 38304:38304
     command: /bin/bash -c "while true;do echo '';sleep 2;done"
@@ -30,7 +30,7 @@ services:
     image: registry.baidubce.com/paddledtx/paddledtx-paddfl:1.1.2
     container_name: paddlefl-env3
     networks:
-      - blockchain_xchain_network   
+      - blockchain_network
     ports:
       - 38306:38306
     command: /bin/bash -c "while true;do echo '';sleep 2;done"
@@ -40,5 +40,5 @@ services:
 
 
 networks:
-  blockchain_xchain_network:
+  blockchain_network:
     external: true

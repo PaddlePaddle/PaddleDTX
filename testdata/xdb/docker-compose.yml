@@ -5,7 +5,7 @@ services:
     image: registry.baidubce.com/paddledtx/xdb-dataowner:2.1
     container_name: dataowner1.node.com
     networks:
-      - blockchain_xchain_network
+      - blockchain_network
     ports:
         - 8441:80
     volumes:
@@ -21,7 +21,7 @@ services:
     image: registry.baidubce.com/paddledtx/xdb-dataowner:2.1
     container_name: dataowner2.node.com
     networks:
-      - blockchain_xchain_network
+      - blockchain_network
     ports:
       - 8442:80
     depends_on:
@@ -39,7 +39,7 @@ services:
     image: registry.baidubce.com/paddledtx/xdb-dataowner:2.1
     container_name: dataowner3.node.com
     networks:
-      - blockchain_xchain_network
+      - blockchain_network
     depends_on:
       - dataowner2
     ports:
@@ -56,7 +56,7 @@ services:
     image: registry.baidubce.com/paddledtx/xdb-storage:2.1
     container_name: storage1.node.com
     networks:
-      - blockchain_xchain_network
+      - blockchain_network
     ports:
         - 38201:80
     volumes:
@@ -70,7 +70,7 @@ services:
     depends_on:
       - storage1
     networks:
-      - blockchain_xchain_network
+      - blockchain_network
     ports:
         - 38202:80
     volumes:
@@ -84,7 +84,7 @@ services:
     depends_on:
       - storage2
     networks:
-      - blockchain_xchain_network
+      - blockchain_network
     ports:
         - 38203:80
     volumes:
@@ -92,5 +92,5 @@ services:
         - ./storage3/keys:/home/keys
         - ./storage3/logs:/home/logs
 networks:
-  blockchain_xchain_network:
+  blockchain_network:
     external: true
