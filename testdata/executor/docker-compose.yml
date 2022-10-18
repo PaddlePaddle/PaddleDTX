@@ -5,7 +5,7 @@ services:
     image: registry.baidubce.com/paddledtx/paddledtx-dai:2.1
     container_name: executor1.node.com
     networks:
-      - blockchain_xchain_network
+      - blockchain_network
     ports:
       - 38301:38301
       - 8511:8511
@@ -23,7 +23,7 @@ services:
     depends_on:
       - executor1
     networks:
-      - blockchain_xchain_network
+      - blockchain_network
     ports:
       - 38303:38303
       - 8512:8512
@@ -41,7 +41,7 @@ services:
     depends_on:
       - executor2
     networks:
-      - blockchain_xchain_network
+      - blockchain_network
     ports:
       - 38305:38305
       - 8513:8513
@@ -55,5 +55,5 @@ services:
 
 
 networks:
-  blockchain_xchain_network:
+  blockchain_network:
     external: true
