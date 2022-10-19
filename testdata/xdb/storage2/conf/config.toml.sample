@@ -15,11 +15,11 @@ publicAddress = "storage2.node.com:80"
         chainAddress = "xchain1.node.com:37101"
         chainName = "xuper"
     [storage.blockchain.fabric]
-        configFile = "./config/fabric/config.yaml"
-        channelId = "mychannel"
-        chaincode = "mycc"
+        configFile = "/home/conf/fabric/config.yaml"
+        channelId = "${CHANNEL_NAME}"
+        chaincode = "${CONTRACT_NAME}"
         userName = "Admin"
-        orgName = "org1"
+        orgName = "Org1"
 
 [storage.prover]
     localRoot = "/home/data/prove"

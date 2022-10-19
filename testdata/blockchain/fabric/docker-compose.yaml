@@ -17,7 +17,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.33.2.0/24
+        - subnet: 172.33.1.0/24
 
 services:
 
@@ -73,7 +73,7 @@ services:
 
   cli:
     container_name: cli
-    image: hyperledger/fabric-tools
+    image: hyperledger/fabric-tools:$IMAGE_TAG
     tty: true
     stdin_open: true
     environment:
