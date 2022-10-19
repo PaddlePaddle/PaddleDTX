@@ -40,11 +40,11 @@ allowCros = true
         chainAddress = "xchain1.node.com:37101"
         chainName = "xuper"
     [dataOwner.blockchain.fabric]
-        configFile = "./config/fabric/config.yaml"
-        channelId = "mychannel"
-        chaincode = "mycc"
+        configFile = "/home/conf/fabric/config.yaml"
+        channelId = "${CHANNEL_NAME}"
+        chaincode = "${CONTRACT_NAME}"
         userName = "Admin"
-        orgName = "org1"
+        orgName = "Org1"
 
 [dataOwner.copier]
     type = "random-copier"
