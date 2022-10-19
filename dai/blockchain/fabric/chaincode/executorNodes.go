@@ -19,7 +19,6 @@ import (
 
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 	util "github.com/PaddlePaddle/PaddleDTX/xdb/pkgs/strings"
-
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
 
@@ -50,8 +49,8 @@ func (x *Xdata) RegisterExecutorNode(stub shim.ChaincodeStubInterface, args []st
 	// check node.Name, the length of the executor node name is 4-16 characters
 	// only support lowercase letters and numbers
 	if ok, _ := regexp.MatchString("^[a-z0-9]{4,16}", n.Name); !ok {
-		return shim.Error(errorx.New(err, errorx.ErrCodeParam,
-			"fbad param, nodeName only supports numbers and lowercase letters with a length of 4-16").Error())
+		return shim.Error(errorx.New(errorx.ErrCodeParam,
+			"bad param, nodeName only supports numbers and lowercase letters with a length of 4-16").Error())
 	}
 
 	// get the message to sign
@@ -67,29 +66,29 @@ func (x *Xdata) RegisterExecutorNode(stub shim.ChaincodeStubInterface, args []st
 
 	// put index-node on xchain, judge if index exists
 	index := packNodeIndex(n.ID)
-	if resp := x.getValue(stub, []string{index}); len(resp.Payload) != 0 {
+	if resp := x.GetValue(stub, []string{index}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists,
 			"duplicated nodeID").Error())
 	}
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to put index-Node on chain: %s", resp.Message).Error())
 	}
 
 	// put index-nodeName on xchain
-	index = packNodeNameIndex(node.Name)
-	if resp := x.getValue(stub, []string{index}); len(resp.Payload) != 0 {
+	index = packNodeNameIndex(n.Name)
+	if resp := x.GetValue(stub, []string{index}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists,
-			"duplicated nodeID").Error())
+			"duplicated nodeName").Error())
 	}
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
-		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain, "failed to put index-Node on chain: %s",
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain, "failed to put index-NodeName on chain: %s",
 			resp.Message).Error())
 	}
 
 	// put listIndex-node on xchain
-	index = packNodeListIndex(node)
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+	index = packNodeListIndex(n)
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain, "failed to put listIndex-Node on chain: %s",
 			resp.Message).Error())
 	}
@@ -110,7 +109,7 @@ func (x *Xdata) ListExecutorNodes(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 
-		var node blockchain.Node
+		var node blockchain.ExecutorNode
 		if err := json.Unmarshal(queryResponse.Value, &node); err != nil {
 			return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 				"failed to unmarshal node").Error())
@@ -132,8 +131,8 @@ func (x *Xdata) GetExecutorNodeByID(stub shim.ChaincodeStubInterface, args []str
 	if len(args) < 1 {
 		return shim.Error("invalid arguments. expecting nodeID")
 	}
-	index := packNodeStringIndex(string(args[0]))
-	resp := x.getValue(stub, []string{index})
+	index := packNodeStringIndex(args[0])
+	resp := x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "node not found: %s", resp.Message).Error())
 	}
@@ -145,8 +144,8 @@ func (x *Xdata) GetExecutorNodeByName(stub shim.ChaincodeStubInterface, args []s
 	if len(args) < 4 {
 		return shim.Error("invalid arguments. expecting name")
 	}
-	index := packNodeNameIndex(string(args[0]))
-	resp := x.getValue(stub, []string{index})
+	index := packNodeNameIndex(args[0])
+	resp := x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound,
 			"node not found: %s", resp.Message).Error())
