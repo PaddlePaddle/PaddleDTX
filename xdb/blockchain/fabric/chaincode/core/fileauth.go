@@ -65,33 +65,33 @@ func (x *Xdata) PublishFileAuthApplication(stub shim.ChaincodeStubInterface, arg
 
 	// judge if fileAuthIndex exists
 	fileAuthIndex := packFileAuthIndex(fa.ID)
-	if resp := x.getValue(stub, []string{fileAuthIndex}); len(resp.Payload) != 0 {
+	if resp := x.GetValue(stub, []string{fileAuthIndex}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated file authID").Error())
 	}
 
 	// put index_fileauth into chain
-	if resp := x.setValue(stub, []string{fileAuthIndex, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{fileAuthIndex, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set index_fileauth on chain: %s", resp.Message).Error())
 	}
 
 	// put index_fileauth_list_applier into chain
 	applierListIndex := packFileAuthApplierIndex(fa.Applier, fa.ID, fa.CreateTime)
-	if resp := x.setValue(stub, []string{applierListIndex, fa.ID}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{applierListIndex, fa.ID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set index_fileauth_list_applier on chain: %s", resp.Message).Error())
 	}
 
 	// put index_fileauth_list_authorizer into chain
 	authorizerListIndex := packFileAuthAuthorizerIndex(fa.Authorizer, fa.ID, fa.CreateTime)
-	if resp := x.setValue(stub, []string{authorizerListIndex, fa.ID}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{authorizerListIndex, fa.ID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set index_fileauth_list_authorizer on chain: %s", resp.Message).Error())
 	}
 
 	// put index_fileauth_list_applier_authorizer into chain
 	authListIndex := packApplierAndAuthorizerIndex(fa.Applier, fa.Authorizer, fa.ID, fa.CreateTime)
-	if resp := x.setValue(stub, []string{authListIndex, fa.ID}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{authListIndex, fa.ID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set index_fileauth_list_applier_authorizer on chain: %s", resp.Message).Error())
 	}
@@ -157,7 +157,7 @@ func (x *Xdata) setFileAuthConfirmStatus(stub shim.ChaincodeStubInterface, args 
 	}
 	// update index_fileauth on chain
 	index := packFileAuthIndex(fa.ID)
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to confirm index_fileauth on chain: %s", resp.Message).Error())
 	}
@@ -168,7 +168,7 @@ func (x *Xdata) setFileAuthConfirmStatus(stub shim.ChaincodeStubInterface, args 
 // getFileAuthByID query file's authorization application by authID
 func (x *Xdata) getFileAuthByID(stub shim.ChaincodeStubInterface, authID string) (fa blockchain.FileAuthApplication, err error) {
 	index := packFileAuthIndex(authID)
-	resp := x.getValue(stub, []string{index})
+	resp := x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return fa, errorx.New(errorx.ErrCodeNotFound, "fileAuthApplication[%s] not found: %s", authID, resp.Message)
 	}
@@ -246,7 +246,7 @@ func (x *Xdata) GetAuthApplicationByID(stub shim.ChaincodeStubInterface, args []
 
 	// get authorization application detail by index_fileauth
 	index := packFileAuthIndex(string(args[0]))
-	resp := x.getValue(stub, []string{index})
+	resp := x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "fileAuthApplication not found: %s", resp.Message).Error())
 	}

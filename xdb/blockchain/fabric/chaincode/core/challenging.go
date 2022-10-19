@@ -68,7 +68,7 @@ func (x *Xdata) ListChallengeRequests(stub shim.ChaincodeStubInterface, args []s
 			break
 		}
 		index := packChallengeIndex(string(queryResponse.Value))
-		resp := x.getValue(stub, []string{index})
+		resp := x.GetValue(stub, []string{index})
 		if len(resp.Payload) == 0 {
 			return shim.Error(errorx.New(errorx.ErrCodeNotFound,
 				"the Challenge[%x] not found: %s", queryResponse.Value, resp.Message).Error())
@@ -111,7 +111,7 @@ func (x *Xdata) ChallengeRequest(stub shim.ChaincodeStubInterface, args []string
 	}
 	// judge if id exists
 	index := packChallengeIndex(opt.ChallengeID)
-	if resp := x.getValue(stub, []string{index}); len(resp.Payload) != 0 {
+	if resp := x.GetValue(stub, []string{index}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated ChallengeID").Error())
 	}
 
@@ -159,20 +159,20 @@ func (x *Xdata) ChallengeRequest(stub shim.ChaincodeStubInterface, args []string
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal Challenge").Error())
 	}
 	// set challengeID-challenge on chain
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set ChallengeID-Challenge on chain: %s", resp.Message).Error())
 	}
 
 	// set index40owner-challengeID on chain
 	index4Owner := packChallengeIndex4Owner(&c)
-	if resp := x.setValue(stub, []string{index4Owner, c.ID}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index4Owner, c.ID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set index40owner-ChallengeID on chain: %s", resp.Message).Error())
 	}
 	// set index4Target-challengeID on chain
 	index4Target := packChallengeIndex4Target(&c)
-	if resp := x.setValue(stub, []string{index4Target, c.ID}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index4Target, c.ID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set index4Target-ChallengeID on chain: %s", resp.Message).Error())
 	}
@@ -195,7 +195,7 @@ func (x *Xdata) ChallengeAnswer(stub shim.ChaincodeStubInterface, args []string)
 	}
 	// judge if challenge exists
 	index := packChallengeIndex(opt.ChallengeID)
-	resp := x.getValue(stub, []string{index})
+	resp := x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "Challenge not found: %s", resp.Message).Error())
 	}
@@ -225,7 +225,7 @@ func (x *Xdata) ChallengeAnswer(stub shim.ChaincodeStubInterface, args []string)
 	}
 
 	// judge if file exists
-	resp = x.getValue(stub, []string{c.FileID})
+	resp = x.GetValue(stub, []string{c.FileID})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "File not found: %s", resp.Message).Error())
 	}
@@ -276,7 +276,7 @@ func (x *Xdata) ChallengeAnswer(stub shim.ChaincodeStubInterface, args []string)
 			"failed to marshal Challenge").Error())
 	}
 	// update challengeID-challenge on chain
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to update ChallengeID-Challenge on chain: %s", resp.Message).Error())
 	}
@@ -296,7 +296,7 @@ func (x *Xdata) GetChallengeByID(stub shim.ChaincodeStubInterface, args []string
 
 	// get challenge result by challenge id
 	index := packChallengeIndex(args[0])
-	resp := x.getValue(stub, []string{index})
+	resp := x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "challenge not found: %s", resp.Message).Error())
 	}
@@ -334,7 +334,7 @@ func (x *Xdata) GetChallengeNum(stub shim.ChaincodeStubInterface, args []string)
 		}
 
 		index := packChallengeIndex(string(queryResponse.Value))
-		resp := x.getValue(stub, []string{index})
+		resp := x.GetValue(stub, []string{index})
 		if len(resp.Payload) == 0 {
 			return shim.Error(errorx.NewCode(err, errorx.ErrCodeNotFound,
 				"the Challenge[%x] not found: %s", queryResponse.Value, resp.Message).Error())
