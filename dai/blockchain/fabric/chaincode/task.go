@@ -16,11 +16,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
-
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
 
@@ -43,11 +41,9 @@ func (x *Xdata) PublishTask(stub shim.ChaincodeStubInterface, args []string) pb.
 	// get fltask
 	t := opt.FLTask
 	msg, err := util.GetSigMessage(t)
-
 	if err != nil {
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to get the message to sign").Error())
 	}
-
 	if err := x.checkSign(opt.Signature, t.Requester, []byte(msg)); err != nil {
 		return shim.Error(err.Error())
 	}
@@ -63,10 +59,10 @@ func (x *Xdata) PublishTask(stub shim.ChaincodeStubInterface, args []string) pb.
 
 	// put index-fltask on xchain, judge if index exists
 	index := packFlTaskIndex(t.TaskID)
-	if resp := x.getValue(stub, []string{index}); len(resp.Payload) != 0 {
+	if resp := x.GetValue(stub, []string{index}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated taskID").Error())
 	}
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"fail to put index-flTask on xchain: %s", resp.Message).Error())
 	}
@@ -74,7 +70,7 @@ func (x *Xdata) PublishTask(stub shim.ChaincodeStubInterface, args []string) pb.
 	// put requester listIndex-fltask on xchain
 	index = packFlTaskListIndex(t)
 
-	if resp := x.setValue(stub, []string{index, t.TaskID}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, t.TaskID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"fail to put requester listIndex-fltask on xchain: %s", resp.Message).Error())
 	}
@@ -82,13 +78,13 @@ func (x *Xdata) PublishTask(stub shim.ChaincodeStubInterface, args []string) pb.
 	//put executor listIndex-fltask on xchain
 	for _, ds := range t.DataSets {
 		index := packExecutorTaskListIndex(ds.Executor, t)
-		if resp := x.setValue(stub, []string{index, t.TaskID}); resp.Status == shim.ERROR {
+		if resp := x.SetValue(stub, []string{index, t.TaskID}); resp.Status == shim.ERROR {
 			return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 				"fail to put executor listIndex-fltask on xchain: %s", resp.Message).Error())
 		}
 		// put requester and executor listIndex-fltask on xchain
 		index_re := packRequesterExecutorTaskIndex(ds.Executor, t)
-		if resp := x.setValue(stub, []string{index_re, t.TaskID}); resp.Status == shim.ERROR {
+		if resp := x.SetValue(stub, []string{index_re, t.TaskID}); resp.Status == shim.ERROR {
 			return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 				"fail to put requester and executor listIndex-fltask on xchain: %s", resp.Message).Error())
 		}
@@ -128,10 +124,12 @@ func (x *Xdata) ListTask(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		if opt.Limit > 0 && int64(len(tasks)) >= opt.Limit {
 			break
 		}
-		t, err := x.getFileByID(stub, string(queryResponse.Value))
+
+		t, err := x.getTaskById(stub, string(queryResponse.Value))
 		if err != nil {
-			return shim.Error(err.Error())
+			return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to get task by id").Error())
 		}
+
 		if t.PublishTime < opt.TimeStart || (opt.TimeEnd > 0 && t.PublishTime > opt.TimeEnd) ||
 			(opt.Status != "" && t.Status != opt.Status) {
 			continue
@@ -154,8 +152,8 @@ func (x *Xdata) GetTaskById(stub shim.ChaincodeStubInterface, args []string) pb.
 	if len(args) < 1 {
 		return shim.Error("invalid arguments. missing param: id")
 	}
-	index := packFlTaskIndex(string(args[0]))
-	resp := x.getValue(stub, []string{index})
+	index := packFlTaskIndex(args[0])
+	resp := x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "task not found: %s", resp.Message).Error())
 	}
@@ -166,6 +164,7 @@ func (x *Xdata) GetTaskById(stub shim.ChaincodeStubInterface, args []string) pb.
 func (x *Xdata) ConfirmTask(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return x.setTaskConfirmStatus(stub, args, true)
 }
+
 func (x *Xdata) RejectTask(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return x.setTaskConfirmStatus(stub, args, false)
 }
@@ -187,7 +186,7 @@ func (x *Xdata) setTaskConfirmStatus(stub shim.ChaincodeStubInterface, args []st
 
 	// executor validity check
 	if ok := x.checkExecutor(opt.Pubkey, t.DataSets); !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param: executor"))
+		return shim.Error(errorx.New(errorx.ErrCodeParam, "bad param: executor").Error())
 	}
 
 	// verify sig
@@ -208,7 +207,7 @@ func (x *Xdata) setTaskConfirmStatus(stub shim.ChaincodeStubInterface, args []st
 	isAllConfirm := true
 	for index, ds := range t.DataSets {
 		if bytes.Equal(ds.Executor, opt.Pubkey) {
-			if resp := x.getValue(stub, []string{ds.DataID}); len(resp.Payload) != 0 {
+			if resp := x.GetValue(stub, []string{ds.DataID}); len(resp.Payload) != 0 {
 				return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "bad param:taskId, dataId not exist").Error())
 			}
 
@@ -244,7 +243,7 @@ func (x *Xdata) setTaskConfirmStatus(stub shim.ChaincodeStubInterface, args []st
 
 	// update index-fltask on xchain
 	index := packFlTaskIndex(t.TaskID)
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"fail to confirm index-flTask on xchain: %s", resp.Message).Error())
 	}
@@ -253,7 +252,7 @@ func (x *Xdata) setTaskConfirmStatus(stub shim.ChaincodeStubInterface, args []st
 
 // StartTask is called when Requester starts task after Executors confirmed
 // task status will be updated from 'Ready' to 'ToProcess'
-func (x *Xdata) setTaskConfirmStatus(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (x *Xdata) StartTask(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var opt blockchain.StartFLTaskOptions
 	if len(args) < 1 {
 		return shim.Error("incorrect arguments. expecting StartFLTaskOptions")
@@ -273,12 +272,12 @@ func (x *Xdata) setTaskConfirmStatus(stub shim.ChaincodeStubInterface, args []st
 	if err != nil {
 		return shim.Error(errorx.Internal(err, "failed to get the message to sign").Error())
 	}
-	if err := x.checkSign(opt.Signature, opt.Pubkey, []byte(msg)); err != nil {
+	if err := x.checkSign(opt.Signature, t.Requester, []byte(msg)); err != nil {
 		return shim.Error(err.Error())
 	}
-	if t.Status != blockchain.TaskConfirming {
+	if t.Status != blockchain.TaskReady && t.Status != blockchain.TaskFailed {
 		return shim.Error(errorx.New(errorx.ErrCodeParam,
-			"confirm task error, taskStatus is not Confirming, taskId: %s, taskStatus: %s", t.TaskID, t.Status).Error())
+			"start task error, task status is not Ready or Failed, taskId: %s, taskStatus: %s", t.TaskID, t.Status).Error())
 	}
 
 	// update task status
@@ -290,7 +289,7 @@ func (x *Xdata) setTaskConfirmStatus(stub shim.ChaincodeStubInterface, args []st
 
 	// update index-fltask on xchain
 	index := packFlTaskIndex(t.TaskID)
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"fail to confirm index-flTask on xchain: %s", resp.Message).Error())
 	}
@@ -299,12 +298,12 @@ func (x *Xdata) setTaskConfirmStatus(stub shim.ChaincodeStubInterface, args []st
 
 // ExecuteTask is called when Executor run task
 func (x *Xdata) ExecuteTask(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return x.setTaskExecuteStatus(stub, args, true)
+	return x.setTaskExecuteStatus(stub, args, false)
 }
 
 // FinishTask is called when task execution finished
 func (x *Xdata) FinishTask(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return x.setTaskExecuteStatus(stub, args, false)
+	return x.setTaskExecuteStatus(stub, args, true)
 }
 
 // setTaskExecuteStatus is called by the Executor when the task is started or when the task has finished
@@ -326,7 +325,7 @@ func (x *Xdata) setTaskExecuteStatus(stub shim.ChaincodeStubInterface, args []st
 
 	// executor validity check
 	if ok := x.checkExecutor(opt.Executor, t.DataSets); !ok {
-		return code.Error(errorx.New(errorx.ErrCodeParam, "bad param:executor"))
+		return shim.Error(errorx.New(errorx.ErrCodeParam, "bad param:executor").Error())
 	}
 
 	// verify sig
@@ -369,7 +368,7 @@ func (x *Xdata) setTaskExecuteStatus(stub shim.ChaincodeStubInterface, args []st
 
 	// update index-fltask on xchain
 	index := packFlTaskIndex(t.TaskID)
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"fail to set task execute status on xchain: %s", resp.Message).Error())
 	}
@@ -379,11 +378,11 @@ func (x *Xdata) setTaskExecuteStatus(stub shim.ChaincodeStubInterface, args []st
 // getTaskById gets task details from the blockchain ledger
 func (x *Xdata) getTaskById(stub shim.ChaincodeStubInterface, taskID string) (t blockchain.FLTask, err error) {
 	index := packFlTaskIndex(taskID)
-	resp := x.getValue(stub, []string{index})
+	resp := x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return t, errorx.New(errorx.ErrCodeNotFound, "the task[%s] not found", taskID, resp.Message)
 	}
-	if err = json.Unmarshal([]byte(resp.Payload), &t); err != nil {
+	if err = json.Unmarshal(resp.Payload, &t); err != nil {
 		return t, errorx.NewCode(err, errorx.ErrCodeInternal,
 			"fail to unmarshal FlTask")
 	}

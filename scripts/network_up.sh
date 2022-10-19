@@ -241,6 +241,16 @@ function startFabric() {
   sleep 3
 
   # Copy fabric sdk yaml file into xdb configuration directory
+  # 拷贝sdk yaml文件到xdb配置目录下
+  CONFFILE_LIST="dataowner storage1 storage2 storage3"
+  for CONF_PATH in $CONFFILE_LIST
+  do
+    mkdir -p ../$TMP_CONF_NAME/xdb/$CONF_PATH/conf/fabric/
+    cp -f ../$TMP_CONF_NAME/blockchain/fabric/conf/config.yaml ../$TMP_CONF_NAME/xdb/$CONF_PATH/conf/fabric/
+    cp -rf ../$TMP_CONF_NAME/blockchain/fabric/crypto-config ../$TMP_CONF_NAME/xdb/$CONF_PATH/conf/fabric/
+  done
+
+  # Copy fabric sdk yaml file into xdb configuration directory
   # 拷贝sdk yaml文件到executor配置目录下
   CONFFILE_LIST="requester node1 node2 node3"
   for CONF_PATH in $CONFFILE_LIST
@@ -252,7 +262,7 @@ function startFabric() {
 }
 
 function generateVendor() {
-  cp -f ../dai/blockchain/fabric/chaincode/* ../$TMP_CONF_PATH/blockchain/fabric/chaincode/
+  cp -rf ../dai/blockchain/fabric/chaincode/* ../$TMP_CONF_PATH/blockchain/fabric/chaincode/
   docker run -it --rm \
       -v $(dirname ${PWD}):/workspace \
       -v ~/.ssh:/root/.ssh \

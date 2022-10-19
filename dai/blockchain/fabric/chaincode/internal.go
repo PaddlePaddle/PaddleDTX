@@ -21,6 +21,9 @@ import (
 )
 
 const (
+	compositeKeyNamespace = "\x00"
+	minUnicodeRuneValue   = 0
+
 	prefixFlTaskIndex       = "index_fltask"
 	prefixFlTaskListIndex   = "index_fltask_list"
 	prefixREFlTaskListIndex = "index_re_fltask_list"
@@ -36,21 +39,24 @@ func subByInt64Max(n int64) int64 {
 
 // packFlTaskIndex pack task index for saving task using taskID
 func packFlTaskIndex(taskID string) string {
-	return fmt.Sprintf("%s/%s", prefixFlTaskIndex, taskID)
+	return createCompositeKey(prefixFlTaskIndex, []string{taskID})
 }
 
 // packFlTaskListIndex pack index for saving tasks for requester, in time descending order
 func packFlTaskListIndex(task blockchain.FLTask) string {
-	return fmt.Sprintf("%s/%x/%d/%s", prefixFlTaskListIndex, task.Requester, subByInt64Max(task.PublishTime), task.TaskID)
+	attributes := []string{fmt.Sprintf("%x", task.Requester), fmt.Sprintf("%d", subByInt64Max(task.PublishTime)), task.TaskID}
+	return createCompositeKey(prefixFlTaskListIndex, attributes)
 }
 
 // packExecutorTaskListIndex pack index for saving tasks that an executor involves, in time descending order
 func packExecutorTaskListIndex(executor []byte, task blockchain.FLTask) string {
-	return fmt.Sprintf("%s/%x/%d/%s", prefixFlTaskListIndex, executor, subByInt64Max(task.PublishTime), task.TaskID)
+	attributes := []string{fmt.Sprintf("%x", executor), fmt.Sprintf("%d", subByInt64Max(task.PublishTime)), task.TaskID}
+	return createCompositeKey(prefixFlTaskListIndex, attributes)
 }
 
 func packRequesterExecutorTaskIndex(executor []byte, task blockchain.FLTask) string {
-	return fmt.Sprintf("%s/%x/%x/%d/%s", prefixREFlTaskListIndex, task.Requester, executor, subByInt64Max(task.PublishTime), task.TaskID)
+	attributes := []string{fmt.Sprintf("%x", task.Requester), fmt.Sprintf("%x", executor), fmt.Sprintf("%d", subByInt64Max(task.PublishTime)), task.TaskID}
+	return createCompositeKey(prefixREFlTaskListIndex, attributes)
 }
 
 // packFlTaskFilter pack filter index with public key for searching tasks for requester or executor
@@ -66,20 +72,29 @@ func packFlTaskFilter(rPubkey, ePubkey []byte) (string, []string) {
 
 // packNodeIndex pack index-id contract key for saving executor node
 func packNodeIndex(nodeID []byte) string {
-	return fmt.Sprintf("%s/%x", prefixNodeIndex, nodeID)
+	return createCompositeKey(prefixNodeIndex, []string{fmt.Sprintf("%x", nodeID)})
 }
 
 // packNodeStringIndex pack index-id contract key for saving executor node
 func packNodeStringIndex(nodeID string) string {
-	return fmt.Sprintf("%s/%s", prefixNodeIndex, nodeID)
+	return createCompositeKey(prefixNodeIndex, []string{nodeID})
 }
 
 // packNodeNameIndex pack index-name contract key for saving executor node
 func packNodeNameIndex(name string) string {
-	return fmt.Sprintf("%s/%s", prefixNodeNameIndex, name)
+	return createCompositeKey(prefixNodeNameIndex, []string{name})
 }
 
 // packNodeListIndex pack filter for listing executor nodes
 func packNodeListIndex(node blockchain.ExecutorNode) string {
-	return fmt.Sprintf("%s/%d/%x", prefixNodeListIndex, subByInt64Max(node.RegTime), node.ID)
+	attributes := []string{fmt.Sprintf("%d", subByInt64Max(node.RegTime)), fmt.Sprintf("%x", node.ID)}
+	return createCompositeKey(prefixNodeListIndex, attributes)
+}
+
+func createCompositeKey(objectType string, attributes []string) string {
+	ck := compositeKeyNamespace + objectType + string(minUnicodeRuneValue)
+	for _, att := range attributes {
+		ck += att + string(minUnicodeRuneValue)
+	}
+	return ck
 }
