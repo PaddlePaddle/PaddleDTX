@@ -30,10 +30,10 @@ func (x *Xdata) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (x *Xdata) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	fn, args := stub.GetFunctionAndParameters()
 	switch fn {
-	case "setValue":
-		return x.setValue(stub, args)
-	case "getValue":
-		return x.getValue(stub, args)
+	case "SetValue":
+		return x.SetValue(stub, args)
+	case "GetValue":
+		return x.GetValue(stub, args)
 	case "AddNode":
 		return x.AddNode(stub, args)
 	case "ListNodes":
@@ -101,7 +101,7 @@ func (x *Xdata) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 }
 
-func (x *Xdata) setValue(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (x *Xdata) SetValue(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	err := stub.PutState(args[0], []byte(args[1]))
 	if err != nil {
 		return shim.Error("set right fail " + err.Error())
@@ -109,7 +109,7 @@ func (x *Xdata) setValue(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	return shim.Success(nil)
 }
 
-func (x *Xdata) getValue(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (x *Xdata) GetValue(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	result, err := stub.GetState(args[0])
 	if err != nil {
 		return shim.Error("query" + args[0] + " fail:" + err.Error())

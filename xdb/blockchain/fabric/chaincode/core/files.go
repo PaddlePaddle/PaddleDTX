@@ -59,13 +59,13 @@ func (x *Xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 			"slices is empty when publishing file").Error())
 	}
 	// judge if id exists
-	if resp := x.getValue(stub, []string{opt.File.ID}); len(resp.Payload) != 0 {
+	if resp := x.GetValue(stub, []string{opt.File.ID}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated fileID").Error())
 	}
 
 	// judge if fileNsIndex exists
 	fileNsIndex := packFileNsIndex(f.Owner, f.Namespace)
-	resp := x.getValue(stub, []string{fileNsIndex})
+	resp := x.GetValue(stub, []string{fileNsIndex})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound,
 			"file namespace not found: %s", resp.Message).Error())
@@ -79,7 +79,7 @@ func (x *Xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 	// if there's a expired file with the same name in user's storage, overwrite it with the new one
 	filenameIndex := packFileNameIndex(f.Owner, f.Namespace, f.Name)
 
-	if resp := x.getValue(stub, []string{filenameIndex}); len(resp.Payload) != 0 {
+	if resp := x.GetValue(stub, []string{filenameIndex}); len(resp.Payload) != 0 {
 		fc, err := x.getFileByID(stub, string(resp.Payload))
 		if err != nil {
 			return shim.Error(err.Error())
@@ -96,24 +96,24 @@ func (x *Xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 	}
 
 	// set id-file on chain
-	if resp := x.setValue(stub, []string{f.ID, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{f.ID, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set id-file on chain: %s", resp.Message).Error())
 	}
 	// set filenameIndex-id on chain
-	if resp := x.setValue(stub, []string{filenameIndex, f.ID}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{filenameIndex, f.ID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set index-id on chain: %s", resp.Message).Error())
 	}
 	// set filenameListIndex-id on chain
 	filenameListIndex := packFileListByOwnerIndex(f.Owner, f.Namespace, f.Name, f.PublishTime)
-	if resp := x.setValue(stub, []string{filenameListIndex, f.ID}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{filenameListIndex, f.ID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set listIndex-id on chain: %s", resp.Message).Error())
 	}
 	// set fileListByNsIndex-id on chain
 	fileListByNsIndex := packFileListByNsIndex(f.Owner, f.Namespace, f.Name, f.PublishTime)
-	if resp := x.setValue(stub, []string{fileListByNsIndex, f.ID}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{fileListByNsIndex, f.ID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set fileListByNsIndex-id on chain: %s", resp.Message).Error())
 	}
@@ -126,12 +126,12 @@ func (x *Xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal,
 			"failed to marshal File namespace").Error())
 	}
-	if resp := x.setValue(stub, []string{fileNsIndex, string(nsf)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{fileNsIndex, string(nsf)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to update index-ns on chain: %s", resp.Message).Error())
 	}
 	nsListIndex := packFileNsListIndex(ns.Owner, ns.Name, ns.CreateTime)
-	if resp := x.setValue(stub, []string{nsListIndex, string(nsf)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{nsListIndex, string(nsf)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to update listIndex-ns on chain: %s", resp.Message).Error())
 	}
@@ -143,7 +143,7 @@ func (x *Xdata) PublishFile(stub shim.ChaincodeStubInterface, args []string) pb.
 	}
 	for nodeID, sliceL := range nodeSlice {
 		prefixNodeFileSlice := packNodeSliceIndex(nodeID, f)
-		if resp := x.setValue(stub, []string{prefixNodeFileSlice, strings.Join(sliceL, ",")}); resp.Status == shim.ERROR {
+		if resp := x.SetValue(stub, []string{prefixNodeFileSlice, strings.Join(sliceL, ",")}); resp.Status == shim.ERROR {
 			return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 				"failed to set index-id on chain: %s", resp.Message).Error())
 		}
@@ -183,18 +183,18 @@ func (x *Xdata) AddFileNs(stub shim.ChaincodeStubInterface, args []string) pb.Re
 
 	// judge if fileNsIndex exists
 	fileNsIndex := packFileNsIndex(ns.Owner, ns.Name)
-	if resp := x.getValue(stub, []string{fileNsIndex}); len(resp.Payload) != 0 {
+	if resp := x.GetValue(stub, []string{fileNsIndex}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated file namespace").Error())
 	}
 
 	// put index-ns on chain
-	if resp := x.setValue(stub, []string{fileNsIndex, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{fileNsIndex, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set index-ns on chain: %s", resp.Message).Error())
 	}
 	// put listIndex-ns on chain
 	nsListIndex := packFileNsListIndex(ns.Owner, ns.Name, ns.CreateTime)
-	if resp := x.setValue(stub, []string{nsListIndex, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{nsListIndex, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set listIndex-ns on chain: %s", resp.Message).Error())
 	}
@@ -226,7 +226,7 @@ func (x *Xdata) UpdateNsReplica(stub shim.ChaincodeStubInterface, args []string)
 
 	// get file ns
 	fileNsIndex := packFileNsIndex(opt.Owner, opt.Name)
-	resp := x.getValue(stub, []string{fileNsIndex})
+	resp := x.GetValue(stub, []string{fileNsIndex})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound,
 			"file namespace not found: %s", resp.Message).Error())
@@ -247,13 +247,13 @@ func (x *Xdata) UpdateNsReplica(stub shim.ChaincodeStubInterface, args []string)
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal Namespaces").Error())
 	}
 	// put index-ns on chain
-	if resp := x.setValue(stub, []string{fileNsIndex, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{fileNsIndex, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to update nsindex-replica on chain: %s", resp.Message).Error())
 	}
 	// put listIndex-ns on chain
 	nsListIndex := packFileNsListIndex(n.Owner, n.Name, n.CreateTime)
-	if resp := x.setValue(stub, []string{nsListIndex, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{nsListIndex, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to update nsListIndex-replica on chain: %s", resp.Message).Error())
 	}
@@ -282,7 +282,7 @@ func (x *Xdata) UpdateFilePublicSliceMeta(stub shim.ChaincodeStubInterface, args
 	}
 
 	// get file from id
-	resp := x.getValue(stub, []string{opt.FileID})
+	resp := x.GetValue(stub, []string{opt.FileID})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound,
 			"file not found: %s", resp.Message).Error())
@@ -302,7 +302,7 @@ func (x *Xdata) UpdateFilePublicSliceMeta(stub shim.ChaincodeStubInterface, args
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal Namespaces").Error())
 	}
 
-	if resp := x.setValue(stub, []string{f.ID, string(nfs)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{f.ID, string(nfs)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set id-file on chain: %s", resp.Message).Error())
 	}
@@ -329,19 +329,19 @@ func (x *Xdata) GetFileByName(stub shim.ChaincodeStubInterface, args []string) p
 
 	// judge if fileNsIndex exists
 	fileNsIndex := packFileNsIndex(owner, ns)
-	if resp := x.getValue(stub, []string{fileNsIndex}); len(resp.Payload) == 0 {
+	if resp := x.GetValue(stub, []string{fileNsIndex}); len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeParam, "bad param, ns not found: %s", resp.Message).Error())
 	}
 
 	// pack fileNameIndex
 	index := packFileNameIndex(owner, ns, name)
 	//get id from index
-	resp := x.getValue(stub, []string{index})
+	resp := x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "fileID not found with name+ns: %s", resp.Message).Error())
 	}
 	// get file from id
-	resp = x.getValue(stub, []string{string(resp.Payload)})
+	resp = x.GetValue(stub, []string{string(resp.Payload)})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "file not found: %s", resp.Message).Error())
 	}
@@ -373,7 +373,7 @@ func (x *Xdata) GetFileByID(stub shim.ChaincodeStubInterface, args []string) pb.
 	}
 
 	//get file from id
-	resp := x.getValue(stub, []string{id})
+	resp := x.GetValue(stub, []string{id})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "file not found: %s", resp.Message).Error())
 	}
@@ -430,7 +430,7 @@ func (x *Xdata) UpdateFileExpireTime(stub shim.ChaincodeStubInterface, args []st
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal File").Error())
 	}
 	// set id-file on chain
-	if resp := x.setValue(stub, []string{f.ID, string(nf)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{f.ID, string(nf)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set id-file on chain: %s", resp.Message).Error())
 	}
@@ -476,7 +476,7 @@ func (x *Xdata) SliceMigrateRecord(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal fid-sid").Error())
 	}
 	// put index-migrate on chain
-	if resp := x.setValue(stub, []string{hindex, string(b)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{hindex, string(b)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to put index-migrate on chain: %s", resp.Message).Error())
 	}
@@ -655,7 +655,7 @@ func (x *Xdata) GetNsByName(stub shim.ChaincodeStubInterface, args []string) pb.
 	// judge if fileNsIndex exists
 	fileNsIndex := packFileNsIndex(owner, ns)
 	// get file ns
-	resp := x.getValue(stub, []string{fileNsIndex})
+	resp := x.GetValue(stub, []string{fileNsIndex})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound,
 			"file namespace not found: %s", resp.Message).Error())
@@ -664,7 +664,7 @@ func (x *Xdata) GetNsByName(stub shim.ChaincodeStubInterface, args []string) pb.
 }
 
 func (x *Xdata) getFileByID(stub shim.ChaincodeStubInterface, fileID string) (f blockchain.File, err error) {
-	resp := x.getValue(stub, []string{fileID})
+	resp := x.GetValue(stub, []string{fileID})
 	if len(resp.Payload) == 0 {
 		return f, errorx.NewCode(err, errorx.ErrCodeNotFound, "file[%s] not found", fileID)
 	}

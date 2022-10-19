@@ -63,18 +63,18 @@ func (x *Xdata) AddNode(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 
 	// put index-node on chain, judge if index exists
 	index := packNodeIndex(n.ID)
-	if resp := x.getValue(stub, []string{index}); len(resp.Payload) != 0 {
+	if resp := x.GetValue(stub, []string{index}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists,
 			"duplicated nodeID").Error())
 	}
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain, "failed to put index-Node on chain: %s",
 			resp.Message).Error())
 	}
 
 	// put listIndex-node on chain
 	index = packNodeListIndex(n)
-	if resp := x.setValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain, "failed to put listIndex-Node on chain: %s",
 			resp.Message).Error())
 	}
@@ -123,7 +123,7 @@ func (x *Xdata) GetNode(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	// get index
 	index := packNodeIndex([]byte(args[0]))
 	// get node by index
-	resp := x.getValue(stub, []string{index})
+	resp := x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "node not found: %s", resp.Message).Error())
 	}
@@ -175,7 +175,7 @@ func (x *Xdata) setNodeOnlineStatus(stub shim.ChaincodeStubInterface, args []str
 
 	// get node
 	index := packNodeIndex(opt.NodeID)
-	resp := x.getValue(stub, []string{index})
+	resp := x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "node not found: %s", resp.Message).Error())
 	}
@@ -196,13 +196,13 @@ func (x *Xdata) setNodeOnlineStatus(stub shim.ChaincodeStubInterface, args []str
 				"failed to marshal node").Error())
 		}
 		// put index-node on fabric
-		if resp := x.setValue(stub, []string{index, string(newn)}); resp.Status == shim.ERROR {
+		if resp := x.SetValue(stub, []string{index, string(newn)}); resp.Status == shim.ERROR {
 			return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 				"failed to put index-Node on chain: %s", resp.Message).Error())
 		}
 		// put listIndex-node on chain
 		index = packNodeListIndex(node)
-		if resp := x.setValue(stub, []string{index, string(newn)}); resp.Status == shim.ERROR {
+		if resp := x.SetValue(stub, []string{index, string(newn)}); resp.Status == shim.ERROR {
 			return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 				"failed to put listIndex-Node on chain: %s", resp.Message).Error())
 		}
@@ -237,7 +237,7 @@ func (x *Xdata) Heartbeat(stub shim.ChaincodeStubInterface, args []string) pb.Re
 
 	// update node heartbeat number
 	hindex := packHeartBeatIndex(opt.NodeID, opt.BeginningTime)
-	resp := x.getValue(stub, []string{hindex})
+	resp := x.GetValue(stub, []string{hindex})
 	var hb []int64
 	if len(resp.Payload) == 0 {
 		hb = append(hb, opt.CurrentTime)
@@ -257,14 +257,14 @@ func (x *Xdata) Heartbeat(stub shim.ChaincodeStubInterface, args []string) pb.Re
 	if err != nil {
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal heartbeat number").Error())
 	}
-	if resp := x.setValue(stub, []string{hindex, string(hbc)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{hindex, string(hbc)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to set index-heartbeat on chain: %s", resp.Message).Error())
 	}
 
 	// update node updateAt after heartbeat success
 	index := packNodeIndex(opt.NodeID)
-	resp = x.getValue(stub, []string{index})
+	resp = x.GetValue(stub, []string{index})
 	if len(resp.Payload) == 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeNotFound, "node not found: %s", resp.Message).Error())
 	}
@@ -280,13 +280,13 @@ func (x *Xdata) Heartbeat(stub shim.ChaincodeStubInterface, args []string) pb.Re
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "failed to marshal node").Error())
 	}
 	// put index-node on fabric
-	if resp := x.setValue(stub, []string{index, string(newNode)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(newNode)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to put index-Node on chain: %s", resp.Message).Error())
 	}
 	// put listIndex-node on chain
 	index = packNodeListIndex(node)
-	if resp := x.setValue(stub, []string{index, string(newNode)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{index, string(newNode)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
 			"failed to put listIndex-Node on chain: %s", resp.Message).Error())
 	}
@@ -308,7 +308,7 @@ func (x *Xdata) GetHeartbeatNum(stub shim.ChaincodeStubInterface, args []string)
 
 	// get heart beat by index
 	hindex := packHeartBeatIndex(nodeID, ctime)
-	resp := x.getValue(stub, []string{hindex})
+	resp := x.GetValue(stub, []string{hindex})
 
 	var hb []int64
 	if len(resp.Payload) == 0 {
@@ -441,12 +441,12 @@ func (x *Xdata) GetSliceMigrateRecords(stub shim.ChaincodeStubInterface, args []
 
 func (x *Xdata) checkAndSetNonce(stub shim.ChaincodeStubInterface, nodeID []byte, nonce int64) error {
 	nonceIndex := packNonceIndex(nodeID, nonce)
-	resp := x.getValue(stub, []string{nonceIndex})
+	resp := x.GetValue(stub, []string{nonceIndex})
 	if len(resp.Payload) != 0 {
 		return errorx.New(errorx.ErrCodeAlreadyExists, "duplicated node nonceIndex")
 	}
 	// put index-node-nonce on fabric
-	if resp := x.setValue(stub, []string{nonceIndex, strconv.FormatInt(nonce, 10)}); resp.Status == shim.ERROR {
+	if resp := x.SetValue(stub, []string{nonceIndex, strconv.FormatInt(nonce, 10)}); resp.Status == shim.ERROR {
 		return errorx.New(errorx.ErrCodeWriteBlockchain, "failed to set nonce on chain: %s", resp.Message)
 	}
 	return nil
