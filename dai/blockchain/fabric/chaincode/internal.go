@@ -62,7 +62,7 @@ func packRequesterExecutorTaskIndex(executor []byte, task blockchain.FLTask) str
 // packFlTaskFilter pack filter index with public key for searching tasks for requester or executor
 func packFlTaskFilter(rPubkey, ePubkey []byte) (string, []string) {
 	if len(rPubkey) > 0 && len(ePubkey) > 0 {
-		return prefixFlTaskListIndex, []string{fmt.Sprintf("%x", rPubkey), fmt.Sprintf("%x", ePubkey)}
+		return prefixREFlTaskListIndex, []string{fmt.Sprintf("%x", rPubkey), fmt.Sprintf("%x", ePubkey)}
 	} else if len(rPubkey) > 0 {
 		return prefixFlTaskListIndex, []string{fmt.Sprintf("%x", rPubkey)}
 	} else {
