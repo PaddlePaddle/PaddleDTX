@@ -242,22 +242,22 @@ function startFabric() {
 
   # Copy fabric sdk yaml file into xdb configuration directory
   # 拷贝sdk yaml文件到xdb配置目录下
-  CONFFILE_LIST="dataowner storage1 storage2 storage3"
-  for CONF_PATH in $CONFFILE_LIST
+  CONFFILE_LIST_xdb="data1 data2 data3 storage1 storage2 storage3"
+  for CONF_PATH in $CONFFILE_LIST_xdb
   do
-    mkdir -p ../$TMP_CONF_NAME/xdb/$CONF_PATH/conf/fabric/
-    cp -f ../$TMP_CONF_NAME/blockchain/fabric/conf/config.yaml ../$TMP_CONF_NAME/xdb/$CONF_PATH/conf/fabric/
-    cp -rf ../$TMP_CONF_NAME/blockchain/fabric/crypto-config ../$TMP_CONF_NAME/xdb/$CONF_PATH/conf/fabric/
+    mkdir -p ../$TMP_CONF_PATH/xdb/$CONF_PATH/conf/fabric/
+    cp -f ../$TMP_CONF_PATH/blockchain/fabric/conf/config.yaml ../$TMP_CONF_PATH/xdb/$CONF_PATH/conf/fabric/
+    cp -rf ../$TMP_CONF_PATH/blockchain/fabric/crypto-config ../$TMP_CONF_PATH/xdb/$CONF_PATH/conf/fabric/
   done
 
   # Copy fabric sdk yaml file into xdb configuration directory
   # 拷贝sdk yaml文件到executor配置目录下
-  CONFFILE_LIST="requester node1 node2 node3"
-  for CONF_PATH in $CONFFILE_LIST
+  CONFFILE_LIST_dai="requester node1 node2 node3"
+  for CONF_PATH in $CONFFILE_LIST_dai
   do
     mkdir -p ../$TMP_CONF_PATH/executor/$CONF_PATH/conf/fabric/
     cp -f ../$TMP_CONF_PATH/blockchain/fabric/conf/config.yaml ../$TMP_CONF_PATH/executor/$CONF_PATH/conf/fabric/
-    cp -rf ../$TMP_CONF_PATH/blockchain/fabric/crypto-config ../$TTMP_CONF_PATH/executor/$CONF_PATH/conf/fabric/
+    cp -rf ../$TMP_CONF_PATH/blockchain/fabric/crypto-config ../$TMP_CONF_PATH/executor/$CONF_PATH/conf/fabric/
   done
 }
 
