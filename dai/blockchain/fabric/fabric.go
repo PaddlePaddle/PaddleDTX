@@ -31,7 +31,7 @@ type Fabric struct {
 	fabricchain.Fabric
 }
 
-// New creates a XChain client used for connecting and requesting blockchain
+// New creates a Fabric client used for connecting and requesting blockchain
 func New(conf *config.FabricConf) (*Fabric, error) {
 	config := &xdbconfig.FabricConf{
 		ConfigFile: conf.ConfigFile,
@@ -42,7 +42,6 @@ func New(conf *config.FabricConf) (*Fabric, error) {
 	}
 
 	fa, err := fabricchain.New(config)
-
 	if err != nil {
 		return nil, err
 	}

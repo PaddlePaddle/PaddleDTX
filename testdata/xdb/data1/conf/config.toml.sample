@@ -32,7 +32,7 @@ allowCros = true
         segmentSize = 5
 
 [dataOwner.blockchain]
-    type = "xchain"
+    type = "${BLOCKCHAIN_TYPE}"
     [dataOwner.blockchain.xchain]
         mnemonic = "${MNEMONIC}"
         contractName = "${CONTRACT_NAME}"

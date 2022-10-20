@@ -141,7 +141,7 @@ func (x *Xdata) GetExecutorNodeByID(stub shim.ChaincodeStubInterface, args []str
 
 // GetExecutorNodeByName gets Executor node by NodeName
 func (x *Xdata) GetExecutorNodeByName(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) < 4 {
+	if len(args) < 1 {
 		return shim.Error("invalid arguments. expecting name")
 	}
 	index := packNodeNameIndex(args[0])

@@ -7,7 +7,7 @@ keyPath = "./keys"
 publicAddress = "storage2.node.com:80"
 
 [storage.blockchain]
-    type = "xchain"
+    type = "${BLOCKCHAIN_TYPE}"
     [storage.blockchain.xchain]
         mnemonic = "${MNEMONIC}"
         contractName = "${CONTRACT_NAME}"
