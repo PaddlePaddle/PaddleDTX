@@ -207,7 +207,7 @@ func (x *Xdata) setTaskConfirmStatus(stub shim.ChaincodeStubInterface, args []st
 	isAllConfirm := true
 	for index, ds := range t.DataSets {
 		if bytes.Equal(ds.Executor, opt.Pubkey) {
-			if resp := x.GetValue(stub, []string{ds.DataID}); len(resp.Payload) != 0 {
+			if resp := x.GetValue(stub, []string{ds.DataID}); resp.Status == shim.ERROR {
 				return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "bad param:taskId, dataId not exist").Error())
 			}
 
