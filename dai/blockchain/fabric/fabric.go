@@ -14,14 +14,10 @@
 package fabric
 
 import (
+	"github.com/PaddlePaddle/PaddleDTX/dai/config"
 	fabricchain "github.com/PaddlePaddle/PaddleDTX/xdb/blockchain/fabric"
 	xdbconfig "github.com/PaddlePaddle/PaddleDTX/xdb/config"
-	"github.com/sirupsen/logrus"
-
-	"github.com/PaddlePaddle/PaddleDTX/dai/config"
 )
-
-var logger = logrus.WithField("module", "xchain")
 
 type Config struct {
 	fabricchain.Config
@@ -33,7 +29,7 @@ type Fabric struct {
 
 // New creates a Fabric client used for connecting and requesting blockchain
 func New(conf *config.FabricConf) (*Fabric, error) {
-	config := &xdbconfig.FabricConf{
+	c := &xdbconfig.FabricConf{
 		ConfigFile: conf.ConfigFile,
 		ChannelID:  conf.ChannelID,
 		Chaincode:  conf.Chaincode,
@@ -41,7 +37,7 @@ func New(conf *config.FabricConf) (*Fabric, error) {
 		OrgName:    conf.OrgName,
 	}
 
-	fa, err := fabricchain.New(config)
+	fa, err := fabricchain.New(c)
 	if err != nil {
 		return nil, err
 	}

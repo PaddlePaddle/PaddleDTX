@@ -114,6 +114,7 @@ function stop() {
   # 停止IPFS网络
   print_blue "==========> Stop IPFS network ..."
   docker-compose -p ipfs -f ../$TMP_CONF_PATH/ipfs/docker-compose.yml down
+
   # 停止 PaddleFL
   print_blue "==========> Stop executor paddlefl network ..."
   docker-compose -p paddlefl -f ../$TMP_CONF_PATH/executor/docker-compose-paddlefl.yml down
@@ -143,6 +144,7 @@ function stop() {
   docker run -it --rm \
     -v $(dirname ${PWD}):/workspace \
     golang:1.13.4 sh -c "cd /workspace && rm -rf $TMP_CONF_PATH"
+  docker volume rm $(docker volume ls -qf dangling=true)
   print_green "==========> PaddleDTX stopped !"
 }
 
