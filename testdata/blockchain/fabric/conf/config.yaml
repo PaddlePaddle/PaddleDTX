@@ -25,7 +25,7 @@ client:
   organization: Org1
   logging:
     # Develope can using debug to get more information
-    level: debug
+    level: error
     # level: info
   cryptoconfig:
     path: /home/conf/fabric/crypto-config
