@@ -64,7 +64,7 @@ func (x *Xdata) RegisterExecutorNode(stub shim.ChaincodeStubInterface, args []st
 		return shim.Error(err.Error())
 	}
 
-	// put index-node on xchain, judge if index exists
+	// put index-node on fabric, judge if index exists
 	index := packNodeIndex(n.ID)
 	if resp := x.GetValue(stub, []string{index}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists,
@@ -75,7 +75,7 @@ func (x *Xdata) RegisterExecutorNode(stub shim.ChaincodeStubInterface, args []st
 			"failed to put index-Node on chain: %s", resp.Message).Error())
 	}
 
-	// put index-nodeName on xchain
+	// put index-nodeName on fabric
 	index = packNodeNameIndex(n.Name)
 	if resp := x.GetValue(stub, []string{index}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists,
@@ -86,7 +86,7 @@ func (x *Xdata) RegisterExecutorNode(stub shim.ChaincodeStubInterface, args []st
 			resp.Message).Error())
 	}
 
-	// put listIndex-node on xchain
+	// put listIndex-node on fabric
 	index = packNodeListIndex(n)
 	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain, "failed to put listIndex-Node on chain: %s",
