@@ -57,36 +57,36 @@ func (x *Xdata) PublishTask(stub shim.ChaincodeStubInterface, args []string) pb.
 			"fail to marshal FLTask").Error())
 	}
 
-	// put index-fltask on xchain, judge if index exists
+	// put index-fltask on fabric, judge if index exists
 	index := packFlTaskIndex(t.TaskID)
 	if resp := x.GetValue(stub, []string{index}); len(resp.Payload) != 0 {
 		return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "duplicated taskID").Error())
 	}
 	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
-			"fail to put index-flTask on xchain: %s", resp.Message).Error())
+			"fail to put index-flTask on fabric: %s", resp.Message).Error())
 	}
 
-	// put requester listIndex-fltask on xchain
+	// put requester listIndex-fltask on fabric
 	index = packFlTaskListIndex(t)
 
 	if resp := x.SetValue(stub, []string{index, t.TaskID}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
-			"fail to put requester listIndex-fltask on xchain: %s", resp.Message).Error())
+			"fail to put requester listIndex-fltask on fabric: %s", resp.Message).Error())
 	}
 
-	//put executor listIndex-fltask on xchain
+	//put executor listIndex-fltask on fabric
 	for _, ds := range t.DataSets {
 		index := packExecutorTaskListIndex(ds.Executor, t)
 		if resp := x.SetValue(stub, []string{index, t.TaskID}); resp.Status == shim.ERROR {
 			return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
-				"fail to put executor listIndex-fltask on xchain: %s", resp.Message).Error())
+				"fail to put executor listIndex-fltask on fabric: %s", resp.Message).Error())
 		}
-		// put requester and executor listIndex-fltask on xchain
+		// put requester and executor listIndex-fltask on fabric
 		index_re := packRequesterExecutorTaskIndex(ds.Executor, t)
 		if resp := x.SetValue(stub, []string{index_re, t.TaskID}); resp.Status == shim.ERROR {
 			return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
-				"fail to put requester and executor listIndex-fltask on xchain: %s", resp.Message).Error())
+				"fail to put requester and executor listIndex-fltask on fabric: %s", resp.Message).Error())
 		}
 	}
 	return shim.Success([]byte("added"))
@@ -207,8 +207,8 @@ func (x *Xdata) setTaskConfirmStatus(stub shim.ChaincodeStubInterface, args []st
 	isAllConfirm := true
 	for index, ds := range t.DataSets {
 		if bytes.Equal(ds.Executor, opt.Pubkey) {
-			if resp := x.GetValue(stub, []string{ds.DataID}); len(resp.Payload)==0 {
-				return shim.Error(errorx.New(errorx.ErrCodeAlreadyExists, "bad param:taskId, dataId not exist").Error())
+			if resp := x.GetValue(stub, []string{ds.DataID}); len(resp.Payload) == 0 {
+				return shim.Error(errorx.New(errorx.ErrCodeParam, "bad param:taskId, dataId not exist").Error())
 			}
 
 			// judge task is confirmed
@@ -241,11 +241,11 @@ func (x *Xdata) setTaskConfirmStatus(stub shim.ChaincodeStubInterface, args []st
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "fail to marshal FLTask").Error())
 	}
 
-	// update index-fltask on xchain
+	// update index-fltask on fabric
 	index := packFlTaskIndex(t.TaskID)
 	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
-			"fail to confirm index-flTask on xchain: %s", resp.Message).Error())
+			"fail to confirm index-flTask on fabric: %s", resp.Message).Error())
 	}
 	return shim.Success([]byte("OK"))
 }
@@ -287,11 +287,11 @@ func (x *Xdata) StartTask(stub shim.ChaincodeStubInterface, args []string) pb.Re
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "fail to marshal FLTask").Error())
 	}
 
-	// update index-fltask on xchain
+	// update index-fltask on fabric
 	index := packFlTaskIndex(t.TaskID)
 	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
-			"fail to confirm index-flTask on xchain: %s", resp.Message).Error())
+			"fail to confirm index-flTask on fabric: %s", resp.Message).Error())
 	}
 	return shim.Success([]byte("OK"))
 }
@@ -366,11 +366,11 @@ func (x *Xdata) setTaskExecuteStatus(stub shim.ChaincodeStubInterface, args []st
 		return shim.Error(errorx.NewCode(err, errorx.ErrCodeInternal, "fail to marshal FLTask").Error())
 	}
 
-	// update index-fltask on xchain
+	// update index-fltask on fabric
 	index := packFlTaskIndex(t.TaskID)
 	if resp := x.SetValue(stub, []string{index, string(s)}); resp.Status == shim.ERROR {
 		return shim.Error(errorx.New(errorx.ErrCodeWriteBlockchain,
-			"fail to set task execute status on xchain: %s", resp.Message).Error())
+			"fail to set task execute status on fabric: %s", resp.Message).Error())
 	}
 	return shim.Success([]byte("OK"))
 }

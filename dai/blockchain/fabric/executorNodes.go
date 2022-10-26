@@ -23,7 +23,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
 )
 
-// RegisterExecutorNode registers Executor node to xchain
+// RegisterExecutorNode registers Executor node to fabric
 func (f *Fabric) RegisterExecutorNode(opt *blockchain.AddNodeOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
@@ -39,7 +39,7 @@ func (f *Fabric) RegisterExecutorNode(opt *blockchain.AddNodeOptions) error {
 	return nil
 }
 
-// ListExecutorNodes gets all Executor nodes from xchain
+// ListExecutorNodes gets all Executor nodes from fabric
 func (f *Fabric) ListExecutorNodes() (blockchain.ExecutorNodes, error) {
 	var nodes blockchain.ExecutorNodes
 

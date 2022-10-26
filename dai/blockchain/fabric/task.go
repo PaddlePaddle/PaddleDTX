@@ -21,7 +21,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/dai/blockchain"
 )
 
-// PublishTask publishes task on xchain
+// PublishTask publishes task on fabric
 func (f *Fabric) PublishTask(opt *blockchain.PublishFLTaskOptions) error {
 	opts, err := json.Marshal(*opt)
 	if err != nil {
@@ -36,7 +36,7 @@ func (f *Fabric) PublishTask(opt *blockchain.PublishFLTaskOptions) error {
 	return nil
 }
 
-// ListTask lists tasks from xchain
+// ListTask lists tasks from fabric
 func (f *Fabric) ListTask(opt *blockchain.ListFLTaskOptions) (blockchain.FLTasks, error) {
 	var ts blockchain.FLTasks
 
