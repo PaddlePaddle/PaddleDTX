@@ -61,8 +61,8 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 5. 准备fabric链码:
 	```
 	$ cp ./testdata/blockchain/fabric/chaincode/go.mod ./dai/blockchain/fabric/chaincode
-    $ cd ./dai/blockchain/fabric/chaincode
-    $ go mod vendor
+	$ cd ./dai/blockchain/fabric/chaincode
+	$ go mod vendor
 	```
 
 	产出为fabric链码安装所需的依赖库。
