@@ -29,7 +29,7 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
 	
 	产出镜像名和版本号为 *registry.baidubce.com/paddledtx/paddledtx-dai:2.1* ，可以通过修改 *build_image.sh* 脚本来修改镜像名和版本号。
 
-3. 编译合约
+3. xchain编译合约
 	``` shell
 	$ export contractName='paddlempc'
 	$ docker run -it --rm \
@@ -41,9 +41,20 @@ PaddleDTX也支持使用 docker 进行编译、安装和使用，您需要准备
       golang:1.13.4 sh -c "cd dai && go build -o ../testdata/blockchain/contract/$contractName ./blockchain/xchain/contract"
 	```
 
+4. fabric链码准备
+    ``` shell
+    $ docker run -it --rm \
+         -v $(dirname ${PWD}):/workspace \
+         -v ~/.ssh:/root/.ssh \
+         -w /workspace \
+         -e GONOSUMDB=* \
+         -e GO111MODULE=on \
+         golang:1.13.4 sh -c "cd dai/blockchain/fabric/chaincode/ && go mod vendor"
+    ```
+
 ### 1.3 网络部署
 
-1. 部署区块链网络
+1. 部署区块链网络，以 xchain 网络为例
 	``` shell
 	$ cd PaddleDTX/testdata/blockchain
 	$ docker-compose -f docker-compose.yml up -d

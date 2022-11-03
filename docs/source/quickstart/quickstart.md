@@ -16,6 +16,8 @@ $ git clone git@github.com:PaddlePaddle/PaddleDTX.git
 $ cd PaddleDTX/scripts
 $ sh network_up.sh start
 
+# 支持启动基于Fabric区块链网络的DAI，命令如下：
+$ sh network_up.sh start -b fabric
 # 支持启动基于ipfs存储网络的DAI，命令如下：
 $ sh network_up.sh start -s ipfs
 # 支持三方的DNN 算法，需要启动 PaddleFL 的节点，执行如下命令代替上述命令：
@@ -31,6 +33,11 @@ $ ./network_up.sh start -h 106.13.169.234
 $ sh network_up.sh stop
 ```
 
+
+销毁基于Fabric的DAI网络：
+```
+$ sh network_up.sh stop -b fabric
+```
 网络启动之后，当收到返回 **PaddleDTX starts successfully ! ** 即启动成功，用户可通过 ==./paddledtx_test.sh== 脚本，开启你的PaddleDTX初体验。
 
 !!! info "说明"
