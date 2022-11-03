@@ -34,6 +34,7 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	├── xdb                   //数据存储服务启动二进制,根据配置文件的不同有数据持有节点或存储节点两种类型
 	└── xdb-cli               //数据存储服务操作客户端
 	```
+
 3. 编译Distributed AI
 	```
 	$ cd ../dai
@@ -49,12 +50,22 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 	├── executor-cli            //DAI任务执行节点操作客户端
 	└── requester-cli           //计算需求节点操作客户端
 	```
-4. 编译区块链合约:
+
+4. 编译xchain区块链合约:
 	```
-	$ go build -o paddlempc ./blockchain/xchain/contract
+	$ go build -o paddlempc ./dai/blockchain/xchain/contract
 	```
 
 	编译产出为 paddlempc 合约文件，为安装在xchain 区块链上的合约文件。
+
+5. 准备fabric链码:
+	```
+	$ cp ./testdata/blockchain/fabric/chaincode/go.mod ./dai/blockchain/fabric/chaincode
+    $ cd ./dai/blockchain/fabric/chaincode
+    $ go mod vendor
+	```
+
+	产出为fabric链码安装所需的依赖库。
 
 ### 1.3 网络部署
 
@@ -62,7 +73,9 @@ PaddleDTX 使用 golang 进行开发，当您使用源码进行编译和安装�
 
 	PaddleDTX 使用区块链网络支撑计算层和去中心化存储网络，底层依赖可以使用同一个区块链网络。
 	<br>
-	这里使用百度超级链 xchain v3.9 作为底层区块链网络，可参考 [XuperChain环境部署](https://xuper.baidu.com/n/xuperdoc/v3.9/quickstart.html) 来搭建区块链网络。
+	这里以 xchain 为例介绍区块链网络部署具体步骤。Fabric网络搭建，可参考[Fabric网络部署](https://hyperledger-fabric.readthedocs.io/en/release-1.4/build_network.html)。
+	<br>
+	PaddleDTX使用百度超级链 xchain v3.9 作为底层区块链网络，可参考 [XuperChain环境部署](https://xuper.baidu.com/n/xuperdoc/v3.9/quickstart.html) 来搭建区块链网络。
 	<br>
 	您需要了解如何创建合约账户、部署智能合约，详细参考 [部署 native 合约](https://xuper.baidu.com/n/xuperdoc/v3.9/advanced_usage/create_contracts.html?highlight=native#native) ，更多内容请参考[XuperChain官方文档](https://xuper.baidu.com/n/xuperdoc/index.html) 。
 	<br>
