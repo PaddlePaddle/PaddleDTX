@@ -44,7 +44,7 @@ func (f *Fabric) RejectFileAuthApplication(opt *blockchain.ConfirmFileAuthOption
 	return f.setFileAuthConfirmStatus(opt, false)
 }
 
-// setFileAuthConfirmStatus set file's authorization application status into the blokchain
+// setFileAuthConfirmStatus set file's authorization application status into the blockchain
 func (f *Fabric) setFileAuthConfirmStatus(opt *blockchain.ConfirmFileAuthOptions, isConfirm bool) error {
 	opts, err := json.Marshal(*opt)
 	if err != nil {

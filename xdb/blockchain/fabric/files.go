@@ -178,6 +178,7 @@ func (f *Fabric) GetNsByName(owner []byte, name string) (blockchain.Namespace, e
 }
 
 // ListFiles lists files from fabric
+// filter condition may include fileOwner, namespace, time period and items numb limit
 func (f *Fabric) ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error) {
 	var fs []blockchain.File
 
@@ -199,6 +200,7 @@ func (f *Fabric) ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, 
 }
 
 // ListExpiredFiles lists expired but valid files
+// filter condition may include fileOwner, namespace, time period and items numb limit
 func (f *Fabric) ListExpiredFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error) {
 	var fs []blockchain.File
 

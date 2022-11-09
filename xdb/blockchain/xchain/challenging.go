@@ -21,7 +21,8 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
-// ListChallengeRequests lists all challenge requests on blockchain
+// ListChallengeRequests lists challenge requests on blockchain
+// filter condition may include fileOwner, storageNode, fileID, challenge status, time period and items number limit
 func (x *XChain) ListChallengeRequests(opt *blockchain.ListChallengeOptions) ([]blockchain.Challenge, error) {
 
 	opts, err := json.Marshal(*opt)
@@ -45,7 +46,7 @@ func (x *XChain) ListChallengeRequests(opt *blockchain.ListChallengeOptions) ([]
 	return cs, nil
 }
 
-// ChallengeRequest sets a challenge request on chain
+// ChallengeRequest sets a dataowner's challenge request on chain
 func (x *XChain) ChallengeRequest(opt *blockchain.ChallengeRequestOptions) error {
 
 	opts, err := json.Marshal(*opt)
@@ -63,7 +64,7 @@ func (x *XChain) ChallengeRequest(opt *blockchain.ChallengeRequestOptions) error
 	return nil
 }
 
-// ChallengeAnswer sets a challenge answer on chain
+// ChallengeAnswer sets a storage node's challenge answer on chain
 func (x *XChain) ChallengeAnswer(opt *blockchain.ChallengeAnswerOptions) ([]byte, error) {
 
 	opts, err := json.Marshal(*opt)
@@ -82,7 +83,7 @@ func (x *XChain) ChallengeAnswer(opt *blockchain.ChallengeAnswerOptions) ([]byte
 	return resp, nil
 }
 
-// GetChallengeByID gets a challenge by id
+// GetChallengeByID gets a challenge by challengeID
 func (x *XChain) GetChallengeByID(id string) (blockchain.Challenge, error) {
 
 	var c blockchain.Challenge
@@ -102,7 +103,8 @@ func (x *XChain) GetChallengeByID(id string) (blockchain.Challenge, error) {
 	return c, nil
 }
 
-// GetChallengeNum gets challenge number given filter
+// GetChallengeNum gets challenge number given filter condition
+// filter condition may include storageNode, challenge status, time period
 func (x *XChain) GetChallengeNum(opt *blockchain.GetChallengeNumOptions) (uint64, error) {
 
 	opts, err := json.Marshal(*opt)

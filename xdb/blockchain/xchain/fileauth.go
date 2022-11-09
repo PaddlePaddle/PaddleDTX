@@ -48,7 +48,7 @@ func (x *XChain) RejectFileAuthApplication(opt *blockchain.ConfirmFileAuthOption
 	return x.setFileAuthConfirmStatus(opt, false)
 }
 
-// setFileAuthConfirmStatus set file's authorization application status into the blokchain
+// setFileAuthConfirmStatus set file's authorization application status into the blockchain
 func (x *XChain) setFileAuthConfirmStatus(opt *blockchain.ConfirmFileAuthOptions, isConfirm bool) error {
 	opts, err := json.Marshal(*opt)
 	if err != nil {
