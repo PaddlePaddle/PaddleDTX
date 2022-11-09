@@ -24,7 +24,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
-// AddNode adds a node to fabric
+// AddNode adds a storage node to fabric
 func (f *Fabric) AddNode(opt *blockchain.AddNodeOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
@@ -38,7 +38,7 @@ func (f *Fabric) AddNode(opt *blockchain.AddNodeOptions) error {
 	return nil
 }
 
-// ListNodes gets all nodes from fabric
+// ListNodes gets all storage nodes from fabric
 func (f *Fabric) ListNodes() (blockchain.Nodes, error) {
 	var nodes blockchain.Nodes
 	s, err := f.QueryContract([][]byte{}, "ListNodes")
@@ -52,7 +52,7 @@ func (f *Fabric) ListNodes() (blockchain.Nodes, error) {
 	return nodes, nil
 }
 
-// GetNode gets node by id
+// GetNode gets storage node by id
 func (f *Fabric) GetNode(id []byte) (node blockchain.Node, err error) {
 	s, err := f.QueryContract([][]byte{id}, "GetNode")
 	if err != nil {
@@ -65,7 +65,7 @@ func (f *Fabric) GetNode(id []byte) (node blockchain.Node, err error) {
 	return node, err
 }
 
-// setNodeOnlineStatus sets node status online/offline
+// setNodeOnlineStatus sets storage node status online/offline
 func (f *Fabric) setNodeOnlineStatus(opt *blockchain.NodeOperateOptions, online bool) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
@@ -93,7 +93,7 @@ func (f *Fabric) NodeOnline(opt *blockchain.NodeOperateOptions) error {
 	return f.setNodeOnlineStatus(opt, true)
 }
 
-// Heartbeat updates heartbeat of node
+// Heartbeat updates heartbeat of storage node
 func (f *Fabric) Heartbeat(opt *blockchain.NodeHeartBeatOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
@@ -105,7 +105,7 @@ func (f *Fabric) Heartbeat(opt *blockchain.NodeHeartBeatOptions) error {
 	return nil
 }
 
-// GetHeartbeatNum gets heartbeat number by time
+// GetHeartbeatNum gets storage heartbeat number by time
 func (f *Fabric) GetHeartbeatNum(id []byte, timestamp int64) (int, error) {
 	args := [][]byte{id, []byte(strconv.FormatInt(common.TodayBeginning(timestamp), 10))}
 	number, err := f.QueryContract(args, "GetHeartbeatNum")
@@ -119,7 +119,7 @@ func (f *Fabric) GetHeartbeatNum(id []byte, timestamp int64) (int, error) {
 	return num, nil
 }
 
-// GetSliceMigrateRecords get node slice migration records
+// GetSliceMigrateRecords get storage node slice migration records
 func (f *Fabric) GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error) {
 	s, err := json.Marshal(*opt)
 	if err != nil {
@@ -170,7 +170,7 @@ func (f *Fabric) ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([][
 	return sliceID2StorIndex, nil
 }
 
-// GetNodeHealth gets node health status
+// GetNodeHealth gets storage node health status
 func (f *Fabric) GetNodeHealth(id []byte) (string, error) {
 	now := time.Now().UnixNano()
 	node, err := f.GetNode(id)

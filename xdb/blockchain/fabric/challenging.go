@@ -21,7 +21,8 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
-// ListChallengeRequests lists all challenge requests on chain
+// ListChallengeRequests lists challenge requests on chain
+// filter condition may include fileOwner, storageNode, fileID, challenge status, time period and items number limit
 func (f *Fabric) ListChallengeRequests(opt *blockchain.ListChallengeOptions) ([]blockchain.Challenge, error) {
 
 	opts, err := json.Marshal(*opt)
@@ -41,7 +42,7 @@ func (f *Fabric) ListChallengeRequests(opt *blockchain.ListChallengeOptions) ([]
 	return cs, nil
 }
 
-// ChallengeRequest sets a challenge request on chain
+// ChallengeRequest sets a dataowner's challenge request on chain
 func (f *Fabric) ChallengeRequest(opt *blockchain.ChallengeRequestOptions) error {
 
 	opts, err := json.Marshal(*opt)
@@ -55,7 +56,7 @@ func (f *Fabric) ChallengeRequest(opt *blockchain.ChallengeRequestOptions) error
 	return nil
 }
 
-// ChallengeAnswer sets a challenge answer onto blockchain
+// ChallengeAnswer sets a storage node's challenge answer onto blockchain
 func (f *Fabric) ChallengeAnswer(opt *blockchain.ChallengeAnswerOptions) ([]byte, error) {
 	opts, err := json.Marshal(*opt)
 	if err != nil {
@@ -69,7 +70,7 @@ func (f *Fabric) ChallengeAnswer(opt *blockchain.ChallengeAnswerOptions) ([]byte
 	return resp, nil
 }
 
-// GetChallengeByID gets a challenge by id
+// GetChallengeByID gets a challenge by challengeID
 func (f *Fabric) GetChallengeByID(id string) (blockchain.Challenge, error) {
 	var c blockchain.Challenge
 	s, err := f.QueryContract([][]byte{[]byte(id)}, "GetChallengeByID")
@@ -84,7 +85,8 @@ func (f *Fabric) GetChallengeByID(id string) (blockchain.Challenge, error) {
 	return c, nil
 }
 
-// GetChallengeNum gets challenge number with given filter
+// GetChallengeNum gets challenge number given filter condition
+// filter condition may include storageNode, challenge status, time period
 func (f *Fabric) GetChallengeNum(opt *blockchain.GetChallengeNumOptions) (uint64, error) {
 
 	opts, err := json.Marshal(*opt)

@@ -216,6 +216,7 @@ func (x *XChain) GetNsByName(owner []byte, name string) (blockchain.Namespace, e
 }
 
 // ListFiles lists files from xchain
+// filter condition may include fileOwner, namespace, time period and items numb limit
 func (x *XChain) ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error) {
 	var fs []blockchain.File
 
@@ -241,6 +242,7 @@ func (x *XChain) ListFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, 
 }
 
 // ListExpiredFiles lists expired but valid files
+// filter condition may include fileOwner, namespace, time period and items numb limit
 func (x *XChain) ListExpiredFiles(opt *blockchain.ListFileOptions) ([]blockchain.File, error) {
 	var fs []blockchain.File
 

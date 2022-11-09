@@ -24,7 +24,7 @@ import (
 	"github.com/PaddlePaddle/PaddleDTX/xdb/errorx"
 )
 
-// AddNode adds a node to xchain
+// AddNode adds a storage node to xchain
 func (x *XChain) AddNode(opt *blockchain.AddNodeOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
@@ -41,7 +41,7 @@ func (x *XChain) AddNode(opt *blockchain.AddNodeOptions) error {
 	return nil
 }
 
-// ListNodes gets all nodes from xchain
+// ListNodes gets all storage nodes from xchain
 func (x *XChain) ListNodes() (blockchain.Nodes, error) {
 	var nodes blockchain.Nodes
 	args := map[string]string{}
@@ -57,7 +57,7 @@ func (x *XChain) ListNodes() (blockchain.Nodes, error) {
 	return nodes, nil
 }
 
-// GetNode gets node by id
+// GetNode gets storage node by id
 func (x *XChain) GetNode(id []byte) (node blockchain.Node, err error) {
 	args := map[string]string{
 		"id": string(id),
@@ -74,7 +74,7 @@ func (x *XChain) GetNode(id []byte) (node blockchain.Node, err error) {
 	return node, err
 }
 
-// setNodeOnlineStatus sets node status online/offline
+// setNodeOnlineStatus sets storage node status online/offline
 func (x *XChain) setNodeOnlineStatus(opt *blockchain.NodeOperateOptions, online bool) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
@@ -105,7 +105,7 @@ func (x *XChain) NodeOnline(opt *blockchain.NodeOperateOptions) error {
 	return x.setNodeOnlineStatus(opt, true)
 }
 
-// Heartbeat updates heartbeat of node
+// Heartbeat updates heartbeat of storage node
 func (x *XChain) Heartbeat(opt *blockchain.NodeHeartBeatOptions) error {
 	s, err := json.Marshal(*opt)
 	if err != nil {
@@ -121,7 +121,7 @@ func (x *XChain) Heartbeat(opt *blockchain.NodeHeartBeatOptions) error {
 	return nil
 }
 
-// GetHeartbeatNum gets heartbeat number by time
+// GetHeartbeatNum gets storage heartbeat number by time
 func (x *XChain) GetHeartbeatNum(id []byte, timestamp int64) (int, error) {
 	args := map[string]string{
 		"id":          string(id),
@@ -139,7 +139,7 @@ func (x *XChain) GetHeartbeatNum(id []byte, timestamp int64) (int, error) {
 	return num, nil
 }
 
-// GetSliceMigrateRecords get node slice migration records
+// GetSliceMigrateRecords get storage node slice migration records
 func (x *XChain) GetSliceMigrateRecords(opt *blockchain.NodeSliceMigrateOptions) (string, error) {
 	s, err := json.Marshal(*opt)
 	if err != nil {
@@ -196,7 +196,7 @@ func (x *XChain) ListNodesExpireSlice(opt *blockchain.ListNodeSliceOptions) ([][
 	return sliceID2StorIndex, nil
 }
 
-// GetNodeHealth gets node health status
+// GetNodeHealth gets storage node health status
 func (x *XChain) GetNodeHealth(id []byte) (string, error) {
 	now := time.Now().UnixNano()
 	node, err := x.GetNode(id)
