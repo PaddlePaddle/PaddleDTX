@@ -51,13 +51,11 @@ const (
 )
 
 func packNodeIndex(nodeID []byte) string {
-	//return fmt.Sprintf("%s/%x", prefixNodeIndex, nodeID)
 	attributes := []string{fmt.Sprintf("%x", nodeID)}
 	return createCompositeKey(prefixNodeIndex, attributes)
 }
 
 func packNodeListIndex(node blockchain.Node) string {
-	//return fmt.Sprintf("%s/%d/%x", prefixNodeListIndex, subByInt64Max(node.RegTime), node.ID)
 	attributes := []string{fmt.Sprintf("%d", subByInt64Max(node.RegTime)), fmt.Sprintf("%x", node.ID)}
 	return createCompositeKey(prefixNodeListIndex, attributes)
 }
@@ -68,12 +66,10 @@ func packHeartBeatIndex(nodeID []byte, ctime int64) string {
 }
 
 func packNonceIndex(node []byte, nonce int64) string {
-	//return fmt.Sprintf("%s/%x/%d", prefixNodeNonceIndex, node, nonce)
 	return createCompositeKey(prefixNodeNonceIndex, []string{fmt.Sprintf("%x", node), fmt.Sprintf("%d", nonce)})
 }
 
 func packNodeSliceIndex(node string, f blockchain.File) string {
-	//return fmt.Sprintf("%s/%s/%d/%s", prefixNodeFileSlice, node, f.ExpireTime, f.ID)
 	attributes := []string{node, fmt.Sprintf("%d", f.ExpireTime), f.ID}
 	return createCompositeKey(prefixNodeFileSlice, attributes)
 }
@@ -93,13 +89,11 @@ func getNodeSliceFileID(key []byte) int64 {
 }
 
 func packNodeSliceMigrateIndex(target string, ctime int64) string {
-	//return fmt.Sprintf("%s/%s/%d", prefixNodeSliceMigrateIndex, target, subByInt64Max(ctime))
 	attributes := []string{target, fmt.Sprintf("%d", subByInt64Max(ctime))}
 	return createCompositeKey(prefixNodeSliceMigrateIndex, attributes)
 }
 
 func packNodeSliceMigrateFilter(nodeID string) (string, []string) {
-	//return fmt.Sprintf("%s/%s/", prefixNodeSliceMigrateIndex, target)
 	return prefixNodeSliceMigrateIndex, []string{nodeID}
 }
 
@@ -113,7 +107,6 @@ func getNodeSliceMigrateTime(key []byte) int64 {
 }
 
 func packFileNameIndex(owner []byte, ns, name string) string {
-	//return fmt.Sprintf("%s/%x/%s/%s", prefixFilenameIndex, owner, ns, name)
 	attributes := []string{fmt.Sprintf("%x", owner), ns, name}
 	return createCompositeKey(prefixFilenameIndex, attributes)
 }
@@ -130,20 +123,17 @@ func packFileListByNsIndex(owner []byte, ns, name string, pubTime int64) string 
 }
 
 func packFileNsIndex(owner []byte, ns string) string {
-	//return fmt.Sprintf("%s/%x/%s", prefixFileNsIndex, owner, ns)
 	attributes := []string{fmt.Sprintf("%x", owner), ns}
 	return createCompositeKey(prefixFileNsIndex, attributes)
 }
 
 func packFileNsListIndex(owner []byte, ns string, createTime int64) string {
-	//return fmt.Sprintf("%s/%x/%d/%s", prefixFileNsListIndex, owner, subByInt64Max(createTime), ns)
 	attributes := []string{fmt.Sprintf("%x", owner), fmt.Sprintf("%d", subByInt64Max(createTime)), ns}
 	return createCompositeKey(prefixFileNsListIndex, attributes)
 }
 
 // prefixFileNsListIndex + "/" + fmt.Sprintf("%x/", owner)
 func packFileNsListFilter(owner []byte) (prefix string, attr []string) {
-	//return prefixFileNsListIndex + "/" + fmt.Sprintf("%x/", owner)
 	prefix = prefixFileNsListIndex
 	if len(owner) > 0 {
 		attr = []string{fmt.Sprintf("%x", owner)}
@@ -200,18 +190,15 @@ func packFileAuthFilter(applier, authorizer []byte) (string, []string) {
 }
 
 func packChallengeIndex(id string) string {
-	//return fmt.Sprintf("%s/%s", prefixChallenge, id)
 	return createCompositeKey(prefixChallenge, []string{id})
 }
 
 func packChallengeIndex4Owner(c *blockchain.Challenge) string {
-	//return fmt.Sprintf("%s/%x/%x/%d/%s", prefixChallengeIndex4Owner, c.FileOwner, c.TargetNode, subByInt64Max(c.ChallengeTime), c.ID)
 	attributes := []string{fmt.Sprintf("%x", c.FileOwner), fmt.Sprintf("%x", c.TargetNode), fmt.Sprintf("%d", subByInt64Max(c.ChallengeTime)), c.ID}
 	return createCompositeKey(prefixChallengeIndex4Owner, attributes)
 }
 
 func packChallengeIndex4Target(c *blockchain.Challenge) string {
-	//return fmt.Sprintf("%s/%x/%d/%s", prefixChallengeIndex4Target, c.TargetNode, subByInt64Max(c.ChallengeTime), c.ID)
 	attributes := []string{fmt.Sprintf("%x", c.TargetNode), fmt.Sprintf("%d", subByInt64Max(c.ChallengeTime)), c.ID}
 	return createCompositeKey(prefixChallengeIndex4Target, attributes)
 }
