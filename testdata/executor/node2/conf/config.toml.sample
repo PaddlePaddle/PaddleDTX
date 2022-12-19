@@ -41,7 +41,7 @@ allowCros = true
         localPredictStoragePath = "./predictions"
 
 [executor.blockchain]
-    type = "${BLOCKCHAIN_TYPE}" 
+    type = "${BLOCKCHAIN_TYPE}"
     [executor.blockchain.xchain]
         mnemonic = "${MNEMONIC}"
         contractName = "${CONTRACT_NAME}"
@@ -55,7 +55,7 @@ allowCros = true
         chaincode = "${CONTRACT_NAME}"
         userName = "Admin"
         orgName = "Org1"
- 
+
 [log]
 level = "debug"
 path = "./logs"

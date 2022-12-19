@@ -66,7 +66,6 @@ IMAGETAG="1.4.8"
 # Default channel_name
 CHANNEL_NAME="mychannel"
 
-
 function start() {
   # 1. Standardize Conf
   # 1. 标准化配置文件
@@ -87,7 +86,7 @@ function start() {
 
   # 4. Start PaddleDTX Visualization service
   # 4. 如果用户指定了计算节点IP，则启动可视化服务
-  if [ $EXECUTOR_HOST ]; then     
+  if [ $EXECUTOR_HOST ]; then
     startVisual
   fi
 
@@ -188,7 +187,7 @@ function startFabric() {
   # 1. 启动fabric网络工具容器, 用于证书生成
   docker run -itd --name fabric-network-start-tool \
   -v $(dirname ${PWD})/$TMP_CONF_PATH/blockchain/fabric/conf:/home/conf/ \
-  registry.baidubce.com/paddledtx/fabric-network-start-tool:1.0 
+  registry.baidubce.com/paddledtx/fabric-network-start-tool:1.0
   docker exec fabric-network-start-tool sh -c "
   cd conf \
   && ../cryptogen generate --config=./crypto-config.yaml"
@@ -196,7 +195,7 @@ function startFabric() {
     print_red "==========> ERROR !!!! Unable to generate the x509 certificates ..."
     exit 1
   fi
-  
+
   # 2. Generate orderer genesis block, channel configuration transaction and
   # anchor peer update transactions
   # 2. 生成创世区块
@@ -219,7 +218,7 @@ function startFabric() {
   # Clear tool build container
   # 清除工具生成容器
   clearToolContainer
-  
+
   # 4. start fabric network
   # 4. 启动fabric网络
   # Generate dependent packages required for chain code installation
