@@ -113,7 +113,7 @@ allowCros = false
     [executor.blockchain.fabric]
         configFile = "./conf/fabric/config.yaml"
         channelId = "mychannel"
-        chaincode = "mycc"   
+        chaincode = "mycc"
         userName = "Admin"
         orgName = "org1"
 

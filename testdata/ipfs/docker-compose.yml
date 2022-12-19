@@ -6,7 +6,7 @@ services:
     container_name: ipfs_host_0
     image: ipfs/go-ipfs:latest
     networks:
-       - blockchain_network
+      - blockchain_network
     restart: always
     volumes:
       - ./ipfs_data_0:/data/ipfs                
