@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20220705024525-b5b6c6a3ad76
-	github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20221019054435-b0e5dde7c0c5
+	github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20230419070454-b5afd37bf0bb
 	github.com/cjqpker/slidewindow v1.0.2
 	github.com/docker/docker v1.4.2-0.20191101170500-ac7306503d23
 	github.com/docker/go-connections v0.4.1-0.20180821093606-97c2040d34df
