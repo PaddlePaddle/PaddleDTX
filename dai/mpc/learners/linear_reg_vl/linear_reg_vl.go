@@ -811,7 +811,7 @@ func (l *Learner) sendMessage(message *pbLinearRegVl.Message, address string) (*
 func NewLearner(id string, address string, params *pbCom.TrainParams, samplesFile []byte,
 	parties []string, rpc RpcHandler, rh ResultHandler, le LiveEvaluator) (*Learner, error) {
 
-	p, err := psi.NewVLTowPartsPSI(address, samplesFile, params.GetIdName(), parties)
+	p, err := psi.NewVLTwoPartsPSI(address, samplesFile, params.GetIdName(), parties)
 	if err != nil {
 		return nil, err
 	}
