@@ -187,12 +187,12 @@ func (vp *vlTwoPartsPsi) readSamples() error {
 	return nil
 }
 
-// NewVLTowPartsPSI create a VLPSI instance and initiate it
+// NewVLTwoPartsPSI create a VLPSI instance and initiate it
 // name is to name the PSI instance
 // parties are names of other parties who participate MPC
 // sampleFile is csv file content subjected to specified form
 // sampleIdName is used to extract IDs
-func NewVLTowPartsPSI(name string, samplesFile []byte, samplesIdName string, parties []string) (VLPSI, error) {
+func NewVLTwoPartsPSI(name string, samplesFile []byte, samplesIdName string, parties []string) (VLPSI, error) {
 	if len(parties) <= 0 {
 		return nil, errorx.New(errcodes.ErrCodeParam, "no parties in PSI")
 	}

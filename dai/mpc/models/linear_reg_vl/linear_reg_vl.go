@@ -418,7 +418,7 @@ func NewModel(id string, address string,
 	params *pbCom.TrainModels, samplesFile []byte,
 	parties []string, rpc RpcHandler, rh ResultHandler) (*Model, error) {
 
-	p, err := psi.NewVLTowPartsPSI(address, samplesFile, params.GetIdName(), parties)
+	p, err := psi.NewVLTwoPartsPSI(address, samplesFile, params.GetIdName(), parties)
 	if err != nil {
 		return nil, err
 	}

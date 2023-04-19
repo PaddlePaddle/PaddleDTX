@@ -30,7 +30,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/sykesm/zap-logfmt v0.0.4 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
-	github.com/xuperchain/crypto v0.0.0-20201028025054-4d560674bcd6 // indirect
 	github.com/xuperchain/xuper-sdk-go v0.0.0-20210430070222-16051cc40b09
 	github.com/xuperchain/xuperchain v0.0.0-20210208123615-2d08ff11de3e
 	github.com/yudai/pp v2.0.1+incompatible // indirect
