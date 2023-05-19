@@ -3,7 +3,7 @@ PaddleDTX的四类节点（数据持有节点、存储节点、任务执行节�
 ## XuperDB
 ### 1. 数据持有节点
 #### 1.1 文件操作
-参数类型和详细说明参考 [input.go](https://github.com/PaddlePaddle/PaddleDTX/xdb/server/types/input.go) 文件：
+参数类型和详细说明参考 [input.go](https://github.com/PaddlePaddle/PaddleDTX/tree/master/xdb/engine/types/input.go) 文件：
 
 | URL  | Method | Param | explanation |
 | :--------:   | :----------: | :------------: | :------: | 
@@ -43,7 +43,7 @@ PaddleDTX的四类节点（数据持有节点、存储节点、任务执行节�
 
 
 ### 2. 存储节点
-参数类型和详细说明参考 [input.go](https://github.com/PaddlePaddle/PaddleDTX/xdb/server/types/input.go) 文件：
+参数类型和详细说明参考 [input.go](https://github.com/PaddlePaddle/PaddleDTX/tree/master/xdb/engine/types/input.go) 文件：
 #### 2.1 切片操作
 | URL  | Method | Param | explanation |
 | :--------:   | :----------: | :------------: | :------: | 
