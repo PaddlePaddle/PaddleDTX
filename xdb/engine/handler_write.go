@@ -48,9 +48,9 @@ const (
 	defaultRetryTime = 5 // seconds
 )
 
-// finishWritenSlice encrypted slice info
+// finishWrittenSlice encrypted slice info
 // contains slice digest and encrypted ciphertext
-type finishWritenSlice struct {
+type finishWrittenSlice struct {
 	eSlice    encryptor.EncryptedSlice
 	storIndex string //storage index of a slice, returned by `Storage Node`
 }
@@ -162,7 +162,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 
 	// Setup challenging materials && Distribute
 	// both finishedQueue and failedQueue will be closed when encryptedSliceQueue is closed
-	finishedQueue := make(chan finishWritenSlice, 10)
+	finishedQueue := make(chan finishWrittenSlice, 10)
 	failedQueue := make(chan encryptor.EncryptedSlice, 10)
 	go e.distributeRoutine(ctx, nodesMap, encryptedSliceQueue, finishedQueue, failedQueue, opt.User)
 	var finishedEncSlices []encryptor.EncryptedSlice
@@ -177,7 +177,7 @@ func (e *Engine) Write(ctx context.Context, opt types.WriteOptions,
 	for f := range failedQueue {
 		failedSlices = append(failedSlices, f)
 	}
-	finishedQueue2 := make(chan finishWritenSlice, 10)
+	finishedQueue2 := make(chan finishWrittenSlice, 10)
 	failedQueue2 := make(chan encryptor.EncryptedSlice, 10)
 	e.retryRoutine(ctx, failedSlices, finishedQueue2, failedQueue2, nodesMap, opt.User)
 	for m := range finishedQueue2 {
@@ -375,7 +375,7 @@ func (e *Engine) encryptRoutine(ctx context.Context, fileID string, locatedQueue
 
 // distributeRoutine push slices to storage nodes
 func (e *Engine) distributeRoutine(ctx context.Context, nodes map[string]blockchain.Node,
-	encryptedQueue <-chan encryptor.EncryptedSlice, finishedQueue chan<- finishWritenSlice,
+	encryptedQueue <-chan encryptor.EncryptedSlice, finishedQueue chan<- finishWrittenSlice,
 	failedQueue chan<- encryptor.EncryptedSlice, owner string) {
 	wg := sync.WaitGroup{}
 
@@ -409,7 +409,7 @@ func (e *Engine) distributeRoutine(ctx context.Context, nodes map[string]blockch
 					"address":     node.Address,
 				}).Debug("slice pushed")
 
-				finishedQueue <- finishWritenSlice{
+				finishedQueue <- finishWrittenSlice{
 					eSlice:    es,
 					storIndex: sIdx,
 				}
@@ -424,7 +424,7 @@ func (e *Engine) distributeRoutine(ctx context.Context, nodes map[string]blockch
 
 // retryRoutine re-push failed slice
 func (e *Engine) retryRoutine(ctx context.Context, failedSlices []encryptor.EncryptedSlice,
-	finishedQueue chan<- finishWritenSlice, failedQueue chan<- encryptor.EncryptedSlice,
+	finishedQueue chan<- finishWrittenSlice, failedQueue chan<- encryptor.EncryptedSlice,
 	nodes map[string]blockchain.Node, owner string) {
 
 	wg := sync.WaitGroup{}
@@ -449,7 +449,7 @@ func (e *Engine) retryRoutine(ctx context.Context, failedSlices []encryptor.Encr
 							"address":     node.Address,
 						}).Debug("slice pushed")
 
-						finishedQueue <- finishWritenSlice{
+						finishedQueue <- finishWrittenSlice{
 							eSlice:    es,
 							storIndex: sIdx,
 						}
@@ -474,9 +474,9 @@ func (e *Engine) retryRoutine(ctx context.Context, failedSlices []encryptor.Encr
 
 // pushToOtherNode re-push failed slice to another node
 func (e *Engine) pushToOtherNode(ctx context.Context, owner, fileID string, failedSlices []encryptor.EncryptedSlice,
-	finishedEncSlices []encryptor.EncryptedSlice, nodes blockchain.NodeHs, onErr func(error)) []finishWritenSlice {
+	finishedEncSlices []encryptor.EncryptedSlice, nodes blockchain.NodeHs, onErr func(error)) []finishWrittenSlice {
 
-	var finishedSlices []finishWritenSlice
+	var finishedSlices []finishWrittenSlice
 	alreadySelected := make(map[string][]string)
 	for _, slice := range finishedEncSlices {
 		alreadySelected[slice.SliceID] = append(alreadySelected[slice.SliceID], string(slice.NodeID))
@@ -534,7 +534,7 @@ func (e *Engine) pushToOtherNode(ctx context.Context, owner, fileID string, fail
 					"target_node": string(node.ID),
 				}).Debug("slice re-pushed")
 
-				finishedSlices = append(finishedSlices, finishWritenSlice{eSlice: es, storIndex: sIdx})
+				finishedSlices = append(finishedSlices, finishWrittenSlice{eSlice: es, storIndex: sIdx})
 				done = true
 				break
 			} else {
