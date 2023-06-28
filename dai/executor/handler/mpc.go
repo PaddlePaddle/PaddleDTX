@@ -232,16 +232,19 @@ func (m *MpcModelHandler) updateTaskStatusAndStopLocalMpc(taskID, executeErr, ex
 
 // stopLocalMpcTask stops mpc task
 func (m *MpcModelHandler) stopLocalMpcTask(taskId string) {
-	m.Lock()
-	delete(m.MpcTasks, taskId)
-	m.Unlock()
-	//notify MPC of stop
+	if _, ok := m.MpcTasks[taskId]; !ok {
+		logger.Debugf("mpc task already stopped, taskId: %s", taskId)
+		return
+	}
+
+	// notify MPC to stop
 	taskType := m.MpcTasks[taskId].AlgoParam.TaskType
 	if err := m.Mpc.StopTask(&pbCom.StopTaskRequest{TaskID: taskId, Params: &pbCom.TaskParams{TaskType: taskType}}); err != nil {
 		logger.WithError(err).Errorf("failed to stop mpc handler task, taskId: %s", taskId)
 	} else {
 		logger.Debugf("stop mpc task, taskId: %s", taskId)
 	}
+	delete(m.MpcTasks, taskId)
 }
 
 // sendTaskStartRequestToOthers sends "start task" request to other Executors
