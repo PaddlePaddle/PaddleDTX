@@ -244,7 +244,9 @@ func (m *MpcModelHandler) stopLocalMpcTask(taskId string) {
 	} else {
 		logger.Debugf("stop mpc task, taskId: %s", taskId)
 	}
+	m.Lock()
 	delete(m.MpcTasks, taskId)
+	m.Unlock()
 }
 
 // sendTaskStartRequestToOthers sends "start task" request to other Executors
