@@ -553,8 +553,8 @@ func decideTerminate(currentNode, fatherNode *CTreeNode, label string, cond Stop
 		return true, getMaxLabelType(currentNode.DataSet, label)
 	}
 	// 节点基尼指数和父节点基尼指数振的差值小于阈值，则该节点标记为叶子节点, 类别设置为该节点所含样本最多的类别
-	if fatherNode != nil && math.Abs(fatherNode.Gini-currentNode.Gini) <= cond.GiniThreshold {
-		fmt.Printf("==terminate== node gini amplitude smaller than threshold, current: %f, father: %f\n", currentNode.Gini, fatherNode.Gini)
+	if currentNode.Gini <= cond.GiniThreshold {
+		fmt.Printf("==terminate== node gini smaller than threshold, current gini: %f\n", currentNode.Gini)
 		return true, getMaxLabelType(currentNode.DataSet, label)
 	} else if fatherNode != nil {
 		fmt.Printf("==Gini== current: %f, father: %f, difference: %f\n", currentNode.Gini, fatherNode.Gini, math.Abs(fatherNode.Gini-currentNode.Gini))
