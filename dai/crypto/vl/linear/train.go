@@ -130,12 +130,12 @@ func CalEncGradientAndCost(rawPart *linear_vertical.RawLocalGradientPart, otherP
 
 	var encCost *ml_common.EncLocalCost
 	if params.IsTagPart {
-		encCost, err = xchainCryptoClient.LinRegVLEvaluateEncCostTagPart(rawPart, otherEncPart, trainSetThisRound, publicKey)
+		encCost, err = xchainCryptoClient.LinRegVLEvaluateEncCostTagPart(rawPart, otherEncPart, trainSetThisRound, int(params.Accuracy), publicKey)
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
 	} else {
-		encCost, err = xchainCryptoClient.LinRegVLEvaluateEncCost(rawPart, otherEncPart, trainSetThisRound, publicKey)
+		encCost, err = xchainCryptoClient.LinRegVLEvaluateEncCost(rawPart, otherEncPart, trainSetThisRound, int(params.Accuracy), publicKey)
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
@@ -214,7 +214,8 @@ func UpdateGradient(decGradBytes []byte, gradientNoise []*big.Int, thetas []floa
 
 	for i := 0; i < len(newThetas); i++ {
 		realGradient := xchainCryptoClient.LinRegVLRetrieveRealGradient(grads[i], int(params.Accuracy), gradientNoise[i])
-		grad := xchainCryptoClient.LinRegVLCalGradient(realGradient)
+		//		grad := xchainCryptoClient.LinRegVLCalGradient(realGradient)
+		grad := xchainCryptoClient.LinRegVLCalGradientWithReg(thetas, realGradient, i, int(params.RegMode), params.RegParam)
 		newThetas[i] = newThetas[i] - params.Alpha*grad
 	}
 
