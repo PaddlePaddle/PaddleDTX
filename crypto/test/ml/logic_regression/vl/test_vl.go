@@ -87,7 +87,7 @@ func main() {
 	alpha := 0.01
 	accuracy := 10
 	lambda := 0.1
-	amplitude := 0.001
+	amplitude := 0.0001
 
 	// 创建模型参数
 	thetasA := make([]float64, len(trainSetA[0])-1)
@@ -101,8 +101,12 @@ func main() {
 	lastCostB := 0.0
 	round := 0
 	for {
+		// 使用随机梯度下降 stochastic gradient descent
+		trainSetAThisRound := [][]float64{trainSetA[round%len(trainSetA)]}
+		trainSetBThisRound := [][]float64{trainSetB[round%len(trainSetB)]}
+
 		for i := 0; i < len(thetasA); i++ {
-			gradA, err := calGradForA(thetasA, thetasB, trainSetA, trainSetB, i, accuracy, regMode, lambda, paillierPrivateKeyA, paillierPrivateKeyB)
+			gradA, err := calGradForA(thetasA, thetasB, trainSetAThisRound, trainSetBThisRound, i, accuracy, regMode, lambda, paillierPrivateKeyA, paillierPrivateKeyB)
 			if err != nil {
 				log.Printf("calGrad for A err is %v", err)
 				return
@@ -111,7 +115,7 @@ func main() {
 		}
 
 		for i := 0; i < len(thetasB); i++ {
-			gradB, err := calGradForB(thetasA, thetasB, trainSetA, trainSetB, i, accuracy, regMode, lambda, paillierPrivateKeyA, paillierPrivateKeyB)
+			gradB, err := calGradForB(thetasA, thetasB, trainSetAThisRound, trainSetBThisRound, i, accuracy, regMode, lambda, paillierPrivateKeyA, paillierPrivateKeyB)
 			if err != nil {
 				log.Printf("calGrad for B err is %v", err)
 				return
@@ -127,14 +131,14 @@ func main() {
 			thetasB[i] = tempsB[i]
 		}
 
-		currentCostA, err := calCostForA(thetasA, thetasB, trainSetA, trainSetB, accuracy, regMode, lambda, paillierPrivateKeyA, paillierPrivateKeyB)
+		currentCostA, err := calCostForA(thetasA, thetasB, trainSetAThisRound, trainSetBThisRound, accuracy, regMode, lambda, paillierPrivateKeyA, paillierPrivateKeyB)
 		if err != nil {
 			log.Printf("calCostForA err is %v", err)
 			return
 		}
 		deltaA := math.Abs(currentCostA - lastCostA)
 
-		currentCostB, err := calCostForB(thetasA, thetasB, trainSetA, trainSetB, accuracy, regMode, lambda, paillierPrivateKeyA, paillierPrivateKeyB)
+		currentCostB, err := calCostForB(thetasA, thetasB, trainSetAThisRound, trainSetBThisRound, accuracy, regMode, lambda, paillierPrivateKeyA, paillierPrivateKeyB)
 		if err != nil {
 			log.Printf("calCostForA err is %v", err)
 			return
@@ -246,7 +250,8 @@ func calGradForB(thetasA, thetasB []float64, trainSetA, trainSetB [][]float64, f
 
 	// B 移除随机数得到最终梯度
 	realGraForB := xcc.LogRegVLRetrieveRealGradient(decGraForB, accuracy, encGraForB.RandomNoise)
-	graForB := xcc.LogRegVLCalGradient(realGraForB)
+	//	graForB := xcc.LogRegVLCalGradient(realGraForB)
+	graForB := xcc.LogRegVLCalGradientWithReg(thetasB, realGraForB, featureIndex, regMode, regParam)
 
 	return graForB, err
 }
@@ -285,7 +290,8 @@ func calGradForA(thetasA, thetasB []float64, trainSetA, trainSetB [][]float64, f
 
 	// A 移除随机数得到最终梯度
 	realGraForA := xcc.LogRegVLRetrieveRealGradient(decGraForA, accuracy, encGraForA.RandomNoise)
-	graForA := xcc.LogRegVLCalGradient(realGraForA)
+	//	graForA := xcc.LogRegVLCalGradient(realGraForA)
+	graForA := xcc.LogRegVLCalGradientWithReg(thetasA, realGraForA, featureIndex, regMode, regParam)
 
 	return graForA, err
 }

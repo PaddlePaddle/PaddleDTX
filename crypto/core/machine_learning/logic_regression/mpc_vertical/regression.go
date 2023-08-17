@@ -879,6 +879,23 @@ func CalGradient(gradMap map[int]float64) float64 {
 	return gradient
 }
 
+// 使用批量梯度下降来计算实际下降的梯度，增加L1\L2正则化支持
+// 批量梯度下降(batch gradient descent)，样本不多的情况下，相比较随机梯度下降(SGD,stochastic gradient descent)收敛的速度更快，且保证朝全局最优逼近
+func CalGradientWithReg(thetas []float64, gradMap map[int]float64, featureIndex int, regMode int, regParam float64) float64 {
+	gradient := 0.0
+
+	switch regMode {
+	case common.RegLasso:
+		gradient = CalGradientWithLassoReg(thetas, gradMap, featureIndex, regParam)
+	case common.RegRidge:
+		gradient = CalGradientWithRidgeReg(thetas, gradMap, featureIndex, regParam)
+	default:
+		gradient = CalGradient(gradMap)
+	}
+
+	return gradient
+}
+
 // CalGradientWithLassoReg 使用L1正则(Lasso)计算梯度
 // 定义总特征数量n，总样本数量m，正则项系数λ（用来权衡正则项与原始损失函数项的比重）
 // Grad_new(i) = (Grad_new(i) + λ*sgn(θ(i)))/m
