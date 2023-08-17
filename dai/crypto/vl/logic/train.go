@@ -214,7 +214,8 @@ func UpdateGradient(decGradBytes []byte, gradientNoise []*big.Int, thetas []floa
 
 	for i := 0; i < len(newThetas); i++ {
 		realGradient := xchainCryptoClient.LogRegVLRetrieveRealGradient(grads[i], int(params.Accuracy), gradientNoise[i])
-		grad := xchainCryptoClient.LogRegVLCalGradient(realGradient)
+		//	grad := xchainCryptoClient.LogRegVLCalGradient(realGradient)
+		grad := xchainCryptoClient.LogRegVLCalGradientWithReg(thetas, realGradient, i, int(params.RegMode), params.RegParam)
 		newThetas[i] = newThetas[i] - params.Alpha*grad
 	}
 

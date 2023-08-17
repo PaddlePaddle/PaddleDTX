@@ -3,7 +3,7 @@ module github.com/PaddlePaddle/PaddleDTX/dai
 go 1.16
 
 require (
-	github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20220705024525-b5b6c6a3ad76
+	github.com/PaddlePaddle/PaddleDTX/crypto v0.0.0-20230817074501-597f03fd9f80
 	github.com/PaddlePaddle/PaddleDTX/xdb v0.0.0-20230419070454-b5afd37bf0bb
 	github.com/cjqpker/slidewindow v1.0.2
 	github.com/docker/docker v1.4.2-0.20191101170500-ac7306503d23
