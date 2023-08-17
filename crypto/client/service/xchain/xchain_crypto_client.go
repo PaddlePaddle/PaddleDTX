@@ -367,13 +367,18 @@ func (xcc *XchainCryptoClient) LinRegVLCalGradient(gradMap map[int]float64) floa
 	return linear_vertical.CalGradient(gradMap)
 }
 
+// LinRegVLCalGradient 根据还原的明文梯度数据计算梯度值
+func (xcc *XchainCryptoClient) LinRegVLCalGradientWithReg(thetas []float64, gradMap map[int]float64, featureIndex int, regMode int, regParam float64) float64 {
+	return linear_vertical.CalGradientWithReg(thetas, gradMap, featureIndex, regMode, regParam)
+}
+
 // LinRegVLEvaluateEncCost 非标签方计算加密的损失，用其他参与方的同态公钥加密
 // - localPart 本地的明文损失数据
 // - tagPart 标签方的加密损失数据
 // - trainSet 非标签方训练样本集合
 // - publicKey 标签方同态公钥
-func (xcc *XchainCryptoClient) LinRegVLEvaluateEncCost(localPart *linear_vertical.RawLocalGradientPart, tagPart *linear_vertical.EncLocalGradientPart, trainSet [][]float64, publicKey *paillier.PublicKey) (*ml_common.EncLocalCost, error) {
-	return linear_vertical.EvaluateEncLocalCost(localPart, tagPart, trainSet, publicKey)
+func (xcc *XchainCryptoClient) LinRegVLEvaluateEncCost(localPart *linear_vertical.RawLocalGradientPart, tagPart *linear_vertical.EncLocalGradientPart, trainSet [][]float64, accuracy int, publicKey *paillier.PublicKey) (*ml_common.EncLocalCost, error) {
+	return linear_vertical.EvaluateEncLocalCost(localPart, tagPart, trainSet, accuracy, publicKey)
 }
 
 // LinRegVLEvaluateEncCostTagPart 标签方计算加密的损失，用其他参与方的同态公钥加密
@@ -381,8 +386,8 @@ func (xcc *XchainCryptoClient) LinRegVLEvaluateEncCost(localPart *linear_vertica
 // - otherPart 非标签方的加密损失数据
 // - trainSet 标签方训练样本集合
 // - publicKey 非标签方同态公钥
-func (xcc *XchainCryptoClient) LinRegVLEvaluateEncCostTagPart(localPart *linear_vertical.RawLocalGradientPart, otherPart *linear_vertical.EncLocalGradientPart, trainSet [][]float64, publicKey *paillier.PublicKey) (*ml_common.EncLocalCost, error) {
-	return linear_vertical.EvaluateEncLocalCostTag(localPart, otherPart, trainSet, publicKey)
+func (xcc *XchainCryptoClient) LinRegVLEvaluateEncCostTagPart(localPart *linear_vertical.RawLocalGradientPart, otherPart *linear_vertical.EncLocalGradientPart, trainSet [][]float64, accuracy int, publicKey *paillier.PublicKey) (*ml_common.EncLocalCost, error) {
+	return linear_vertical.EvaluateEncLocalCostTag(localPart, otherPart, trainSet, accuracy, publicKey)
 }
 
 // LinRegVLDecryptCost 为其他方解密带噪音的损失信息
@@ -518,6 +523,10 @@ func (xcc *XchainCryptoClient) LogRegVLRetrieveRealGradient(decGradMap map[int]*
 // LogRegVLCalGradient 根据明文梯度信息获取梯度值
 func (xcc *XchainCryptoClient) LogRegVLCalGradient(gradMap map[int]float64) float64 {
 	return logic_vertical.CalGradient(gradMap)
+}
+
+func (xcc *XchainCryptoClient) LogRegVLCalGradientWithReg(thetas []float64, gradMap map[int]float64, featureIndex int, regMode int, regParam float64) float64 {
+	return logic_vertical.CalGradientWithReg(thetas, gradMap, featureIndex, regMode, regParam)
 }
 
 // LogRegVLEvaluateEncCost 非标签方计算加密的损失，用其他参与方的同态公钥加密

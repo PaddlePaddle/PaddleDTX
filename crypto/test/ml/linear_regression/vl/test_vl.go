@@ -16,6 +16,7 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math"
@@ -85,6 +86,7 @@ func main() {
 	regMode := ml_common.RegNone
 	var alpha = 0.01
 	var amplitude = 0.0001
+	//	var amplitude = 0.001
 	var lambda = 0.1
 	accuracy := 10
 
@@ -183,6 +185,15 @@ func main() {
 		return
 	}
 
+	// 读取真实数据
+	realValues, err := readFeaturesFromCSVFile("./testdata/targetValues.csv")
+	if err != nil {
+		log.Printf("readFeaturesFromCSVFile failed: %v", err)
+		return
+	}
+
+	dev := 0.0
+
 	inputA := make(map[string]float64)
 	inputB := make(map[string]float64)
 	for i := 0; i < len(predictDataA[0].Sets); i++ {
@@ -203,8 +214,13 @@ func main() {
 		// 逆标准化并得到最终结果
 		predictSum := predictA + predictB
 		predictReal := xcc.LinRegVLDeStandardizeOutput(trainDataSetB.XbarParams["MEDV"], trainDataSetB.SigmaParams["MEDV"], predictSum)
-		log.Printf("predictReal after joint learning DeStandardizeOutput is %v", predictReal)
+		log.Printf("realValue: %v, predictvalue: %v", realValues[2].Sets[i], predictReal)
+
+		dev += math.Pow(predictReal-realValues[2].Sets[i], 2)
 	}
+
+	dev = dev / float64(len(predictDataA[0].Sets))
+	fmt.Printf("standDev: %v\n", math.Sqrt(dev))
 
 	//  -- 联邦预测 end
 }
@@ -245,7 +261,9 @@ func calGradForB(thetasA, thetasB []float64, trainSetA, trainSetB [][]float64, f
 
 	// B 移除随机数得到最终梯度
 	realGraForB := xcc.LinRegVLRetrieveRealGradient(decGraForB, accuracy, encGraForB.RandomNoise)
-	graForB := xcc.LinRegVLCalGradient(realGraForB)
+
+	//	graForB := xcc.LinRegVLCalGradient(realGraForB)
+	graForB := xcc.LinRegVLCalGradientWithReg(thetasB, realGraForB, featureIndex, regMode, regParam)
 
 	return graForB, err
 }
@@ -287,7 +305,9 @@ func calGradForA(thetasA, thetasB []float64, trainSetA, trainSetB [][]float64, f
 
 	// A 移除随机数得到最终梯度
 	realGraForA := xcc.LinRegVLRetrieveRealGradient(decGraForA, accuracy, encGraForA.RandomNoise)
-	graForA := xcc.LinRegVLCalGradient(realGraForA)
+
+	//	graForA := xcc.LinRegVLCalGradient(realGraForA)
+	graForA := xcc.LinRegVLCalGradientWithReg(thetasA, realGraForA, featureIndex, regMode, regParam)
 
 	return graForA, err
 }
@@ -314,7 +334,7 @@ func calCostForB(thetasA, thetasB []float64, trainSetA, trainSetB [][]float64, r
 	// B 计算最终加密的损失，并传给 A
 	encLocalGradientPartA := localGradientPartA.EncPart
 	rawLocalGradientPartB := localGradientPartB.RawPart
-	encCostForB, err := xcc.LinRegVLEvaluateEncCostTagPart(rawLocalGradientPartB, encLocalGradientPartA, trainSetB, paillierPublicKeyA)
+	encCostForB, err := xcc.LinRegVLEvaluateEncCostTagPart(rawLocalGradientPartB, encLocalGradientPartA, trainSetB, accuracy, paillierPublicKeyA)
 	if err != nil {
 		return 0, err
 	}
@@ -363,7 +383,7 @@ func calCostForA(thetasA, thetasB []float64, trainSetA, trainSetB [][]float64, r
 
 	// 通过损失函数评估损失
 
-	encCostForA, err := xcc.LinRegVLEvaluateEncCost(rawLocalGradientPartA, encLocalGradientPartB, trainSetA, paillierPublicKeyB)
+	encCostForA, err := xcc.LinRegVLEvaluateEncCost(rawLocalGradientPartA, encLocalGradientPartB, trainSetA, accuracy, paillierPublicKeyB)
 	if err != nil {
 		log.Printf("evaluateEncLocalCost for A err is %v", err)
 		return 0, err

@@ -472,6 +472,7 @@ func CalLocalGradientTagPart(thetas []float64, trainSet [][]float64, accuracy in
 		deviation := predictValue - trainSet[i][len(trainSet[i])-1]
 
 		// 精度处理转int后，才可以使用同态加密和同态运算
+		// 1个精度
 		deviationInt := big.NewInt(int64(math.Round(deviation * math.Pow(10, float64(accuracy)))))
 		// 使用同态公钥加密数据
 		encDeviation, err := publicKey.EncryptSupNegNum(deviationInt)
@@ -481,7 +482,10 @@ func CalLocalGradientTagPart(thetas []float64, trainSet [][]float64, accuracy in
 		}
 
 		// 精度处理转int后，才可以使用同态加密和同态运算
-		deviationSquareInt := new(big.Int).Mul(deviationInt, deviationInt)
+		//		deviationSquareInt := new(big.Int).Mul(deviationInt, deviationInt)
+		deviationSquare := math.Pow(deviation, 2)
+		// 1个精度
+		deviationSquareInt := big.NewInt(int64(math.Round(deviationSquare * math.Pow(10, float64(accuracy)))))
 		// 使用同态公钥加密数据
 		encDeviationSquare, err := publicKey.EncryptSupNegNum(deviationSquareInt)
 		if err != nil {
@@ -507,6 +511,7 @@ func CalLocalGradientTagPart(thetas []float64, trainSet [][]float64, accuracy in
 	}
 
 	// 精度处理转int后，才可以使用同态加密和同态运算
+	// 1个精度
 	rawRegCost := big.NewInt(int64(math.Round(regCost * math.Pow(10, float64(accuracy)))))
 	// 使用同态公钥加密数据
 	encRegCost, err := publicKey.EncryptSupNegNum(rawRegCost)
@@ -565,6 +570,7 @@ func CalLocalGradientPart(thetas []float64, trainSet [][]float64, accuracy int, 
 		id, predictValue := predictNoTag(thetas, trainSet[i])
 
 		// 精度处理转int后，才可以使用同态加密和同态运算
+		// 1个精度
 		predictValueInt := big.NewInt(int64(math.Round(predictValue * math.Pow(10, float64(accuracy)))))
 		// 使用同态公钥加密数据
 		encPredictValue, err := publicKey.EncryptSupNegNum(predictValueInt)
@@ -574,7 +580,10 @@ func CalLocalGradientPart(thetas []float64, trainSet [][]float64, accuracy int, 
 		}
 
 		// 精度处理转int后，才可以使用同态加密和同态运算
-		predictValueSquareInt := new(big.Int).Mul(predictValueInt, predictValueInt)
+		//		predictValueSquareInt := new(big.Int).Mul(predictValueInt, predictValueInt)
+		predictValueSquare := math.Pow(predictValue, 2)
+		// 1个精度
+		predictValueSquareInt := big.NewInt(int64(math.Round(predictValueSquare * math.Pow(10, float64(accuracy)))))
 		// 使用同态公钥加密数据
 		encPredictValueSquare, err := publicKey.EncryptSupNegNum(predictValueSquareInt)
 		if err != nil {
@@ -648,6 +657,7 @@ func CalLassoRegCost(thetas []float64, trainSetSize int, regParam float64) float
 	}
 
 	lassoRegCost = regParam * lassoRegCost / float64(trainSetSize)
+
 	return lassoRegCost
 }
 
@@ -668,6 +678,7 @@ func CalRidgeRegCost(thetas []float64, trainSetSize int, regParam float64) float
 	}
 
 	ridgeRegCost = regParam * ridgeRegCost / (2 * float64(trainSetSize))
+
 	return ridgeRegCost
 }
 
@@ -717,9 +728,13 @@ func CalEncLocalGradient(localPart *RawLocalGradientPart, tagPart *EncLocalGradi
 
 		// trainset第一列是id，第二列是1
 		// 计算predictValue(j-A)*xAj(i)
-		scaleFactor := big.NewInt(int64(math.Round(trainSet[i][featureIndex+1] * math.Pow(10, float64(accuracy)))))
-		// 两个乘法子项都拥有精度，相当于倍数*2
-		deviation1 := new(big.Int).Mul(predictValueLocalPart, scaleFactor)
+		//		scaleFactor := big.NewInt(int64(math.Round(trainSet[i][featureIndex+1] * math.Pow(10, float64(accuracy)))))
+		//		// 两个乘法子项都拥有精度，相当于倍数*2
+		//		deviation1 := new(big.Int).Mul(predictValueLocalPart, scaleFactor)
+
+		scaleFactor := big.NewInt(int64(math.Round(math.Pow(10, float64(accuracy)))))
+		deviation1 := new(big.Int).Mul(big.NewInt(int64(math.Round(trainSet[i][featureIndex+1]))), scaleFactor)
+		deviation1 = new(big.Int).Mul(predictValueLocalPart, deviation1)
 
 		// 使用对方的公钥加密 encByB(predictValue(j-A)*xAj(i))
 		encDeviation1, err := publicKey.EncryptSupNegNum(deviation1)
@@ -735,10 +750,11 @@ func CalEncLocalGradient(localPart *RawLocalGradientPart, tagPart *EncLocalGradi
 		}
 
 		// 计算 encByB(predictValue(j-B) - realValue(j)) * xAj(i)
-		scaleFactor = big.NewInt(int64(math.Round(trainSet[i][featureIndex+1] * math.Pow(10, float64(accuracy)))))
+		//		scaleFactor = big.NewInt(int64(math.Round(trainSet[i][featureIndex+1] * math.Pow(10, float64(accuracy)))))
+		encDeviation2 := new(big.Int).Mul(big.NewInt(int64(math.Round(trainSet[i][featureIndex+1]))), scaleFactor)
 
 		// 两个乘法子项都拥有精度，相当于倍数*2
-		encDeviation2 := publicKey.CypherPlainMultiply(predictValueTagPart, scaleFactor)
+		encDeviation2 = publicKey.CypherPlainMultiply(predictValueTagPart, encDeviation2)
 
 		// 计算 encByB(predictValue(j-A)*xAj(i)) + encByB(predictValue(j-B) - realValue(j)) * xAj(i) + encByB(RanNumA)
 		addResult := publicKey.CyphersAdd(encDeviation1, encDeviation2, encRanNum)
@@ -886,6 +902,23 @@ func CalGradient(gradMap map[int]float64) float64 {
 	return gradient
 }
 
+// 使用批量梯度下降来计算实际下降的梯度，增加L1\L2正则化支持
+// 批量梯度下降(batch gradient descent)，样本不多的情况下，相比较随机梯度下降(SGD,stochastic gradient descent)收敛的速度更快，且保证朝全局最优逼近
+func CalGradientWithReg(thetas []float64, gradMap map[int]float64, featureIndex int, regMode int, regParam float64) float64 {
+	gradient := 0.0
+
+	switch regMode {
+	case common.RegLasso:
+		gradient = CalGradientWithLassoReg(thetas, gradMap, featureIndex, regParam)
+	case common.RegRidge:
+		gradient = CalGradientWithRidgeReg(thetas, gradMap, featureIndex, regParam)
+	default:
+		gradient = CalGradient(gradMap)
+	}
+
+	return gradient
+}
+
 // CalGradientWithLassoReg 使用L1正则(Lasso)计算梯度
 // 定义总特征数量n，总样本数量m，正则项系数λ（用来权衡正则项与原始损失函数项的比重）
 // Grad_new(i) = (Grad_new(i) + λ*sgn(θ(i)))/m
@@ -938,7 +971,7 @@ func CalGradientWithRidgeReg(thetas []float64, gradMap map[int]float64, featureI
 // - tagPart 标签方的加密损失数据
 // - trainSet 非标签方训练样本集合
 // - publicKey 标签方同态公钥
-func EvaluateEncLocalCost(localPart *RawLocalGradientPart, tagPart *EncLocalGradientPart, trainSet [][]float64, publicKey *paillier.PublicKey) (*common.EncLocalCost, error) {
+func EvaluateEncLocalCost(localPart *RawLocalGradientPart, tagPart *EncLocalGradientPart, trainSet [][]float64, accuracy int, publicKey *paillier.PublicKey) (*common.EncLocalCost, error) {
 	costSum := make(map[int]*big.Int)
 
 	// 生成 RanNumA，用于损失值的混淆
@@ -959,11 +992,19 @@ func EvaluateEncLocalCost(localPart *RawLocalGradientPart, tagPart *EncLocalGrad
 	for i := 0; i < len(trainSet); i++ {
 		id := int(math.Floor(trainSet[i][0] + 0.5))
 
+		//		// 获得predictValue(j-A)^2
+		//		rawDeviation1, ok := localPart.RawGradPartSquare[id]
+		//		if !ok {
+		//			return nil, fmt.Errorf("EvaluateEncLocalCost failed to get raw grad part square for id: %d, rawGradPartSq: %v", id, localPart.RawGradPartSquare)
+		//		}
+
+		// 一个精度
+		scaleFactor := big.NewInt(int64(math.Round(math.Pow(10, float64(accuracy)))))
+
 		// 获得predictValue(j-A)^2
-		rawDeviation1, ok := localPart.RawGradPartSquare[id]
-		if !ok {
-			return nil, fmt.Errorf("EvaluateEncLocalCost failed to get raw grad part square for id: %d, rawGradPartSq: %v", id, localPart.RawGradPartSquare)
-		}
+		rawDeviation1 := localPart.RawGradPartSquare[id]
+
+		rawDeviation1 = new(big.Int).Mul(rawDeviation1, scaleFactor)
 
 		// 计算encByB(predictValue(j-A)^2)
 		encDeviation1, err := publicKey.EncryptSupNegNum(rawDeviation1)
@@ -973,28 +1014,35 @@ func EvaluateEncLocalCost(localPart *RawLocalGradientPart, tagPart *EncLocalGrad
 		}
 
 		// 获得encByB((predictValue(j-B) - realValue(j))^2)
-		encDeviation2, ok := tagPart.EncGradPartSquare[id]
+		encPart2, ok := tagPart.EncGradPartSquare[id]
 		if !ok {
 			return nil, fmt.Errorf("EvaluateEncLocalCost failed to get enc grad part square for id: %d, encGradPartSq: %v", id, tagPart.EncGradPartSquare)
 		}
 
+		encDeviation2 := publicKey.CypherPlainMultiply(encPart2, scaleFactor)
+
 		// 计算2*predictValue(j-A)
-		localRawGradPart, ok := localPart.RawGradPart[id]
+		rawDeviation3, ok := localPart.RawGradPart[id]
 		if !ok {
 			return nil, fmt.Errorf("EvaluateEncLocalCost failed to get local raw grad part for id: %d, rawGradPart: %v", id, localPart.RawGradPart)
 		}
-		scaleFactor := new(big.Int).Mul(big.NewInt(2), localRawGradPart)
+		rawDeviation3 = new(big.Int).Mul(big.NewInt(2), rawDeviation3)
+		//		scaleFactor := new(big.Int).Mul(big.NewInt(2), localRawGradPart)
 
 		// 计算2*predictValue(j-A)*encByB(predictValue(j-B) - realValue(j))
-		encPart, ok := tagPart.EncGradPart[id]
+		encPart3, ok := tagPart.EncGradPart[id]
 		if !ok {
 			return nil, fmt.Errorf("EvaluateEncLocalCost failed to get enc grad part for id: %d, encGradPart: %v", id, tagPart.EncGradPart)
 		}
-		encDeviation3 := publicKey.CypherPlainMultiply(encPart, scaleFactor)
+		//		encDeviation3 := publicKey.CypherPlainMultiply(encPart, scaleFactor)
+		encDeviation3 := publicKey.CypherPlainMultiply(encPart3, rawDeviation3)
 
 		// 支持泛化
 		// 获得L_A
 		rawDeviation4 := localPart.RawRegCost
+
+		// 补充1个精度
+		rawDeviation4 = new(big.Int).Mul(rawDeviation4, scaleFactor)
 
 		// 计算encByB(L_A)
 		encDeviation4, err := publicKey.EncryptSupNegNum(rawDeviation4)
@@ -1005,6 +1053,9 @@ func EvaluateEncLocalCost(localPart *RawLocalGradientPart, tagPart *EncLocalGrad
 
 		// 获得encByB(L_B)
 		encDeviation5 := tagPart.EncRegCost
+
+		// 补充1个精度
+		encDeviation5 = publicKey.CypherPlainMultiply(encDeviation5, scaleFactor)
 
 		// 将误差值累加，再加上随机数
 		// 密文加法
@@ -1034,7 +1085,7 @@ func EvaluateEncLocalCost(localPart *RawLocalGradientPart, tagPart *EncLocalGrad
 // - otherPart 非标签方的加密损失数据
 // - trainSet 标签方训练样本集合
 // - publicKey 非标签方同态公钥
-func EvaluateEncLocalCostTag(localPart *RawLocalGradientPart, otherPart *EncLocalGradientPart, trainSet [][]float64, publicKey *paillier.PublicKey) (*common.EncLocalCost, error) {
+func EvaluateEncLocalCostTag(localPart *RawLocalGradientPart, otherPart *EncLocalGradientPart, trainSet [][]float64, accuracy int, publicKey *paillier.PublicKey) (*common.EncLocalCost, error) {
 	costSum := make(map[int]*big.Int)
 
 	// 生成 RanNumB，用于损失值的混淆
@@ -1055,11 +1106,16 @@ func EvaluateEncLocalCostTag(localPart *RawLocalGradientPart, otherPart *EncLoca
 	for i := 0; i < len(trainSet); i++ {
 		id := int(math.Floor(trainSet[i][0] + 0.5))
 
+		// 一个精度
+		scaleFactor := big.NewInt(int64(math.Round(math.Pow(10, float64(accuracy)))))
+
 		// 获得(predictValue(j-B) - realValue(j))^2
 		rawDeviation1, ok := localPart.RawGradPartSquare[id]
 		if !ok {
 			return nil, fmt.Errorf("EvaluateEncLocalCostTag failed to get local raw grad part square for id: %d, rawGradPartSq: %v", id, localPart.RawGradPartSquare)
 		}
+
+		rawDeviation1 = new(big.Int).Mul(rawDeviation1, scaleFactor)
 
 		// 计算encByA((predictValue(j-B) - realValue(j))^2)
 		encDeviation1, err := publicKey.EncryptSupNegNum(rawDeviation1)
@@ -1074,23 +1130,28 @@ func EvaluateEncLocalCostTag(localPart *RawLocalGradientPart, otherPart *EncLoca
 			return nil, fmt.Errorf("EvaluateEncLocalCostTag failed to get enc grad part square for id: %d, encgradPartSq: %v", id, otherPart.EncGradPartSquare)
 		}
 
+		encDeviation2 = publicKey.CypherPlainMultiply(encDeviation2, scaleFactor)
+
 		// 计算2*(predictValue(j-B) - realValue(j))
-		rawGradPart, ok := localPart.RawGradPart[id]
+		rawGradPart3, ok := localPart.RawGradPart[id]
 		if !ok {
 			return nil, fmt.Errorf("EvaluateEncLocalCostTag failed to get raw grad part for id: %d, rawGradPart: %v", id, localPart.RawGradPart)
 		}
-		scaleFactor := new(big.Int).Mul(big.NewInt(2), rawGradPart)
+		rawGradPart3 = new(big.Int).Mul(big.NewInt(2), rawGradPart3)
 
 		// 计算2*encByA(predictValue(j-A))*(predictValue(j-B) - realValue(j))
 		otherEncGradPart, ok := otherPart.EncGradPart[id]
 		if !ok {
 			return nil, fmt.Errorf("EvaluateEncLocalCostTag failed to get other enc grad part for id: %d, encGradPart: %v", id, otherPart.EncGradPart)
 		}
-		encDeviation3 := publicKey.CypherPlainMultiply(otherEncGradPart, scaleFactor)
+		encDeviation3 := publicKey.CypherPlainMultiply(otherEncGradPart, rawGradPart3)
 
 		// 支持泛化
 		// 获得L_B
 		rawDeviation4 := localPart.RawRegCost
+
+		// 补充1个精度
+		rawDeviation4 = new(big.Int).Mul(rawDeviation4, scaleFactor)
 
 		// 计算encByA(L_B)
 		encDeviation4, err := publicKey.EncryptSupNegNum(rawDeviation4)
@@ -1101,6 +1162,8 @@ func EvaluateEncLocalCostTag(localPart *RawLocalGradientPart, otherPart *EncLoca
 
 		// 获得encByA(L_A)
 		encDeviation5 := otherPart.EncRegCost
+
+		encDeviation5 = publicKey.CypherPlainMultiply(encDeviation5, scaleFactor)
 
 		// 将误差值累加，再加上随机数
 		// 密文加法
