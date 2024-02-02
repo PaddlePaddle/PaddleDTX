@@ -294,7 +294,7 @@ $ ./xdb-cli --host http://localhost:8121 files rejectauth -r '拒绝授权申请
 |   --end     |      -e       |   authorization applications publish before endTime, example '2022-07-10 12:00:00' |    no    |
 |   --fileID  |      -f       |   sample file ID |    no    |
 |   --start   |      -s       |   authorization applications publish after startTime, example '2022-06-10 12:00:00' |    no    |
-|   --limit   |      -l       |   slimit for list file authorization applications |    no    |
+|   --limit   |      -l       |   limit for list file authorization applications |    no    |
 |   --status  |               |   status of file authorization application, example 'Unapproved, Approved or Rejected' |    no    |
 
 查询文件授权列表：

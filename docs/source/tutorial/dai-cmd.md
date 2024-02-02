@@ -44,7 +44,7 @@ $  ./requester-cli files getauthbyid  -i 82bd3362-a95e-4c8b-9512-f17fc4091309
 |   --end     |      -e       |   authorization applications publish before endTime, example '2022-07-10 12:00:00' |    no    |
 |   --fileID  |      -f       |   sample file ID |    no    |
 |   --start   |      -s       |   authorization applications publish after startTime, example '2022-06-10 12:00:00' |    no    |
-|   --limit   |      -l       |   slimit for list file authorization applications |    no    |
+|   --limit   |      -l       |   limit for list file authorization applications |    no    |
 |   --status  |               |   status of file authorization application |    no    |
 
 依据申请者公钥查询申请者所发起的样本授权使用列表：
