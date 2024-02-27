@@ -140,17 +140,26 @@ func (m *Monitor) Start(ctx context.Context) error {
 	serType := config.GetServerType()
 	switch serType {
 	case config.NodeTypeDataOwner:
-		m.fileMaintainer.Migrate(ctx)
+		// If the dataOwner node's filemaintainerSwitch is enabled,
+		// the node's fileMaintainer will check storage-nodes health conditions and
+		// migrate slices from bad nodes to healthy nodes.
+		if m.fileMaintainer != nil {
+			m.fileMaintainer.Migrate(ctx)
+		}
 		if m.challengingMonitor != nil {
 			m.challengingMonitor.StartChallengeRequest(ctx)
 		}
 
 	case config.NodeTypeStorage:
-		if err := m.nodeMaintainer.NodeAutoRegister(); err != nil {
-			return err
+		// If the storage node's nodemaintainer is enabled,
+		// the node's automatic registration, heartbeat detection, and expired file cleanup will be enabled.
+		if m.nodeMaintainer != nil {
+			if err := m.nodeMaintainer.NodeAutoRegister(); err != nil {
+				return err
+			}
+			m.nodeMaintainer.StartFileClear(ctx)
+			m.nodeMaintainer.HeartBeat(ctx)
 		}
-		m.nodeMaintainer.StartFileClear(ctx)
-		m.nodeMaintainer.HeartBeat(ctx)
 		if m.challengingMonitor != nil {
 			m.challengingMonitor.StartChallengeAnswer(ctx)
 		}
