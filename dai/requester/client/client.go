@@ -156,7 +156,6 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 
 	// 4. check if dataset and specified label exist
 	var dataSets []*pbTask.DataForTask
-	var isTagPart bool
 	isLabelExist := 0
 	for index, fileID := range fileIDs {
 		file, err := c.chainClient.GetFileByID(fileID)
@@ -175,6 +174,7 @@ func (c *Client) checkPublishTaskOptions(opt PublishOptions) ([]*pbTask.DataForT
 		}
 
 		// check if label exists in one of the datasets
+		isTagPart := false
 		if util.IsContain(fileFeatures, opt.AlgoParam.TrainParams.Label) {
 			isLabelExist += 1
 			isTagPart = true
