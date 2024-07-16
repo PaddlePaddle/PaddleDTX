@@ -21,11 +21,11 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
-	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/cjqpker/slidewindow"
 	"github.com/sirupsen/logrus"
 
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
+	"github.com/PaddlePaddle/PaddleDTX/crypto/core/hash"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/blockchain"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/common"
 	"github.com/PaddlePaddle/PaddleDTX/xdb/engine/encryptor"
@@ -77,7 +77,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 		cancel()
 		return nil, err
 	}
-	pubkey := ecdsa.PublicKeyFromPrivateKey(e.monitor.challengingMonitor.PrivateKey)
+        pubkey := ecdsa.PublicKeyFromPrivateKey(e.monitor.challengingMonitor.PrivateKey)
 	opt.User = pubkey.String()
 
 	// prepare
@@ -192,12 +192,7 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 				continue
 			}
 
-			// trim 0 at the end of file
-			if s.Index() != sw.Total-1 {
-				s.Set("data", plainText)
-			} else {
-				s.Set("data", bytes.TrimRight(plainText, string([]byte{0})))
-			}
+			s.Set("data", plainText)
 
 			break
 		}
@@ -215,8 +210,8 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 		if !exist {
 			return errorx.New(errorx.ErrCodeNotFound, "failed to find data")
 		}
-
-		if _, err := writer.Write(data.([]byte)); err != nil {
+		sliceData := bytes.TrimRight(data.([]byte), string([]byte{0}))
+		if _, err := writer.Write(sliceData); err != nil {
 			return errorx.NewCode(err, errorx.ErrCodeInternal, "failed to write")
 		}
 
@@ -235,8 +230,14 @@ func (e *Engine) Read(ctx context.Context, opt types.ReadOptions) (io.ReadCloser
 		}
 	}()
 
+	// remove the extra 0 at the end of the file ciphertext
+	// the length of the ciphertext is 16 more than the original text length
+	fileCiphertext, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, errorx.NewCode(err, errorx.ErrCodeInternal, "failed to read ciphertext during Recover")
+	}
 	// decrypt recovered file
-	plain, err := e.encryptor.Recover(reader, &encryptor.RecoverOptions{FileID: opt.FileID})
+	plain, err := e.encryptor.Recover(bytes.NewReader(fileCiphertext[:f.Length+16]), &encryptor.RecoverOptions{FileID: opt.FileID})
 	if err != nil {
 		return nil, errorx.NewCode(err, errorx.ErrCodeCrypto, "failed to recover original file")
 	}
@@ -276,3 +277,4 @@ func makeSlicesPool4Read(srs []blockchain.PublicSliceMeta) map[string][]blockcha
 
 	return slicesPool
 }
+
