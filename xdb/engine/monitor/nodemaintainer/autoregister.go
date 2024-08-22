@@ -14,7 +14,6 @@
 package nodemaintainer
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/PaddlePaddle/PaddleDTX/crypto/core/ecdsa"
@@ -37,24 +36,21 @@ func (m *NodeMaintainer) autoRegister() error {
 		return nil
 	} else if err == nil && !node.Online {
 		// get sig message
-		nonce := time.Now().UnixNano()
-		msg, err := util.GetSigMessage(map[string]string{
-			"nodeID": pubkey.String(),
-			"nonce":  strconv.FormatInt(nonce, 10),
-		})
+		nodeOpts := &blockchain.NodeOperateOptions{
+			NodeID: []byte(pubkey.String()),
+			Nonce:  time.Now().UnixNano(),
+		}
+		msg, err := util.GetSigMessage(nodeOpts)
 		if err != nil {
 			return errorx.Internal(err, "failed to get the message to sign")
 		}
-		// generate signature
 		sig, err := ecdsa.Sign(m.localNode.PrivateKey, hash.HashUsingSha256([]byte(msg)))
 		if err != nil {
-			return errorx.Wrap(err, "failed to sign File")
+			return errorx.Wrap(err, "failed to sign")
 		}
-		nodeOpts := &blockchain.NodeOperateOptions{
-			NodeID:    []byte(pubkey.String()),
-			Nonce:     nonce,
-			Signature: sig[:],
-		}
+		nodeOpts.Signature = sig[:]
+
+		// generate signature
 		err = m.blockchain.NodeOnline(nodeOpts)
 		if err != nil {
 			logrus.Error("node failed online on  blockchain")
@@ -97,3 +93,4 @@ func (m *NodeMaintainer) autoRegister() error {
 		return errorx.Wrap(err, "failed to read blockchain")
 	}
 }
+
